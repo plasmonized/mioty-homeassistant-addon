@@ -50,4 +50,3 @@ schema:
   auto_discovery: "bool"
   log_level: "list(debug|info|warning|error)?"
   web_port: "port"
-image: "mioty_application_center/{arch}"

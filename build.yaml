@@ -8,7 +8,7 @@ build_from:
 labels:
   org.opencontainers.image.title: "mioty Application Center für Homeassistant"
   org.opencontainers.image.description: "mioty Application Center für die Verwaltung von mioty IoT Sensoren"
-  org.opencontainers.image.source: "https://github.com/your-repo/bssci-mioty-addon"
+  org.opencontainers.image.source: "https://github.com/plasmonized/mioty-homeassistant-addon"
   org.opencontainers.image.licenses: "MIT"
 args:
   TEMPIO_VERSION: "2021.09.0"
