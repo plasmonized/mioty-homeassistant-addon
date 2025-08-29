@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional
 import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.const import CONF_HOST, CONF_PORT, CONF_USERNAME, CONF_PASSWORD
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.data_entry_flow import FlowResult
 import homeassistant.helpers.config_validation as cv
 
@@ -88,7 +88,6 @@ class BSSCIConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             raise
 
     @staticmethod
-    @callback
     def async_get_options_flow(config_entry):
         """Return the options flow."""
         return BSSCIOptionsFlowHandler(config_entry)

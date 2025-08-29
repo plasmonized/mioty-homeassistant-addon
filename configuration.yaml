@@ -1,0 +1,32 @@
+# Home Assistant Konfiguration für BSSCI mioty Integration Testing
+
+default_config:
+
+http:
+  server_port: 5000
+  server_host: 0.0.0.0
+
+logger:
+  default: info
+  logs:
+    custom_components.bssci_mioty: debug
+
+# MQTT wird über die Integration konfiguriert
+# mqtt:
+
+# Frontend
+frontend:
+  themes: !include_dir_merge_named themes
+
+# Enable the recorder
+recorder:
+  db_url: sqlite:///home-assistant_v2.db
+  purge_keep_days: 10
+
+# Sensor Konfiguration
+sensor:
+  - platform: time_date
+    display_options:
+      - 'time'
+      - 'date'
+      - 'date_time'

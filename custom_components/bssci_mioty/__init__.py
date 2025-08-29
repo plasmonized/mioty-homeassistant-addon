@@ -252,11 +252,12 @@ class BSSCIMQTTClient:
 
         topic = f"{self.config[CONF_BASE_TOPIC]}/{TOPIC_SENSOR_CONFIG.format(sensor_eui)}"
         
-        await self.hass.async_add_executor_job(
-            self.client.publish,
-            topic,
-            json.dumps(config)
-        )
+        if self.client:
+            await self.hass.async_add_executor_job(
+                self.client.publish,
+                topic,
+                json.dumps(config)
+            )
         
         _LOGGER.info("Sensor configuration sent for %s", sensor_eui)
 

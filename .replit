@@ -21,10 +21,22 @@ args = "Home Assistant BSSCI Plugin"
 name = "Home Assistant BSSCI Plugin"
 author = "agent"
 
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "pip install homeassistant paho-mqtt voluptuous && python -m homeassistant --config . --safe-mode"
-waitForPort = 8123
-
 [workflows.workflow.metadata]
 outputType = "webview"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python -m homeassistant --config ."
+waitForPort = 5000
+
+[[ports]]
+localPort = 5000
+externalPort = 80
+
+[[ports]]
+localPort = 40000
+externalPort = 3000
+
+[[ports]]
+localPort = 40001
+externalPort = 3001
