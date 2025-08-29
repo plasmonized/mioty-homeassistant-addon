@@ -10,22 +10,35 @@ Preferred communication style: Simple, everyday language.
 
 # Recent Changes
 
-**29.08.2025 - BSSCI mioty Home Assistant Integration abgeschlossen:**
-- Vollständige Custom Integration für Home Assistant erstellt mit deutscher GUI
-- MQTT-Verbindung zu bestehendem BSSCI Service Center implementiert  
-- Automatische Sensor-Discovery und dynamische Entity-Management entwickelt
-- Services für Sensor-Verwaltung (hinzufügen, konfigurieren, entfernen) über Home Assistant GUI
-- Base Station Monitoring mit Echtzeit-Status (CPU, Memory, Uptime, Duty Cycle)
-- Signal Quality Assessment und Device Registry Integration
-- HACS-kompatible Struktur für einfache Installation und Updates
-- Deutsche Lokalisierung aller Benutzeroberflächen-Strings
+**29.08.2025 - mioty Application Center für Homeassistant mit Payload Decoder System abgeschlossen:**
+- Vollständige Custom Integration zu Home Assistant Add-on konvertiert
+- Docker-containerisierte Lösung mit Flask Web-GUI im orange/grauen Design
+- MQTT Broker Konfiguration direkt über Web-Interface mit Credentials-Support
+- **Automatisiertes Payload Decoder System implementiert:**
+  - Unterstützung für mioty Blueprint Decoder (.json Format)
+  - Unterstützung für Sentinum JavaScript Decoder (.js Format)  
+  - Upload-Funktionalität für Decoder-Dateien über Web-GUI
+  - Sensor-Decoder Zuordnungsverwaltung
+  - Live-Testing von Decodern mit Test-Payloads
+  - Automatische Payload-Dekodierung im MQTT Flow integriert
+  - Beispiel-Decoder für Demo-Zwecke vorinstalliert
+- Komplette Umbenennung zu "mioty Application Center für Homeassistant"
+- Web-GUI erweitert mit Decoder-Management Tab und vollständiger CRUD-Funktionalität
 
 # System Architecture
 
-## Core Integration Architecture
-- **Custom Component Structure**: Follows Home Assistant's standard custom component pattern with separate modules for configuration flow, sensor entities, device tracking, and constants management
-- **Platform Support**: Implements both sensor and device_tracker platforms for comprehensive device representation in Home Assistant
-- **Service-Based Management**: Provides Home Assistant services for adding, removing, and configuring sensors dynamically through the UI
+## Add-on Architecture
+- **Docker Containerization**: Complete Home Assistant Add-on with Dockerfile and configuration files
+- **Flask Web Application**: Modern web-based GUI with orange/gray color scheme for all management tasks
+- **Multi-Tab Interface**: Separate sections for Sensor Management, Decoder Management, and Settings
+- **Persistent Configuration**: Settings management with file-based storage and runtime reconfiguration
+
+## Payload Decoder System  
+- **Multi-Format Support**: Handles both mioty Blueprint (.json) and Sentinum JavaScript (.js) decoder formats
+- **Dynamic Decoder Engine**: Runtime loading and execution of decoder scripts with fallback mechanisms
+- **Sensor Assignment Management**: Individual decoder assignment per sensor EUI with persistent storage
+- **Testing Framework**: Built-in decoder testing with hex payload input and JSON result visualization
+- **Upload Management**: Web-based file upload with validation and error handling
 
 ## MQTT Communication Layer
 - **Protocol Bridge**: Acts as an intermediary between BSSCI protocol (TLS-secured base station communication) and MQTT messaging

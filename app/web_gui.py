@@ -41,6 +41,11 @@ class WebGUI:
             """Einstellungsseite."""
             return render_template_string(self.get_settings_template())
         
+        @self.app.route('/decoders')
+        def decoders():
+            """Decoder-Verwaltungsseite."""
+            return render_template_string(self.get_decoders_template())
+        
         @self.app.route('/api/sensors')
         def get_sensors():
             """API: Liste aller Sensoren."""
@@ -142,6 +147,134 @@ class WebGUI:
                 return jsonify({"success": True, "message": "Einstellungen gespeichert. Starten Sie das Add-on neu um Änderungen zu übernehmen."})
             else:
                 return jsonify({"error": "Fehler beim Speichern der Einstellungen"}), 500
+        
+        @self.app.route('/api/decoders')
+        def get_decoders():
+            """API: Liste aller Decoder."""
+            if not self.addon or not hasattr(self.addon, 'decoder_manager'):
+                return jsonify({"error": "Decoder Manager nicht verfügbar"}), 500
+            
+            decoders = self.addon.decoder_manager.get_available_decoders()
+            assignments = self.addon.decoder_manager.get_sensor_assignments()
+            
+            return jsonify({
+                "decoders": decoders,
+                "assignments": assignments
+            })
+        
+        @self.app.route('/api/decoder/upload', methods=['POST'])
+        def upload_decoder():
+            """API: Decoder-Datei hochladen."""
+            if not self.addon or not hasattr(self.addon, 'decoder_manager'):
+                return jsonify({"error": "Decoder Manager nicht verfügbar"}), 500
+            
+            if 'file' not in request.files:
+                return jsonify({"error": "Keine Datei ausgewählt"}), 400
+            
+            file = request.files['file']
+            if file.filename == '':
+                return jsonify({"error": "Kein Dateiname"}), 400
+            
+            if file and file.filename.endswith(('.js', '.json')):
+                try:
+                    content = file.read()
+                    result = self.addon.decoder_manager.upload_decoder_file(file.filename, content)
+                    
+                    if result['success']:
+                        return jsonify({"success": True, "message": result['message']})
+                    else:
+                        return jsonify({"error": result['error']}), 400
+                        
+                except Exception as e:
+                    return jsonify({"error": f"Upload-Fehler: {str(e)}"}), 500
+            else:
+                return jsonify({"error": "Nur .js und .json Dateien werden unterstützt"}), 400
+        
+        @self.app.route('/api/decoder/assign', methods=['POST'])
+        def assign_decoder():
+            """API: Decoder einem Sensor zuweisen."""
+            if not self.addon or not hasattr(self.addon, 'decoder_manager'):
+                return jsonify({"error": "Decoder Manager nicht verfügbar"}), 500
+            
+            data = request.get_json()
+            
+            if not data.get('sensor_eui') or not data.get('decoder_name'):
+                return jsonify({"error": "sensor_eui und decoder_name sind erforderlich"}), 400
+            
+            success = self.addon.decoder_manager.assign_decoder_to_sensor(
+                data['sensor_eui'], data['decoder_name']
+            )
+            
+            if success:
+                return jsonify({"success": True, "message": "Decoder erfolgreich zugewiesen"})
+            else:
+                return jsonify({"error": "Fehler beim Zuweisen des Decoders"}), 500
+        
+        @self.app.route('/api/decoder/unassign', methods=['POST'])
+        def unassign_decoder():
+            """API: Decoder-Zuweisung entfernen."""
+            if not self.addon or not hasattr(self.addon, 'decoder_manager'):
+                return jsonify({"error": "Decoder Manager nicht verfügbar"}), 500
+            
+            data = request.get_json()
+            
+            if not data.get('sensor_eui'):
+                return jsonify({"error": "sensor_eui ist erforderlich"}), 400
+            
+            success = self.addon.decoder_manager.remove_sensor_assignment(data['sensor_eui'])
+            
+            if success:
+                return jsonify({"success": True, "message": "Decoder-Zuweisung entfernt"})
+            else:
+                return jsonify({"error": "Fehler beim Entfernen der Decoder-Zuweisung"}), 500
+        
+        @self.app.route('/api/decoder/test', methods=['POST'])
+        def test_decoder():
+            """API: Decoder mit Test-Payload testen."""
+            if not self.addon or not hasattr(self.addon, 'decoder_manager'):
+                return jsonify({"error": "Decoder Manager nicht verfügbar"}), 500
+            
+            data = request.get_json()
+            
+            if not data.get('decoder_name') or not data.get('test_payload'):
+                return jsonify({"error": "decoder_name und test_payload sind erforderlich"}), 400
+            
+            try:
+                # Konvertiere Hex-String zu Byte-Array
+                if isinstance(data['test_payload'], str):
+                    # Entferne Leerzeichen und 0x Präfixe
+                    hex_str = data['test_payload'].replace(' ', '').replace('0x', '')
+                    test_payload = [int(hex_str[i:i+2], 16) for i in range(0, len(hex_str), 2)]
+                else:
+                    test_payload = data['test_payload']
+                
+                result = self.addon.decoder_manager.test_decoder(data['decoder_name'], test_payload)
+                return jsonify(result)
+                
+            except Exception as e:
+                return jsonify({
+                    "decoded": False,
+                    "reason": f"Test-Fehler: {str(e)}",
+                    "raw_data": data.get('test_payload', [])
+                })
+        
+        @self.app.route('/api/decoder/delete', methods=['POST'])
+        def delete_decoder():
+            """API: Decoder löschen."""
+            if not self.addon or not hasattr(self.addon, 'decoder_manager'):
+                return jsonify({"error": "Decoder Manager nicht verfügbar"}), 500
+            
+            data = request.get_json()
+            
+            if not data.get('decoder_name'):
+                return jsonify({"error": "decoder_name ist erforderlich"}), 400
+            
+            success = self.addon.decoder_manager.delete_decoder(data['decoder_name'])
+            
+            if success:
+                return jsonify({"success": True, "message": "Decoder erfolgreich gelöscht"})
+            else:
+                return jsonify({"error": "Fehler beim Löschen des Decoders"}), 500
     
     def get_main_template(self) -> str:
         """Hauptseiten-Template."""
@@ -395,6 +528,7 @@ class WebGUI:
         
         <div class="nav">
             <a href="/" class="nav-item active">📊 Sensoren</a>
+            <a href="/decoders" class="nav-item">📝 Decoder</a>
             <a href="/settings" class="nav-item">⚙️ Einstellungen</a>
         </div>
         
@@ -874,6 +1008,7 @@ class WebGUI:
         
         <div class="nav">
             <a href="/" class="nav-item">📊 Sensoren</a>
+            <a href="/decoders" class="nav-item">📝 Decoder</a>
             <a href="/settings" class="nav-item active">⚙️ Einstellungen</a>
         </div>
         
@@ -1044,3 +1179,315 @@ class WebGUI:
 </body>
 </html>
         '''
+    
+    def get_decoders_template(self) -> str:
+        """Decoder-Verwaltungsseiten-Template."""
+        return '''<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mioty Application Center Decoder</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%); min-height: 100vh; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); overflow: hidden; }
+        .header { background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%); color: white; padding: 30px; text-align: center; }
+        .nav { background: #6c757d; padding: 0; display: flex; justify-content: center; }
+        .nav-item { color: white; text-decoration: none; padding: 15px 30px; display: block; transition: background-color 0.3s ease; }
+        .nav-item:hover, .nav-item.active { background: #ff6b35; color: white; text-decoration: none; }
+        .header h1 { font-size: 2.5em; margin-bottom: 10px; }
+        .header p { font-size: 1.2em; opacity: 0.9; }
+        .content { padding: 30px; }
+        .section { margin-bottom: 40px; }
+        .section h2 { color: #333; border-bottom: 3px solid #ff6b35; padding-bottom: 10px; margin-bottom: 20px; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-weight: 600; margin-bottom: 5px; color: #555; }
+        .form-group input[type="text"], .form-group textarea, .form-group select { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; transition: border-color 0.3s ease; }
+        .form-group input:focus, .form-group textarea:focus, .form-group select:focus { outline: none; border-color: #ff6b35; }
+        .form-group input[type="file"] { padding: 8px; border: 2px dashed #ddd; border-radius: 8px; background: #f8f9fa; }
+        .btn { background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%); color: white; border: none; padding: 12px 24px; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: transform 0.2s ease; margin-right: 10px; }
+        .btn:hover { transform: translateY(-2px); }
+        .btn-secondary { background: #6c757d; }
+        .btn-danger { background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); }
+        .btn-small { padding: 8px 16px; font-size: 14px; }
+        .decoder-list { display: grid; gap: 20px; }
+        .decoder-card { border: 2px solid #eee; border-radius: 12px; padding: 20px; transition: border-color 0.3s ease; background: #f8f9fa; }
+        .decoder-card:hover { border-color: #ff6b35; }
+        .decoder-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .decoder-name { font-size: 1.3em; font-weight: 600; color: #333; }
+        .decoder-type { background: #ff6b35; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.8em; text-transform: uppercase; }
+        .decoder-info { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px; }
+        .info-item { display: flex; flex-direction: column; }
+        .info-label { font-weight: 600; color: #666; font-size: 0.9em; margin-bottom: 5px; }
+        .info-value { color: #333; }
+        .assignment-section { background: white; border-radius: 8px; padding: 15px; margin-top: 15px; border-left: 4px solid #ff6b35; }
+        .assignment-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #eee; }
+        .assignment-item:last-child { border-bottom: none; }
+        .test-result { margin-top: 15px; padding: 15px; border-radius: 8px; background: #f8f9fa; border-left: 4px solid #28a745; }
+        .test-result.error { border-left-color: #dc3545; background: #f8d7da; }
+        .alert { padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .alert-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .loading { text-align: center; padding: 40px; color: #666; }
+        .help-text { font-size: 0.9em; color: #666; margin-top: 5px; }
+        .code { font-family: monospace; background: #f8f9fa; padding: 2px 4px; border-radius: 4px; color: #e83e8c; }
+        .json-display { background: #f8f9fa; border: 1px solid #ddd; border-radius: 8px; padding: 15px; font-family: monospace; font-size: 14px; overflow-x: auto; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📝 mioty Application Center</h1>
+            <p>Payload Decoder Verwaltung</p>
+        </div>
+        <div class="nav">
+            <a href="/" class="nav-item">📊 Sensoren</a>
+            <a href="/decoders" class="nav-item active">📝 Decoder</a>
+            <a href="/settings" class="nav-item">⚙️ Einstellungen</a>
+        </div>
+        <div class="content">
+            <div id="alerts"></div>
+            <div class="section">
+                <h2>📤 Decoder hochladen</h2>
+                <form id="uploadForm" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label for="decoderFile">Decoder-Datei:</label>
+                        <input type="file" id="decoderFile" name="file" accept=".js,.json" required>
+                        <div class="help-text">Unterstützte Formate: <span class="code">.json</span> (mioty Blueprint) und <span class="code">.js</span> (Sentinum JavaScript)</div>
+                    </div>
+                    <button type="submit" class="btn">📤 Decoder hochladen</button>
+                </form>
+            </div>
+            <div class="section">
+                <h2>🧪 Decoder testen</h2>
+                <form id="testForm">
+                    <div class="form-group">
+                        <label for="testDecoder">Decoder auswählen:</label>
+                        <select id="testDecoder" name="decoder" required>
+                            <option value="">-- Decoder auswählen --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="testPayload">Test-Payload (Hex):</label>
+                        <input type="text" id="testPayload" name="payload" placeholder="01A2B3C4 oder 01 A2 B3 C4" required>
+                        <div class="help-text">Hex-Bytes getrennt durch Leerzeichen oder zusammen</div>
+                    </div>
+                    <button type="submit" class="btn">🧪 Test ausführen</button>
+                </form>
+                <div id="testResult"></div>
+            </div>
+            <div class="section">
+                <h2>🔗 Sensor-Decoder Zuordnung</h2>
+                <form id="assignForm">
+                    <div class="form-group">
+                        <label for="assignSensor">Sensor EUI:</label>
+                        <input type="text" id="assignSensor" name="sensor_eui" placeholder="fca84a0300001234" pattern="[0-9a-fA-F]{16}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="assignDecoder">Decoder auswählen:</label>
+                        <select id="assignDecoder" name="decoder" required>
+                            <option value="">-- Decoder auswählen --</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn">🔗 Decoder zuweisen</button>
+                </form>
+            </div>
+            <div class="section">
+                <h2>📚 Verfügbare Decoder</h2>
+                <div id="decoderList" class="loading">Lade Decoder...</div>
+            </div>
+            <div class="section">
+                <h2>📋 Aktuelle Zuweisungen</h2>
+                <div id="assignmentList" class="loading">Lade Zuweisungen...</div>
+            </div>
+        </div>
+    </div>
+    <script>
+        const uploadForm = document.getElementById('uploadForm');
+        const testForm = document.getElementById('testForm');
+        const assignForm = document.getElementById('assignForm');
+        const decoderList = document.getElementById('decoderList');
+        const assignmentList = document.getElementById('assignmentList');
+        const testResult = document.getElementById('testResult');
+        const alerts = document.getElementById('alerts');
+        let currentDecoders = [];
+        let currentAssignments = {};
+        
+        async function loadDecoders() {
+            try {
+                const response = await fetch('/api/decoders');
+                const data = await response.json();
+                currentDecoders = data.decoders || [];
+                currentAssignments = data.assignments || {};
+                updateDecoderList();
+                updateAssignmentList();
+                updateDecoderSelects();
+            } catch (error) {
+                showAlert('Fehler beim Laden der Decoder', 'error');
+            }
+        }
+        
+        function updateDecoderList() {
+            if (currentDecoders.length === 0) {
+                decoderList.innerHTML = '<p>Noch keine Decoder hochgeladen.</p>';
+                return;
+            }
+            let html = '<div class="decoder-list">';
+            for (const decoder of currentDecoders) {
+                html += createDecoderCard(decoder);
+            }
+            html += '</div>';
+            decoderList.innerHTML = html;
+        }
+        
+        function createDecoderCard(decoder) {
+            const createdDate = new Date(decoder.created_at * 1000).toLocaleString();
+            const assignedSensors = Object.entries(currentAssignments).filter(([eui, assignment]) => assignment.decoder_name === decoder.name).map(([eui, assignment]) => eui);
+            return `<div class="decoder-card"><div class="decoder-header"><div class="decoder-name">${decoder.display_name}</div><div class="decoder-type">${decoder.type}</div></div><div class="decoder-info"><div class="info-item"><div class="info-label">Version</div><div class="info-value">${decoder.version}</div></div><div class="info-item"><div class="info-label">Beschreibung</div><div class="info-value">${decoder.description}</div></div><div class="info-item"><div class="info-label">Erstellt am</div><div class="info-value">${createdDate}</div></div><div class="info-item"><div class="info-label">Zugewiesene Sensoren</div><div class="info-value">${assignedSensors.length}</div></div></div>${assignedSensors.length > 0 ? `<div class="assignment-section"><strong>Zugewiesene Sensoren:</strong>${assignedSensors.map(eui => `<div class="assignment-item"><span class="code">${eui}</span><button class="btn btn-small btn-secondary" onclick="unassignDecoder('${eui}')">Entfernen</button></div>`).join('')}</div>` : ''}<div style="margin-top: 15px;"><button class="btn btn-small" onclick="testDecoderQuick('${decoder.name}')">🧪 Schnelltest</button><button class="btn btn-small btn-danger" onclick="deleteDecoder('${decoder.name}')">🗑️ Löschen</button></div></div>`;
+        }
+        
+        function updateAssignmentList() {
+            const assignments = Object.entries(currentAssignments);
+            if (assignments.length === 0) {
+                assignmentList.innerHTML = '<p>Keine Decoder-Zuweisungen vorhanden.</p>';
+                return;
+            }
+            let html = '<div style="background: white; border-radius: 8px; padding: 20px;">';
+            for (const [sensorEui, assignment] of assignments) {
+                const assignedDate = new Date(assignment.assigned_at * 1000).toLocaleString();
+                html += `<div class="assignment-item"><div><strong class="code">${sensorEui}</strong><br><small>Decoder: ${assignment.decoder_name}</small><br><small>Zugewiesen: ${assignedDate}</small></div><button class="btn btn-small btn-secondary" onclick="unassignDecoder('${sensorEui}')">Entfernen</button></div>`;
+            }
+            html += '</div>';
+            assignmentList.innerHTML = html;
+        }
+        
+        function updateDecoderSelects() {
+            const selects = [document.getElementById('testDecoder'), document.getElementById('assignDecoder')];
+            selects.forEach(select => {
+                const currentValue = select.value;
+                while (select.options.length > 1) { select.remove(1); }
+                for (const decoder of currentDecoders) {
+                    const option = new Option(decoder.display_name, decoder.name);
+                    select.add(option);
+                }
+                select.value = currentValue;
+            });
+        }
+        
+        function showAlert(message, type = 'success') {
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            alerts.appendChild(alert);
+            setTimeout(() => { alert.remove(); }, 5000);
+        }
+        
+        uploadForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(uploadForm);
+            try {
+                const response = await fetch('/api/decoder/upload', { method: 'POST', body: formData });
+                const result = await response.json();
+                if (response.ok) {
+                    showAlert(result.message, 'success');
+                    uploadForm.reset();
+                    loadDecoders();
+                } else {
+                    showAlert(result.error, 'error');
+                }
+            } catch (error) {
+                showAlert('Fehler beim Hochladen des Decoders', 'error');
+            }
+        });
+        
+        testForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(testForm);
+            const data = { decoder_name: formData.get('decoder'), test_payload: formData.get('payload') };
+            try {
+                const response = await fetch('/api/decoder/test', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
+                const result = await response.json();
+                displayTestResult(result);
+            } catch (error) {
+                displayTestResult({ decoded: false, reason: 'Netzwerk-Fehler', raw_data: [] });
+            }
+        });
+        
+        function displayTestResult(result) {
+            const isSuccess = result.decoded;
+            let html = `<div class="test-result ${isSuccess ? '' : 'error'}"><h4>${isSuccess ? '✅ Dekodierung erfolgreich' : '❌ Dekodierung fehlgeschlagen'}</h4>`;
+            if (isSuccess) {
+                html += `<p><strong>Decoder:</strong> ${result.decoder_name || 'Unbekannt'}</p><p><strong>Typ:</strong> ${result.decoder_type || 'Unbekannt'}</p><h5>Dekodierte Daten:</h5><div class="json-display">${JSON.stringify(result.data, null, 2)}</div>`;
+                if (result.warning) { html += `<p><small><em>⚠️ ${result.warning}</em></small></p>`; }
+            } else {
+                html += `<p><strong>Grund:</strong> ${result.reason || 'Unbekannt'}</p>`;
+            }
+            html += `<p><strong>Raw Data:</strong> <span class="code">[${result.raw_data?.join(', ') || 'Keine Daten'}]</span></p></div>`;
+            testResult.innerHTML = html;
+        }
+        
+        assignForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(assignForm);
+            const data = { sensor_eui: formData.get('sensor_eui'), decoder_name: formData.get('decoder') };
+            try {
+                const response = await fetch('/api/decoder/assign', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
+                const result = await response.json();
+                if (response.ok) {
+                    showAlert(result.message, 'success');
+                    assignForm.reset();
+                    loadDecoders();
+                } else {
+                    showAlert(result.error, 'error');
+                }
+            } catch (error) {
+                showAlert('Fehler beim Zuweisen des Decoders', 'error');
+            }
+        });
+        
+        async function unassignDecoder(sensorEui) {
+            if (!confirm(`Decoder-Zuweisung für Sensor ${sensorEui} wirklich entfernen?`)) { return; }
+            try {
+                const response = await fetch('/api/decoder/unassign', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({sensor_eui: sensorEui}) });
+                const result = await response.json();
+                if (response.ok) {
+                    showAlert(result.message, 'success');
+                    loadDecoders();
+                } else {
+                    showAlert(result.error, 'error');
+                }
+            } catch (error) {
+                showAlert('Fehler beim Entfernen der Decoder-Zuweisung', 'error');
+            }
+        }
+        
+        async function deleteDecoder(decoderName) {
+            if (!confirm(`Decoder "${decoderName}" wirklich löschen? Alle Zuweisungen werden entfernt.`)) { return; }
+            try {
+                const response = await fetch('/api/decoder/delete', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({decoder_name: decoderName}) });
+                const result = await response.json();
+                if (response.ok) {
+                    showAlert(result.message, 'success');
+                    loadDecoders();
+                } else {
+                    showAlert(result.error, 'error');
+                }
+            } catch (error) {
+                showAlert('Fehler beim Löschen des Decoders', 'error');
+            }
+        }
+        
+        function testDecoderQuick(decoderName) {
+            document.getElementById('testDecoder').value = decoderName;
+            document.getElementById('testPayload').value = '01 A2 03 B4';
+            document.querySelector('#testForm').scrollIntoView({behavior: 'smooth'});
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDecoders();
+            setInterval(loadDecoders, 30000);
+        });
+    </script>
+</body>
+</html>'''

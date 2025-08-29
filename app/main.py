@@ -16,6 +16,7 @@ from typing import Dict, Any
 from mqtt_manager import MQTTManager
 from bssci_client import BSSCIClient
 from web_gui import WebGUI
+from decoder_manager import DecoderManager
 
 class BSSCIAddon:
     """Hauptklasse für das BSSCI mioty Add-on."""
@@ -29,6 +30,7 @@ class BSSCIAddon:
         self.mqtt_manager = None
         self.bssci_client = None
         self.web_gui = None
+        self.decoder_manager = None
         
         # Status
         self.running = False
@@ -82,6 +84,10 @@ class BSSCIAddon:
             # BSSCI Client starten (optional, falls direkter Zugriff gewünscht)
             # self.bssci_client = BSSCIClient(self.config['bssci_service_url'])
             
+            # Decoder Manager starten (verwende lokales Verzeichnis in Demo-Umgebung)
+            decoder_dir = "decoders" if os.path.exists("demo_run.py") else "/data/decoders"
+            self.decoder_manager = DecoderManager(decoder_dir)
+            
             # Web GUI starten
             self.web_gui = WebGUI(
                 port=self.config['web_port'],
@@ -123,10 +129,33 @@ class BSSCIAddon:
         """Verarbeite eingehende Sensor-Daten."""
         logging.info(f"Sensor-Daten empfangen von {sensor_eui}")
         
+        # Payload dekodieren falls Decoder zugewiesen ist
+        decoded_payload = None
+        if self.decoder_manager and 'data' in data:
+            try:
+                payload_bytes = data['data']
+                metadata = {
+                    'snr': data.get('snr'),
+                    'rssi': data.get('rssi'),
+                    'timestamp': data.get('rxTime'),
+                    'base_station': data.get('bs_eui')
+                }
+                decoded_result = self.decoder_manager.decode_sensor_payload(
+                    sensor_eui, payload_bytes, metadata
+                )
+                if decoded_result.get('decoded'):
+                    decoded_payload = decoded_result
+                    logging.info(f"Payload für {sensor_eui} erfolgreich dekodiert")
+                else:
+                    logging.debug(f"Payload für {sensor_eui} nicht dekodiert: {decoded_result.get('reason', 'Unknown')}")
+            except Exception as e:
+                logging.error(f"Fehler beim Dekodieren von Sensor {sensor_eui}: {e}")
+        
         # Sensor-Daten speichern
         self.sensors[sensor_eui] = {
             'last_seen': time.time(),
             'data': data,
+            'decoded_payload': decoded_payload,
             'signal_quality': self.assess_signal_quality(
                 data.get('snr', 0), 
                 data.get('rssi', -100)
@@ -135,7 +164,7 @@ class BSSCIAddon:
         
         # Home Assistant Discovery
         if self.config['auto_discovery']:
-            self.create_sensor_discovery(sensor_eui, data)
+            self.create_sensor_discovery(sensor_eui, data, decoded_payload)
     
     def handle_sensor_config(self, sensor_eui: str, config: Dict[str, Any]):
         """Verarbeite Sensor-Konfigurationsanfragen."""
@@ -168,7 +197,7 @@ class BSSCIAddon:
         if self.config['auto_discovery']:
             self.create_basestation_discovery(bs_eui, status)
     
-    def create_sensor_discovery(self, sensor_eui: str, data: Dict[str, Any]):
+    def create_sensor_discovery(self, sensor_eui: str, data: Dict[str, Any], decoded_payload: Dict[str, Any] = None):
         """Erstelle Home Assistant MQTT Discovery für Sensor."""
         device_name = f"mioty Sensor {sensor_eui}"
         unique_id = f"bssci_sensor_{sensor_eui}"
@@ -204,7 +233,9 @@ class BSSCIAddon:
             "message_counter": data.get('cnt'),
             "receive_time": self.format_timestamp(data.get('rxTime')),
             "signal_quality": self.assess_signal_quality(data.get('snr'), data.get('rssi')),
-            "raw_data": data.get('data', [])[:10]  # Nur erste 10 Bytes zeigen
+            "raw_data": data.get('data', [])[:10],  # Nur erste 10 Bytes zeigen
+            "decoded_data": decoded_payload.get('data') if decoded_payload else None,
+            "decoder_used": decoded_payload.get('decoder_name') if decoded_payload else None
         }
         
         self.mqtt_manager.publish_sensor_state(unique_id, state_value, attributes)
