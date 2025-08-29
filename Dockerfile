@@ -1,4 +1,4 @@
-# BSSCI mioty Home Assistant Add-on Dockerfile
+# mioty Application Center für Homeassistant Add-on Dockerfile
 ARG BUILD_FROM
 FROM $BUILD_FROM
 
@@ -30,8 +30,8 @@ RUN chmod a+x run.sh
 
 # Labels
 LABEL \
-    io.hass.name="BSSCI mioty Sensor Manager" \
-    io.hass.description="Verwaltet mioty IoT Sensoren über das BSSCI Service Center" \
+    io.hass.name="mioty Application Center für Homeassistant" \
+    io.hass.description="mioty Application Center für die Verwaltung von mioty IoT Sensoren" \
     io.hass.arch="armhf|aarch64|amd64|armv7|i386" \
     io.hass.type="addon" \
     io.hass.version="1.0.0"

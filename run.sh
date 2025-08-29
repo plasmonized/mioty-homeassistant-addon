@@ -1,5 +1,5 @@
 #!/usr/bin/with-contenv bashio
-# BSSCI mioty Add-on Start Script
+# mioty Application Center Add-on Start Script
 
 set -e
 
@@ -27,7 +27,7 @@ export AUTO_DISCOVERY="$AUTO_DISCOVERY"
 export LOG_LEVEL="$LOG_LEVEL"
 export WEB_PORT="$WEB_PORT"
 
-bashio::log.info "Starte BSSCI mioty Sensor Manager..."
+bashio::log.info "Starte mioty Application Center..."
 bashio::log.info "MQTT Broker: $MQTT_BROKER:$MQTT_PORT"
 bashio::log.info "BSSCI Service: $BSSCI_SERVICE_URL"
 bashio::log.info "Base Topic: $BASE_TOPIC"

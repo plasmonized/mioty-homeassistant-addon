@@ -1,8 +1,8 @@
 # BSSCI mioty Home Assistant Add-on Konfiguration
-name: "BSSCI mioty Sensor Manager"
-description: "Verwaltet mioty IoT Sensoren über das BSSCI Service Center mit MQTT Integration und Web-GUI"
+name: "mioty Application Center für Homeassistant"
+description: "mioty Application Center für die Verwaltung von mioty IoT Sensoren mit MQTT Integration und Web-GUI"
 version: "1.0.0"
-slug: bssci_mioty
+slug: mioty_application_center
 init: false
 arch:
   - armhf
@@ -27,7 +27,7 @@ ports_description:
   "5000/tcp": "Web-GUI für Sensor-Management"
 webui: "http://[HOST]:[PORT:5000]"
 panel_icon: mdi:access-point
-panel_title: "BSSCI mioty"
+panel_title: "mioty Application Center"
 ingress: true
 ingress_port: 5000
 options:
@@ -50,4 +50,4 @@ schema:
   auto_discovery: "bool"
   log_level: "list(debug|info|warning|error)?"
   web_port: "port"
-image: "bssci_mioty/{arch}"
+image: "mioty_application_center/{arch}"

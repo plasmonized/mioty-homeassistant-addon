@@ -1,4 +1,4 @@
-# BSSCI mioty Add-on Build Konfiguration
+# mioty Application Center Add-on Build Konfiguration
 build_from:
   aarch64: "ghcr.io/home-assistant/aarch64-base:3.19"
   amd64: "ghcr.io/home-assistant/amd64-base:3.19"
@@ -6,8 +6,8 @@ build_from:
   armhf: "ghcr.io/home-assistant/armhf-base:3.19"
   i386: "ghcr.io/home-assistant/i386-base:3.19"
 labels:
-  org.opencontainers.image.title: "BSSCI mioty Sensor Manager"
-  org.opencontainers.image.description: "Home Assistant Add-on für mioty IoT Sensoren über BSSCI Service Center"
+  org.opencontainers.image.title: "mioty Application Center für Homeassistant"
+  org.opencontainers.image.description: "mioty Application Center für die Verwaltung von mioty IoT Sensoren"
   org.opencontainers.image.source: "https://github.com/your-repo/bssci-mioty-addon"
   org.opencontainers.image.licenses: "MIT"
 args:

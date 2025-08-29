@@ -8,6 +8,7 @@ import json
 from typing import Any, Dict
 from flask import Flask, render_template_string, request, jsonify, redirect, url_for
 from flask_cors import CORS
+from settings_manager import SettingsManager
 
 
 class WebGUI:
@@ -17,6 +18,7 @@ class WebGUI:
         """Initialisiere Web GUI."""
         self.port = port
         self.addon = addon_instance
+        self.settings = SettingsManager()
         
         self.app = Flask(__name__)
         CORS(self.app)
@@ -33,6 +35,11 @@ class WebGUI:
         def index():
             """Hauptseite."""
             return render_template_string(self.get_main_template())
+        
+        @self.app.route('/settings')
+        def settings():
+            """Einstellungsseite."""
+            return render_template_string(self.get_settings_template())
         
         @self.app.route('/api/sensors')
         def get_sensors():
@@ -96,6 +103,45 @@ class WebGUI:
                 return jsonify({"success": True, "message": "Sensor erfolgreich entfernt"})
             else:
                 return jsonify({"error": "Sensor konnte nicht entfernt werden"}), 500
+        
+        @self.app.route('/api/settings')
+        def get_settings():
+            """API: Aktuelle Einstellungen abrufen."""
+            settings = self.settings.get_all_settings()
+            # Passwort aus Sicherheitsgründen nicht zurückgeben
+            settings['mqtt_password'] = '***' if settings.get('mqtt_password') else ''
+            return jsonify(settings)
+        
+        @self.app.route('/api/settings', methods=['POST'])
+        def update_settings():
+            """API: Einstellungen aktualisieren."""
+            data = request.get_json()
+            
+            # Validierung
+            required_fields = ['mqtt_broker', 'mqtt_port', 'base_topic']
+            for field in required_fields:
+                if field not in data or not data[field]:
+                    return jsonify({"error": f"Feld '{field}' ist erforderlich"}), 400
+            
+            # Passwort nur aktualisieren wenn es nicht *** ist
+            if data.get('mqtt_password') == '***':
+                data.pop('mqtt_password', None)
+            
+            # Port zu Integer konvertieren
+            try:
+                data['mqtt_port'] = int(data['mqtt_port'])
+            except ValueError:
+                return jsonify({"error": "MQTT Port muss eine Zahl sein"}), 400
+            
+            # Einstellungen speichern
+            if self.settings.update_settings(data):
+                # Add-on über Änderungen benachrichtigen
+                if self.addon and hasattr(self.addon, 'reload_settings'):
+                    self.addon.reload_settings()
+                    
+                return jsonify({"success": True, "message": "Einstellungen gespeichert. Starten Sie das Add-on neu um Änderungen zu übernehmen."})
+            else:
+                return jsonify({"error": "Fehler beim Speichern der Einstellungen"}), 500
     
     def get_main_template(self) -> str:
         """Hauptseiten-Template."""
@@ -105,7 +151,7 @@ class WebGUI:
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BSSCI mioty Sensor Manager</title>
+    <title>mioty Application Center für Homeassistant</title>
     <style>
         * {
             margin: 0;
@@ -115,7 +161,7 @@ class WebGUI:
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
             min-height: 100vh;
             padding: 20px;
         }
@@ -130,10 +176,31 @@ class WebGUI:
         }
         
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
             color: white;
             padding: 30px;
             text-align: center;
+        }
+        
+        .nav {
+            background: #6c757d;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+        }
+        
+        .nav-item {
+            color: white;
+            text-decoration: none;
+            padding: 15px 30px;
+            display: block;
+            transition: background-color 0.3s ease;
+        }
+        
+        .nav-item:hover, .nav-item.active {
+            background: #ff6b35;
+            color: white;
+            text-decoration: none;
         }
         
         .header h1 {
@@ -156,7 +223,7 @@ class WebGUI:
         
         .section h2 {
             color: #333;
-            border-bottom: 3px solid #667eea;
+            border-bottom: 3px solid #ff6b35;
             padding-bottom: 10px;
             margin-bottom: 20px;
         }
@@ -183,7 +250,7 @@ class WebGUI:
         
         .form-group input[type="text"]:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #ff6b35;
         }
         
         .form-group input[type="checkbox"] {
@@ -192,7 +259,7 @@ class WebGUI:
         }
         
         .btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
             color: white;
             border: none;
             padding: 12px 24px;
@@ -201,6 +268,7 @@ class WebGUI:
             font-weight: 600;
             cursor: pointer;
             transition: transform 0.2s ease;
+            margin-right: 10px;
         }
         
         .btn:hover {
@@ -224,7 +292,7 @@ class WebGUI:
         }
         
         .sensor-card:hover {
-            border-color: #667eea;
+            border-color: #ff6b35;
         }
         
         .sensor-header {
@@ -321,8 +389,13 @@ class WebGUI:
 <body>
     <div class="container">
         <div class="header">
-            <h1>🚀 BSSCI mioty</h1>
-            <p>Sensor Manager für Home Assistant</p>
+            <h1>🚀 mioty Application Center</h1>
+            <p>für Home Assistant</p>
+        </div>
+        
+        <div class="nav">
+            <a href="/" class="nav-item active">📊 Sensoren</a>
+            <a href="/settings" class="nav-item">⚙️ Einstellungen</a>
         </div>
         
         <div class="content">
@@ -624,3 +697,350 @@ class WebGUI:
         # Flask Server kann nicht sauber beendet werden ohne Werkzeug
         # In einer echten Implementation würde hier ein Thread-Safe Shutdown stehen
         pass
+    
+    def get_settings_template(self) -> str:
+        """Einstellungsseiten-Template."""
+        return '''
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mioty Application Center Einstellungen</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .nav {
+            background: #6c757d;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+        }
+        
+        .nav-item {
+            color: white;
+            text-decoration: none;
+            padding: 15px 30px;
+            display: block;
+            transition: background-color 0.3s ease;
+        }
+        
+        .nav-item:hover, .nav-item.active {
+            background: #ff6b35;
+            color: white;
+            text-decoration: none;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .section {
+            margin-bottom: 40px;
+        }
+        
+        .section h2 {
+            color: #333;
+            border-bottom: 3px solid #ff6b35;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #555;
+        }
+        
+        .form-group input[type="text"], .form-group input[type="password"], .form-group input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #ff6b35;
+        }
+        
+        .form-group input[type="checkbox"] {
+            transform: scale(1.2);
+            margin-right: 10px;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            margin-right: 10px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .help-text {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚙️ mioty Application Center</h1>
+            <p>Einstellungen</p>
+        </div>
+        
+        <div class="nav">
+            <a href="/" class="nav-item">📊 Sensoren</a>
+            <a href="/settings" class="nav-item active">⚙️ Einstellungen</a>
+        </div>
+        
+        <div class="content">
+            <div id="alerts"></div>
+            
+            <!-- MQTT Konfiguration -->
+            <div class="section">
+                <h2>🔌 MQTT Broker Konfiguration</h2>
+                <form id="settingsForm">
+                    <div class="form-group">
+                        <label for="mqtt_broker">MQTT Broker:</label>
+                        <input type="text" id="mqtt_broker" name="mqtt_broker" placeholder="core-mosquitto" required>
+                        <div class="help-text">Hostname oder IP-Adresse des MQTT Brokers (Standard: core-mosquitto)</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="mqtt_port">MQTT Port:</label>
+                        <input type="number" id="mqtt_port" name="mqtt_port" placeholder="1883" min="1" max="65535" required>
+                        <div class="help-text">Port des MQTT Brokers (Standard: 1883)</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="mqtt_username">MQTT Benutzername:</label>
+                        <input type="text" id="mqtt_username" name="mqtt_username" placeholder="Optional">
+                        <div class="help-text">Benutzername für MQTT Authentication (Optional)</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="mqtt_password">MQTT Passwort:</label>
+                        <input type="password" id="mqtt_password" name="mqtt_password" placeholder="Passwort">
+                        <div class="help-text">Passwort für MQTT Authentication (Leer lassen um nicht zu ändern)</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="base_topic">Basis Topic:</label>
+                        <input type="text" id="base_topic" name="base_topic" placeholder="bssci" required>
+                        <div class="help-text">MQTT Topic-Präfix für BSSCI Nachrichten (Standard: bssci)</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="auto_discovery" name="auto_discovery">
+                            Home Assistant Auto-Discovery aktivieren
+                        </label>
+                        <div class="help-text">Neue Sensoren automatisch in Home Assistant registrieren</div>
+                    </div>
+                    
+                    <button type="submit" class="btn">💾 Einstellungen speichern</button>
+                    <button type="button" class="btn btn-secondary" onclick="loadSettings()">🔄 Neu laden</button>
+                </form>
+            </div>
+            
+            <!-- Verbindungsstatus -->
+            <div class="section">
+                <h2>📡 Verbindungsstatus</h2>
+                <div id="connectionStatus" class="loading">Lade Verbindungsstatus...</div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // DOM Elemente
+        const settingsForm = document.getElementById('settingsForm');
+        const alerts = document.getElementById('alerts');
+        const connectionStatus = document.getElementById('connectionStatus');
+        
+        // Einstellungen laden
+        async function loadSettings() {
+            try {
+                const response = await fetch('/api/settings');
+                const settings = await response.json();
+                
+                // Formular mit aktuellen Werten füllen
+                document.getElementById('mqtt_broker').value = settings.mqtt_broker || '';
+                document.getElementById('mqtt_port').value = settings.mqtt_port || 1883;
+                document.getElementById('mqtt_username').value = settings.mqtt_username || '';
+                document.getElementById('mqtt_password').value = settings.mqtt_password || '';
+                document.getElementById('base_topic').value = settings.base_topic || 'bssci';
+                document.getElementById('auto_discovery').checked = settings.auto_discovery || false;
+                
+            } catch (error) {
+                showAlert('Fehler beim Laden der Einstellungen', 'error');
+                console.error('Fehler:', error);
+            }
+        }
+        
+        // Alert anzeigen
+        function showAlert(message, type = 'success') {
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            
+            alerts.appendChild(alert);
+            
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+        
+        // Einstellungen speichern
+        settingsForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(settingsForm);
+            const data = {
+                mqtt_broker: formData.get('mqtt_broker'),
+                mqtt_port: formData.get('mqtt_port'),
+                mqtt_username: formData.get('mqtt_username'),
+                mqtt_password: formData.get('mqtt_password'),
+                base_topic: formData.get('base_topic'),
+                auto_discovery: formData.get('auto_discovery') === 'on'
+            };
+            
+            try {
+                const response = await fetch('/api/settings', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showAlert(result.message, 'success');
+                } else {
+                    showAlert(result.error, 'error');
+                }
+                
+            } catch (error) {
+                showAlert('Fehler beim Speichern der Einstellungen', 'error');
+                console.error('Fehler:', error);
+            }
+        });
+        
+        // Verbindungsstatus laden
+        async function loadConnectionStatus() {
+            try {
+                connectionStatus.innerHTML = `
+                    <div style="padding: 20px; background: #f8f9fa; border-radius: 8px;">
+                        <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                            <div style="width: 12px; height: 12px; background: #28a745; border-radius: 50%; margin-right: 10px;"></div>
+                            <strong>Web-GUI: Online</strong>
+                        </div>
+                        <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                            <div style="width: 12px; height: 12px; background: #dc3545; border-radius: 50%; margin-right: 10px;"></div>
+                            <strong>MQTT: Getrennt (Demo-Modus)</strong>
+                        </div>
+                        <div style="display: flex; align-items: center;">
+                            <div style="width: 12px; height: 12px; background: #ffc107; border-radius: 50%; margin-right: 10px;"></div>
+                            <strong>BSSCI Service: Nicht verfügbar (Demo)</strong>
+                        </div>
+                    </div>
+                `;
+                
+            } catch (error) {
+                connectionStatus.innerHTML = '<p>Fehler beim Laden des Verbindungsstatus.</p>';
+                console.error('Fehler:', error);
+            }
+        }
+        
+        // Initialisierung
+        document.addEventListener('DOMContentLoaded', () => {
+            loadSettings();
+            loadConnectionStatus();
+        });
+    </script>
+</body>
+</html>
+        '''

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Demo-Version des BSSCI mioty Add-ons
+Demo-Version des mioty Application Center Add-ons
 Für Demonstration auf Replit (ohne bashio)
 """
 
@@ -28,9 +28,9 @@ os.environ.update({
 try:
     from main import BSSCIAddon
     
-    print("🚀 BSSCI mioty Add-on Demo")
+    print("🚀 mioty Application Center Demo")
     print("=" * 50)
-    print("Starte BSSCI mioty Sensor Manager...")
+    print("Starte mioty Application Center für Homeassistant...")
     print("Web-GUI wird auf Port 5000 gestartet")
     print("=" * 50)
     
