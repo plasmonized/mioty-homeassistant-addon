@@ -3,7 +3,7 @@ ARG BUILD_FROM
 FROM $BUILD_FROM
 
 # Environment variables
-ENV LANG C.UTF-8
+ENV LANG=C.UTF-8
 
 # Install Python and dependencies
 RUN apk add --no-cache \
@@ -21,7 +21,7 @@ WORKDIR /data
 
 # Copy Python requirements
 COPY requirements.txt .
-RUN pip3 install --no-cache-dir -r requirements.txt
+RUN pip3 install --no-cache-dir --break-system-packages -r requirements.txt
 
 # Copy application files
 COPY app/ ./
