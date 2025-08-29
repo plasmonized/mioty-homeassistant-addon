@@ -5,13 +5,6 @@
   "data": {
     "issues": [
       {
-        "created": "2025-08-29T15:42:36.447197+00:00",
-        "dismissed_version": null,
-        "domain": "homeassistant",
-        "is_persistent": false,
-        "issue_id": "country_not_configured"
-      },
-      {
         "created": "2025-08-29T15:43:56.075124+00:00",
         "dismissed_version": null,
         "domain": "homeassistant",

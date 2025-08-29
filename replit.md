@@ -8,6 +8,18 @@ The integration provides automatic sensor discovery, bidirectional communication
 
 Preferred communication style: Simple, everyday language.
 
+# Recent Changes
+
+**29.08.2025 - BSSCI mioty Home Assistant Integration abgeschlossen:**
+- Vollständige Custom Integration für Home Assistant erstellt mit deutscher GUI
+- MQTT-Verbindung zu bestehendem BSSCI Service Center implementiert  
+- Automatische Sensor-Discovery und dynamische Entity-Management entwickelt
+- Services für Sensor-Verwaltung (hinzufügen, konfigurieren, entfernen) über Home Assistant GUI
+- Base Station Monitoring mit Echtzeit-Status (CPU, Memory, Uptime, Duty Cycle)
+- Signal Quality Assessment und Device Registry Integration
+- HACS-kompatible Struktur für einfache Installation und Updates
+- Deutsche Lokalisierung aller Benutzeroberflächen-Strings
+
 # System Architecture
 
 ## Core Integration Architecture
