@@ -4,6 +4,7 @@ expertMode = true
 
 [nix]
 channel = "stable-25_05"
+packages = ["borgbackup"]
 
 [workflows]
 runButton = "Project"
@@ -15,24 +16,20 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "Home Assistant BSSCI Plugin"
+args = "BSSCI Add-on"
 
 [[workflows.workflow]]
-name = "Home Assistant BSSCI Plugin"
+name = "BSSCI Add-on"
 author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd /home/runner/workspace && python3 demo_run.py"
+waitForPort = 5000
 
 [workflows.workflow.metadata]
 outputType = "webview"
 
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "python -m homeassistant --config ."
-waitForPort = 5000
-
 [[ports]]
 localPort = 5000
 externalPort = 80
-
-[[ports]]
-localPort = 40000
-externalPort = 3000

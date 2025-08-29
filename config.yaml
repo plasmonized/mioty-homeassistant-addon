@@ -1,0 +1,53 @@
+# BSSCI mioty Home Assistant Add-on Konfiguration
+name: "BSSCI mioty Sensor Manager"
+description: "Verwaltet mioty IoT Sensoren über das BSSCI Service Center mit MQTT Integration und Web-GUI"
+version: "1.0.0"
+slug: bssci_mioty
+init: false
+arch:
+  - armhf
+  - armv7
+  - aarch64
+  - amd64
+  - i386
+startup: application
+boot: auto
+hassio_api: true
+hassio_role: default
+homeassistant_api: true
+host_network: false
+privileged:
+  - SYS_RAWIO
+devices:
+  - /dev/ttyUSB0
+  - /dev/ttyACM0
+ports:
+  "5000/tcp": 5000
+ports_description:
+  "5000/tcp": "Web-GUI für Sensor-Management"
+webui: "http://[HOST]:[PORT:5000]"
+panel_icon: mdi:access-point
+panel_title: "BSSCI mioty"
+ingress: true
+ingress_port: 5000
+options:
+  mqtt_broker: "core-mosquitto"
+  mqtt_port: 1883
+  mqtt_username: ""
+  mqtt_password: ""
+  bssci_service_url: "localhost:16018"
+  base_topic: "bssci"
+  auto_discovery: true
+  log_level: "info"
+  web_port: 5000
+schema:
+  mqtt_broker: "str"
+  mqtt_port: "port"
+  mqtt_username: "str?"
+  mqtt_password: "password?"
+  bssci_service_url: "str"
+  base_topic: "str"
+  auto_discovery: "bool"
+  log_level: "list(debug|info|warning|error)?"
+  web_port: "port"
+image: "bssci_mioty/{arch}"
