@@ -1,0 +1,10 @@
+{
+  "name": "BSSCI mioty Integration",
+  "content_in_root": false,
+  "zip_release": true,
+  "filename": "bssci_mioty.zip",
+  "render_readme": true,
+  "domains": ["sensor", "device_tracker"],
+  "iot_class": "Cloud Push",
+  "homeassistant": "2023.1.0"
+}

@@ -1,2 +1,30 @@
+modules = ["python-3.11"]
 [agent]
 expertMode = true
+
+[nix]
+channel = "stable-25_05"
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Home Assistant BSSCI Plugin"
+
+[[workflows.workflow]]
+name = "Home Assistant BSSCI Plugin"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "pip install homeassistant paho-mqtt voluptuous && python -m homeassistant --config . --safe-mode"
+waitForPort = 8123
+
+[workflows.workflow.metadata]
+outputType = "webview"

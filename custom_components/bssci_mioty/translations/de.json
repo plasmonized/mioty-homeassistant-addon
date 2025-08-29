@@ -1,0 +1,147 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "BSSCI mioty Integration einrichten",
+        "description": "Konfigurieren Sie die Verbindung zu Ihrem BSSCI Service Center über MQTT.",
+        "data": {
+          "mqtt_broker": "MQTT Broker Adresse",
+          "mqtt_port": "MQTT Port",
+          "mqtt_username": "MQTT Benutzername (optional)",
+          "mqtt_password": "MQTT Passwort (optional)",
+          "base_topic": "Basis-Topic"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Verbindung zum MQTT Broker fehlgeschlagen. Überprüfen Sie die Broker-Adresse und Zugangsdaten."
+    },
+    "abort": {
+      "already_configured": "Diese BSSCI mioty Integration ist bereits konfiguriert."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "BSSCI mioty Optionen",
+        "description": "Ändern Sie die MQTT-Verbindungseinstellungen für das BSSCI Service Center.",
+        "data": {
+          "mqtt_broker": "MQTT Broker Adresse",
+          "mqtt_port": "MQTT Port",
+          "mqtt_username": "MQTT Benutzername",
+          "mqtt_password": "MQTT Passwort",
+          "base_topic": "Basis-Topic"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "bssci_sensor": {
+        "name": "mioty Sensor {sensor_eui}",
+        "state_attributes": {
+          "sensor_eui": {
+            "name": "Sensor EUI"
+          },
+          "base_station_eui": {
+            "name": "Basisstation EUI"
+          },
+          "snr": {
+            "name": "Signal-Rausch-Verhältnis"
+          },
+          "rssi": {
+            "name": "Empfangsfeldstärke"
+          },
+          "message_counter": {
+            "name": "Nachrichtenzähler"
+          },
+          "receive_time": {
+            "name": "Empfangszeit"
+          },
+          "signal_quality": {
+            "name": "Signalqualität"
+          }
+        }
+      },
+      "bssci_basestation": {
+        "name": "mioty Basisstation {bs_eui}",
+        "state_attributes": {
+          "base_station_eui": {
+            "name": "Basisstation EUI"
+          },
+          "status_code": {
+            "name": "Statuscode"
+          },
+          "memory_load": {
+            "name": "Speicherauslastung"
+          },
+          "cpu_load": {
+            "name": "CPU-Auslastung"
+          },
+          "duty_cycle": {
+            "name": "Duty Cycle"
+          },
+          "uptime": {
+            "name": "Betriebszeit"
+          }
+        }
+      }
+    }
+  },
+  "services": {
+    "add_sensor": {
+      "name": "Sensor hinzufügen",
+      "description": "Fügt einen neuen mioty Sensor hinzu und konfiguriert ihn über das BSSCI Service Center.",
+      "fields": {
+        "sensor_eui": {
+          "name": "Sensor EUI",
+          "description": "Die eindeutige 16-stellige Hex-Kennung des Sensors (EUI-64)"
+        },
+        "network_key": {
+          "name": "Netzwerk-Schlüssel",
+          "description": "32-stelliger Hex-Netzwerk-Schlüssel für die Sensor-Authentifizierung"
+        },
+        "short_addr": {
+          "name": "Kurze Adresse",
+          "description": "4-stellige Hex-Kurz-Adresse für effiziente Kommunikation"
+        },
+        "bidirectional": {
+          "name": "Bidirektional",
+          "description": "Aktiviert bidirektionale Kommunikation (Downlink-Nachrichten möglich)"
+        }
+      }
+    },
+    "configure_sensor": {
+      "name": "Sensor konfigurieren",
+      "description": "Ändert die Konfiguration eines existierenden mioty Sensors.",
+      "fields": {
+        "sensor_eui": {
+          "name": "Sensor EUI",
+          "description": "Die eindeutige 16-stellige Hex-Kennung des Sensors (EUI-64)"
+        },
+        "network_key": {
+          "name": "Netzwerk-Schlüssel",
+          "description": "32-stelliger Hex-Netzwerk-Schlüssel für die Sensor-Authentifizierung"
+        },
+        "short_addr": {
+          "name": "Kurze Adresse",
+          "description": "4-stellige Hex-Kurz-Adresse für effiziente Kommunikation"
+        },
+        "bidirectional": {
+          "name": "Bidirektional",
+          "description": "Aktiviert bidirektionale Kommunikation (Downlink-Nachrichten möglich)"
+        }
+      }
+    },
+    "remove_sensor": {
+      "name": "Sensor entfernen",
+      "description": "Entfernt einen mioty Sensor vollständig aus Home Assistant.",
+      "fields": {
+        "sensor_eui": {
+          "name": "Sensor EUI",
+          "description": "Die eindeutige 16-stellige Hex-Kennung des zu entfernenden Sensors"
+        }
+      }
+    }
+  }
+}
