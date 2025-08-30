@@ -34,17 +34,23 @@ class WebGUI:
         @self.app.route('/')
         def index():
             """Hauptseite."""
-            return render_template_string(self.get_main_template())
+            # Get the ingress path from Home Assistant header
+            ingress_path = request.headers.get('X-Ingress-Path', '')
+            return render_template_string(self.get_main_template(), ingress_path=ingress_path)
         
         @self.app.route('/settings')
         def settings():
             """Einstellungsseite."""
-            return render_template_string(self.get_settings_template())
+            # Get the ingress path from Home Assistant header
+            ingress_path = request.headers.get('X-Ingress-Path', '')
+            return render_template_string(self.get_settings_template(), ingress_path=ingress_path)
         
         @self.app.route('/decoders')
         def decoders():
             """Decoder-Verwaltungsseite."""
-            return render_template_string(self.get_decoders_template())
+            # Get the ingress path from Home Assistant header
+            ingress_path = request.headers.get('X-Ingress-Path', '')
+            return render_template_string(self.get_decoders_template(), ingress_path=ingress_path)
         
         @self.app.route('/api/sensors')
         def get_sensors():
@@ -613,21 +619,11 @@ class WebGUI:
     </div>
     
     <script>
-        // Base URL für API Calls (Ingress-kompatibel)
-        const getBaseUrl = () => {
-            // Für Home Assistant Ingress - improved detection
-            if (window.location.pathname.includes('/ingress/')) {
-                const pathParts = window.location.pathname.split('/ingress/');
-                if (pathParts.length >= 2) {
-                    const addonId = pathParts[1].split('/')[0];
-                    return window.location.origin + pathParts[0] + '/ingress/' + addonId;
-                }
-            }
-            // Für direkte Verbindung
-            return window.location.origin;
-        };
-        const BASE_URL = getBaseUrl();
-        console.log('BASE_URL detected:', BASE_URL);
+        // Use server-provided ingress path from X-Ingress-Path header
+        const INGRESS_PATH = '{{ ingress_path }}' || '';
+        const BASE_URL = INGRESS_PATH || window.location.origin;
+        console.log('Ingress path from server:', INGRESS_PATH);
+        console.log('BASE_URL resolved:', BASE_URL);
         console.log('Current pathname:', window.location.pathname);
         console.log('Is embedded (iframe):', window.self !== window.top);
         
@@ -1133,21 +1129,11 @@ class WebGUI:
     </div>
     
     <script>
-        // BASE_URL detection for ingress compatibility
-        const getBaseUrl = () => {
-            // Für Home Assistant Ingress - improved detection
-            if (window.location.pathname.includes('/ingress/')) {
-                const pathParts = window.location.pathname.split('/ingress/');
-                if (pathParts.length >= 2) {
-                    const addonId = pathParts[1].split('/')[0];
-                    return window.location.origin + pathParts[0] + '/ingress/' + addonId;
-                }
-            }
-            // Für direkte Verbindung
-            return window.location.origin;
-        };
-        const BASE_URL = getBaseUrl();
-        console.log('BASE_URL detected:', BASE_URL);
+        // Use server-provided ingress path from X-Ingress-Path header
+        const INGRESS_PATH = '{{ ingress_path }}' || '';
+        const BASE_URL = INGRESS_PATH || window.location.origin;
+        console.log('Ingress path from server:', INGRESS_PATH);
+        console.log('BASE_URL resolved:', BASE_URL);
         console.log('Current pathname:', window.location.pathname);
         console.log('Is embedded (iframe):', window.self !== window.top);
         
@@ -1410,21 +1396,11 @@ class WebGUI:
         </div>
     </div>
     <script>
-        // BASE_URL detection for ingress compatibility
-        const getBaseUrl = () => {
-            // Für Home Assistant Ingress - improved detection
-            if (window.location.pathname.includes('/ingress/')) {
-                const pathParts = window.location.pathname.split('/ingress/');
-                if (pathParts.length >= 2) {
-                    const addonId = pathParts[1].split('/')[0];
-                    return window.location.origin + pathParts[0] + '/ingress/' + addonId;
-                }
-            }
-            // Für direkte Verbindung
-            return window.location.origin;
-        };
-        const BASE_URL = getBaseUrl();
-        console.log('BASE_URL detected:', BASE_URL);
+        // Use server-provided ingress path from X-Ingress-Path header
+        const INGRESS_PATH = '{{ ingress_path }}' || '';
+        const BASE_URL = INGRESS_PATH || window.location.origin;
+        console.log('Ingress path from server:', INGRESS_PATH);
+        console.log('BASE_URL resolved:', BASE_URL);
         console.log('Current pathname:', window.location.pathname);
         console.log('Is embedded (iframe):', window.self !== window.top);
         
