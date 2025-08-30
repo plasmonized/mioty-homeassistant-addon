@@ -31,6 +31,7 @@ class MQTTManager:
         # Callbacks
         self.data_callback: Optional[Callable] = None
         self.config_callback: Optional[Callable] = None
+        self.base_station_callback: Optional[Callable] = None
         
         logging.info(f"MQTT Manager initialisiert für {broker}:{port}")
     
@@ -41,6 +42,10 @@ class MQTTManager:
     def set_config_callback(self, callback: Callable):
         """Setze Callback für Sensor-Konfiguration."""
         self.config_callback = callback
+    
+    def set_base_station_callback(self, callback: Callable):
+        """Setze Callback für Base Station Status."""
+        self.base_station_callback = callback
     
     def connect(self) -> bool:
         """Verbinde mit MQTT Broker."""
@@ -156,7 +161,8 @@ class MQTTManager:
             elif len(topic_parts) >= 3 and topic_parts[1] == "bs":
                 bs_eui = topic_parts[2]
                 # Base Station Status
-                # Hier würde handle_base_station_status aufgerufen werden
+                if self.base_station_callback:
+                    self.base_station_callback(bs_eui, data)
                 logging.debug(f"Base Station Status: {bs_eui}")
                 
         except json.JSONDecodeError as e:

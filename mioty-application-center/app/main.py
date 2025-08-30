@@ -80,6 +80,7 @@ class BSSCIAddon:
             )
             self.mqtt_manager.set_data_callback(self.handle_sensor_data)
             self.mqtt_manager.set_config_callback(self.handle_sensor_config)
+            self.mqtt_manager.set_base_station_callback(self.handle_base_station_status)
             
             # BSSCI Client starten (optional, falls direkter Zugriff gewünscht)
             # self.bssci_client = BSSCIClient(self.config['bssci_service_url'])
