@@ -580,6 +580,17 @@ class WebGUI:
     </div>
     
     <script>
+        // Base URL für API Calls (Ingress-kompatibel)
+        const getBaseUrl = () => {
+            // Für Home Assistant Ingress
+            if (window.location.pathname.includes('/ingress/')) {
+                return window.location.origin + window.location.pathname.split('/ingress/')[0] + '/ingress/' + window.location.pathname.split('/ingress/')[1].split('/')[0];
+            }
+            // Für direkte Verbindung
+            return window.location.origin;
+        };
+        const BASE_URL = getBaseUrl();
+        
         // DOM Elemente
         const addSensorForm = document.getElementById('addSensorForm');
         const sensorList = document.getElementById('sensorList');
@@ -589,7 +600,7 @@ class WebGUI:
         // Sensor-Daten laden
         async function loadSensors() {
             try {
-                const response = await fetch('/api/sensors');
+                const response = await fetch(BASE_URL + '/api/sensors');
                 const sensors = await response.json();
                 
                 if (Object.keys(sensors).length === 0) {
@@ -614,7 +625,7 @@ class WebGUI:
         // Base Station Daten laden
         async function loadBaseStations() {
             try {
-                const response = await fetch('/api/basestations');
+                const response = await fetch(BASE_URL + '/api/basestations');
                 const stations = await response.json();
                 
                 if (Object.keys(stations).length === 0) {
@@ -743,7 +754,7 @@ class WebGUI:
             };
             
             try {
-                const response = await fetch('/api/sensor/add', {
+                const response = await fetch(BASE_URL + '/api/sensor/add', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify(data)
@@ -772,7 +783,7 @@ class WebGUI:
             }
             
             try {
-                const response = await fetch('/api/sensor/remove', {
+                const response = await fetch(BASE_URL + '/api/sensor/remove', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({sensor_eui: eui})
@@ -1079,7 +1090,7 @@ class WebGUI:
         // Einstellungen laden
         async function loadSettings() {
             try {
-                const response = await fetch('/api/settings');
+                const response = await fetch(BASE_URL + '/api/settings');
                 const settings = await response.json();
                 
                 // Formular mit aktuellen Werten füllen
@@ -1124,7 +1135,7 @@ class WebGUI:
             };
             
             try {
-                const response = await fetch('/api/settings', {
+                const response = await fetch(BASE_URL + '/api/settings', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify(data)
@@ -1316,7 +1327,7 @@ class WebGUI:
         
         async function loadDecoders() {
             try {
-                const response = await fetch('/api/decoders');
+                const response = await fetch(BASE_URL + '/api/decoders');
                 const data = await response.json();
                 currentDecoders = data.decoders || [];
                 currentAssignments = data.assignments || {};
@@ -1387,7 +1398,7 @@ class WebGUI:
             e.preventDefault();
             const formData = new FormData(uploadForm);
             try {
-                const response = await fetch('/api/decoder/upload', { method: 'POST', body: formData });
+                const response = await fetch(BASE_URL + '/api/decoder/upload', { method: 'POST', body: formData });
                 const result = await response.json();
                 if (response.ok) {
                     showAlert(result.message, 'success');
@@ -1406,7 +1417,7 @@ class WebGUI:
             const formData = new FormData(testForm);
             const data = { decoder_name: formData.get('decoder'), test_payload: formData.get('payload') };
             try {
-                const response = await fetch('/api/decoder/test', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
+                const response = await fetch(BASE_URL + '/api/decoder/test', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
                 const result = await response.json();
                 displayTestResult(result);
             } catch (error) {
@@ -1432,7 +1443,7 @@ class WebGUI:
             const formData = new FormData(assignForm);
             const data = { sensor_eui: formData.get('sensor_eui'), decoder_name: formData.get('decoder') };
             try {
-                const response = await fetch('/api/decoder/assign', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
+                const response = await fetch(BASE_URL + '/api/decoder/assign', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
                 const result = await response.json();
                 if (response.ok) {
                     showAlert(result.message, 'success');
@@ -1449,7 +1460,7 @@ class WebGUI:
         async function unassignDecoder(sensorEui) {
             if (!confirm(`Decoder-Zuweisung für Sensor ${sensorEui} wirklich entfernen?`)) { return; }
             try {
-                const response = await fetch('/api/decoder/unassign', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({sensor_eui: sensorEui}) });
+                const response = await fetch(BASE_URL + '/api/decoder/unassign', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({sensor_eui: sensorEui}) });
                 const result = await response.json();
                 if (response.ok) {
                     showAlert(result.message, 'success');
@@ -1465,7 +1476,7 @@ class WebGUI:
         async function deleteDecoder(decoderName) {
             if (!confirm(`Decoder "${decoderName}" wirklich löschen? Alle Zuweisungen werden entfernt.`)) { return; }
             try {
-                const response = await fetch('/api/decoder/delete', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({decoder_name: decoderName}) });
+                const response = await fetch(BASE_URL + '/api/decoder/delete', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({decoder_name: decoderName}) });
                 const result = await response.json();
                 if (response.ok) {
                     showAlert(result.message, 'success');
