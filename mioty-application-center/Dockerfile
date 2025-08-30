@@ -16,17 +16,17 @@ RUN apk add --no-cache \
     curl \
     jq
 
-# Set work directory
-WORKDIR /data
-
 # Copy Python requirements
-COPY requirements.txt .
-RUN pip3 install --no-cache-dir --break-system-packages -r requirements.txt
+COPY requirements.txt /tmp/
+RUN pip3 install --no-cache-dir --break-system-packages -r /tmp/requirements.txt
 
 # Copy application files
-COPY app/ ./
-COPY run.sh ./
-RUN chmod a+x run.sh
+COPY app/ /opt/
+COPY run.sh /
+RUN chmod a+x /run.sh
+
+# Set work directory
+WORKDIR /opt
 
 # Labels
 LABEL \
@@ -37,4 +37,4 @@ LABEL \
     io.hass.version="1.0.0"
 
 # Run
-CMD ["./run.sh"]
+CMD ["/run.sh"]
