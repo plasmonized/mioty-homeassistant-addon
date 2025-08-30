@@ -70,13 +70,19 @@ class BSSCIAddon:
         logging.info("Starte BSSCI mioty Add-on...")
         
         try:
-            # MQTT Manager starten
+            # Dual MQTT Manager starten (extern für mioty + HA für Discovery)
             self.mqtt_manager = MQTTManager(
+                # Externe mioty MQTT Verbindung
                 broker=self.config['mqtt_broker'],
                 port=self.config['mqtt_port'],
                 username=self.config['mqtt_username'],
                 password=self.config['mqtt_password'],
-                base_topic=self.config['base_topic']
+                base_topic=self.config['base_topic'],
+                # Home Assistant MQTT Verbindung
+                ha_broker='core-mosquitto',
+                ha_port=1883,
+                ha_username='',
+                ha_password=''
             )
             self.mqtt_manager.set_data_callback(self.handle_sensor_data)
             self.mqtt_manager.set_config_callback(self.handle_sensor_config)
@@ -164,7 +170,7 @@ class BSSCIAddon:
         }
         
         # Home Assistant Discovery
-        if self.config['auto_discovery']:
+        if self.config['auto_discovery'] and self.mqtt_manager:
             self.create_sensor_discovery(sensor_eui, data, decoded_payload)
     
     def handle_sensor_config(self, sensor_eui: str, config: Dict[str, Any]):
@@ -191,17 +197,6 @@ class BSSCIAddon:
                 self.create_basestation_discovery(bs_eui, data)
             except AttributeError:
                 logging.debug(f"Base Station Discovery für {bs_eui} übersprungen")
-        
-        # Sensor registrieren
-        if sensor_eui not in self.sensors:
-            self.sensors[sensor_eui] = {}
-        
-        self.sensors[sensor_eui].update({
-            'network_key': config.get('nwKey', ''),
-            'short_addr': config.get('shortAddr', ''),
-            'bidirectional': config.get('bidi', False),
-            'registered_at': time.time()
-        })
     
     def handle_base_station_status(self, bs_eui: str, status: Dict[str, Any]):
         """Verarbeite Base Station Status."""
@@ -240,7 +235,8 @@ class BSSCIAddon:
         
         # Discovery Nachricht senden
         discovery_topic = f"homeassistant/sensor/{unique_id}/config"
-        self.mqtt_manager.publish_discovery(discovery_topic, discovery_config)
+        if self.mqtt_manager:
+            self.mqtt_manager.publish_discovery(discovery_topic, discovery_config)
         
         # Status und Attribute senden
         state_value = len(data.get('data', []))
@@ -257,7 +253,8 @@ class BSSCIAddon:
             "decoder_used": decoded_payload.get('decoder_name') if decoded_payload else None
         }
         
-        self.mqtt_manager.publish_sensor_state(unique_id, state_value, attributes)
+        if self.mqtt_manager:
+            self.mqtt_manager.publish_sensor_state(unique_id, state_value, attributes)
     
     def create_basestation_discovery(self, bs_eui: str, status: Dict[str, Any]):
         """Erstelle Home Assistant MQTT Discovery für Base Station."""
@@ -280,7 +277,8 @@ class BSSCIAddon:
         }
         
         discovery_topic = f"homeassistant/sensor/{unique_id}/config"
-        self.mqtt_manager.publish_discovery(discovery_topic, discovery_config)
+        if self.mqtt_manager:
+            self.mqtt_manager.publish_discovery(discovery_topic, discovery_config)
         
         # Status
         state_value = "online" if status.get('code', 1) == 0 else "offline"
@@ -294,9 +292,10 @@ class BSSCIAddon:
             "last_seen": self.format_timestamp(status.get('time'))
         }
         
-        self.mqtt_manager.publish_sensor_state(unique_id, state_value, attributes)
+        if self.mqtt_manager:
+            self.mqtt_manager.publish_sensor_state(unique_id, state_value, attributes)
     
-    def assess_signal_quality(self, snr: float, rssi: float) -> str:
+    def assess_signal_quality(self, snr, rssi) -> str:
         """Bewerte Signalqualität."""
         if snr is None or rssi is None:
             return "unknown"
@@ -354,7 +353,9 @@ class BSSCIAddon:
         
         # Konfiguration über MQTT senden
         topic = f"{self.config['base_topic']}/ep/{sensor_eui}/config"
-        return self.mqtt_manager.publish_config(topic, config)
+        if self.mqtt_manager:
+            return self.mqtt_manager.publish_config(topic, config)
+        return False
     
     def remove_sensor(self, sensor_eui: str) -> bool:
         """Entferne einen Sensor."""
@@ -365,7 +366,8 @@ class BSSCIAddon:
             # Discovery-Konfiguration löschen
             unique_id = f"bssci_sensor_{sensor_eui}"
             discovery_topic = f"homeassistant/sensor/{unique_id}/config"
-            self.mqtt_manager.publish_discovery(discovery_topic, "")
+            if self.mqtt_manager:
+                self.mqtt_manager.publish_discovery(discovery_topic, "")
             
             return True
         return False
