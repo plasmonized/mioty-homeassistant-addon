@@ -17,6 +17,7 @@ from mqtt_manager import MQTTManager
 from bssci_client import BSSCIClient
 from web_gui import WebGUI
 from decoder_manager import DecoderManager
+from settings_manager import SettingsManager
 
 class BSSCIAddon:
     """Hauptklasse für das BSSCI mioty Add-on."""
@@ -53,17 +54,45 @@ class BSSCIAddon:
         logging.getLogger('paho').setLevel(logging.WARNING)
     
     def load_config(self) -> Dict[str, Any]:
-        """Lade Konfiguration aus Environment Variables."""
-        return {
-            'mqtt_broker': os.getenv('MQTT_BROKER', 'core-mosquitto'),
-            'mqtt_port': int(os.getenv('MQTT_PORT', '1883')),
-            'mqtt_username': os.getenv('MQTT_USERNAME', ''),
-            'mqtt_password': os.getenv('MQTT_PASSWORD', ''),
-            'bssci_service_url': os.getenv('BSSCI_SERVICE_URL', 'localhost:16018'),
-            'base_topic': os.getenv('BASE_TOPIC', 'bssci'),
-            'auto_discovery': os.getenv('AUTO_DISCOVERY', 'true').lower() == 'true',
-            'web_port': int(os.getenv('WEB_PORT', '5000'))
-        }
+        """Lade Konfiguration aus gespeicherten Einstellungen oder Environment Variables."""
+        # Versuche zuerst gespeicherte Einstellungen zu laden
+        try:
+            settings = SettingsManager()
+            saved_settings = settings.get_all_settings()
+            
+            # Kombiniere gespeicherte Einstellungen mit Environment Variables als Fallback
+            config = {
+                'mqtt_broker': saved_settings.get('mqtt_broker') or os.getenv('MQTT_BROKER', 'akahlig.selfhost.co'),
+                'mqtt_port': saved_settings.get('mqtt_port') or int(os.getenv('MQTT_PORT', '1887')),
+                'mqtt_username': saved_settings.get('mqtt_username') or os.getenv('MQTT_USERNAME', 'Hasso'),
+                'mqtt_password': saved_settings.get('mqtt_password') or os.getenv('MQTT_PASSWORD', 'test=1234'),
+                'ha_mqtt_broker': saved_settings.get('ha_mqtt_broker') or os.getenv('HA_MQTT_BROKER', 'core-mosquitto'),
+                'ha_mqtt_port': saved_settings.get('ha_mqtt_port') or int(os.getenv('HA_MQTT_PORT', '1883')),
+                'ha_mqtt_username': saved_settings.get('ha_mqtt_username') or os.getenv('HA_MQTT_USERNAME', ''),
+                'ha_mqtt_password': saved_settings.get('ha_mqtt_password') or os.getenv('HA_MQTT_PASSWORD', ''),
+                'bssci_service_url': os.getenv('BSSCI_SERVICE_URL', 'localhost:16018'),
+                'base_topic': saved_settings.get('base_topic') or os.getenv('BASE_TOPIC', 'bssci'),
+                'auto_discovery': saved_settings.get('auto_discovery', True) if saved_settings.get('auto_discovery') is not None else (os.getenv('AUTO_DISCOVERY', 'true').lower() == 'true'),
+                'web_port': int(os.getenv('WEB_PORT', '5000'))
+            }
+            return config
+        except Exception as e:
+            logging.warning(f"Konnte gespeicherte Einstellungen nicht laden: {e}, verwende Environment Variables")
+            # Fallback zu Environment Variables
+            return {
+                'mqtt_broker': os.getenv('MQTT_BROKER', 'akahlig.selfhost.co'),
+                'mqtt_port': int(os.getenv('MQTT_PORT', '1887')),
+                'mqtt_username': os.getenv('MQTT_USERNAME', 'Hasso'),
+                'mqtt_password': os.getenv('MQTT_PASSWORD', 'test=1234'),
+                'ha_mqtt_broker': os.getenv('HA_MQTT_BROKER', 'core-mosquitto'),
+                'ha_mqtt_port': int(os.getenv('HA_MQTT_PORT', '1883')),
+                'ha_mqtt_username': os.getenv('HA_MQTT_USERNAME', ''),
+                'ha_mqtt_password': os.getenv('HA_MQTT_PASSWORD', ''),
+                'bssci_service_url': os.getenv('BSSCI_SERVICE_URL', 'localhost:16018'),
+                'base_topic': os.getenv('BASE_TOPIC', 'bssci'),
+                'auto_discovery': os.getenv('AUTO_DISCOVERY', 'true').lower() == 'true',
+                'web_port': int(os.getenv('WEB_PORT', '5000'))
+            }
     
     def start(self):
         """Starte das Add-on."""
@@ -79,10 +108,10 @@ class BSSCIAddon:
                 password=self.config['mqtt_password'],
                 base_topic=self.config['base_topic'],
                 # Home Assistant MQTT Verbindung
-                ha_broker='core-mosquitto',
-                ha_port=1883,
-                ha_username='',
-                ha_password=''
+                ha_broker=self.config['ha_mqtt_broker'],
+                ha_port=self.config['ha_mqtt_port'],
+                ha_username=self.config['ha_mqtt_username'],
+                ha_password=self.config['ha_mqtt_password']
             )
             self.mqtt_manager.set_data_callback(self.handle_sensor_data)
             self.mqtt_manager.set_config_callback(self.handle_sensor_config)
