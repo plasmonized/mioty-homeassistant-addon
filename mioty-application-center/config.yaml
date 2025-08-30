@@ -3,6 +3,7 @@ name: "mioty Application Center für Homeassistant"
 description: "mioty Application Center für die Verwaltung von mioty IoT Sensoren mit MQTT Integration und Web-GUI"
 version: "1.0.3.2"
 slug: mioty-application-center
+logo: logo.png
 init: false
 arch:
   - armhf

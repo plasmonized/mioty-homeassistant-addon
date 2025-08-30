@@ -10,6 +10,12 @@ Preferred communication style: Simple, everyday language.
 
 # Recent Changes
 
+**30.08.2025 - Konfiguration und Logo Updates:**
+- Fixed configuration dashboard to display actual runtime MQTT settings instead of defaults
+- Added live connection status API endpoint (/api/status) with auto-refresh
+- Resolved Home Assistant ingress compatibility with proper BASE_URL handling
+- **Added custom mioty-themed logo** - Professional IoT logo with orange/gray design showing radio waves, sensor networks, and MQTT connectivity
+
 **29.08.2025 - mioty Application Center für Homeassistant mit Payload Decoder System abgeschlossen:**
 - Vollständige Custom Integration zu Home Assistant Add-on konvertiert
 - Docker-containerisierte Lösung mit Flask Web-GUI im orange/grauen Design
