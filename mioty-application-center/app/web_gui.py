@@ -527,9 +527,9 @@ class WebGUI:
         </div>
         
         <div class="nav">
-            <a href="/" class="nav-item active">📊 Sensoren</a>
-            <a href="/decoders" class="nav-item">📝 Decoder</a>
-            <a href="/settings" class="nav-item">⚙️ Einstellungen</a>
+            <a href="#" onclick="window.location.href='/'" class="nav-item active">📊 Sensoren</a>
+            <a href="#" onclick="window.location.href='/decoders'" class="nav-item">📝 Decoder</a>
+            <a href="#" onclick="window.location.href='/settings'" class="nav-item">⚙️ Einstellungen</a>
         </div>
         
         <div class="content">
@@ -1007,9 +1007,9 @@ class WebGUI:
         </div>
         
         <div class="nav">
-            <a href="/" class="nav-item">📊 Sensoren</a>
-            <a href="/decoders" class="nav-item">📝 Decoder</a>
-            <a href="/settings" class="nav-item active">⚙️ Einstellungen</a>
+            <a href="#" onclick="window.location.href='/'" class="nav-item">📊 Sensoren</a>
+            <a href="#" onclick="window.location.href='/decoders'" class="nav-item">📝 Decoder</a>
+            <a href="#" onclick="window.location.href='/settings'" class="nav-item active">⚙️ Einstellungen</a>
         </div>
         
         <div class="content">
@@ -1242,9 +1242,9 @@ class WebGUI:
             <p>Payload Decoder Verwaltung</p>
         </div>
         <div class="nav">
-            <a href="/" class="nav-item">📊 Sensoren</a>
-            <a href="/decoders" class="nav-item active">📝 Decoder</a>
-            <a href="/settings" class="nav-item">⚙️ Einstellungen</a>
+            <a href="#" onclick="window.location.href='/'" class="nav-item">📊 Sensoren</a>
+            <a href="#" onclick="window.location.href='/decoders'" class="nav-item active">📝 Decoder</a>
+            <a href="#" onclick="window.location.href='/settings'" class="nav-item">⚙️ Einstellungen</a>
         </div>
         <div class="content">
             <div id="alerts"></div>
