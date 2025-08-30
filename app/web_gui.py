@@ -560,9 +560,9 @@ class WebGUI:
         </div>
         
         <div class="nav">
-            <a href="/" class="nav-item active">📊 Sensoren</a>
-            <a href="/decoders" class="nav-item">📝 Decoder</a>
-            <a href="/settings" class="nav-item">⚙️ Einstellungen</a>
+            <a id="nav-sensors" href="#" class="nav-item active" onclick="navigateTo('/')">📊 Sensoren</a>
+            <a id="nav-decoders" href="#" class="nav-item" onclick="navigateTo('/decoders')">📝 Decoder</a>
+            <a id="nav-settings" href="#" class="nav-item" onclick="navigateTo('/settings')">⚙️ Einstellungen</a>
         </div>
         
         <div class="content">
@@ -623,6 +623,11 @@ class WebGUI:
             return window.location.origin;
         };
         const BASE_URL = getBaseUrl();
+        
+        // Navigation function for ingress compatibility
+        const navigateTo = (path) => {
+            window.location.href = BASE_URL + path;
+        };
         
         // DOM Elemente
         const addSensorForm = document.getElementById('addSensorForm');
@@ -1051,9 +1056,9 @@ class WebGUI:
         </div>
         
         <div class="nav">
-            <a href="/" class="nav-item">📊 Sensoren</a>
-            <a href="/decoders" class="nav-item">📝 Decoder</a>
-            <a href="/settings" class="nav-item active">⚙️ Einstellungen</a>
+            <a id="nav-sensors" href="#" class="nav-item" onclick="navigateTo('/')">📊 Sensoren</a>
+            <a id="nav-decoders" href="#" class="nav-item" onclick="navigateTo('/decoders')">📝 Decoder</a>
+            <a id="nav-settings" href="#" class="nav-item active" onclick="navigateTo('/settings')">⚙️ Einstellungen</a>
         </div>
         
         <div class="content">
@@ -1115,6 +1120,22 @@ class WebGUI:
     </div>
     
     <script>
+        // BASE_URL detection for ingress compatibility
+        const getBaseUrl = () => {
+            // Für Home Assistant Ingress
+            if (window.location.pathname.includes('/ingress/')) {
+                return window.location.origin + window.location.pathname.split('/ingress/')[0] + '/ingress/' + window.location.pathname.split('/ingress/')[1].split('/')[0];
+            }
+            // Für direkte Verbindung
+            return window.location.origin;
+        };
+        const BASE_URL = getBaseUrl();
+        
+        // Navigation function for ingress compatibility
+        const navigateTo = (path) => {
+            window.location.href = BASE_URL + path;
+        };
+        
         // DOM Elemente
         const settingsForm = document.getElementById('settingsForm');
         const alerts = document.getElementById('alerts');
@@ -1301,9 +1322,9 @@ class WebGUI:
             <p>Payload Decoder Verwaltung</p>
         </div>
         <div class="nav">
-            <a href="/" class="nav-item">📊 Sensoren</a>
-            <a href="/decoders" class="nav-item active">📝 Decoder</a>
-            <a href="/settings" class="nav-item">⚙️ Einstellungen</a>
+            <a id="nav-sensors" href="#" class="nav-item" onclick="navigateTo('/')">📊 Sensoren</a>
+            <a id="nav-decoders" href="#" class="nav-item active" onclick="navigateTo('/decoders')">📝 Decoder</a>
+            <a id="nav-settings" href="#" class="nav-item" onclick="navigateTo('/settings')">⚙️ Einstellungen</a>
         </div>
         <div class="content">
             <div id="alerts"></div>
@@ -1363,6 +1384,22 @@ class WebGUI:
         </div>
     </div>
     <script>
+        // BASE_URL detection for ingress compatibility
+        const getBaseUrl = () => {
+            // Für Home Assistant Ingress
+            if (window.location.pathname.includes('/ingress/')) {
+                return window.location.origin + window.location.pathname.split('/ingress/')[0] + '/ingress/' + window.location.pathname.split('/ingress/')[1].split('/')[0];
+            }
+            // Für direkte Verbindung
+            return window.location.origin;
+        };
+        const BASE_URL = getBaseUrl();
+        
+        // Navigation function for ingress compatibility
+        const navigateTo = (path) => {
+            window.location.href = BASE_URL + path;
+        };
+        
         const uploadForm = document.getElementById('uploadForm');
         const testForm = document.getElementById('testForm');
         const assignForm = document.getElementById('assignForm');
