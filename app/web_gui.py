@@ -148,12 +148,17 @@ class WebGUI:
                     'mqtt_username': self.addon.config.get('mqtt_username', ''),
                     'mqtt_password': '***' if self.addon.config.get('mqtt_password') else '',
                     'base_topic': self.addon.config.get('base_topic', 'bssci'),
-                    'auto_discovery': self.addon.config.get('auto_discovery', True)
+                    'auto_discovery': self.addon.config.get('auto_discovery', True),
+                    'ha_mqtt_broker': self.addon.config.get('ha_mqtt_broker', 'core-mosquitto'),
+                    'ha_mqtt_port': self.addon.config.get('ha_mqtt_port', 1883),
+                    'ha_mqtt_username': self.addon.config.get('ha_mqtt_username', ''),
+                    'ha_mqtt_password': '***' if self.addon.config.get('ha_mqtt_password') else ''
                 }
             else:
                 # Fallback zu gespeicherten Einstellungen
                 settings = self.settings.get_all_settings()
                 settings['mqtt_password'] = '***' if settings.get('mqtt_password') else ''
+                settings['ha_mqtt_password'] = '***' if settings.get('ha_mqtt_password') else ''
             return jsonify(settings)
         
         @self.app.route('/api/settings', methods=['POST'])
@@ -186,6 +191,37 @@ class WebGUI:
                 return jsonify({"success": True, "message": "Einstellungen gespeichert. Starten Sie das Add-on neu um Änderungen zu übernehmen."})
             else:
                 return jsonify({"error": "Fehler beim Speichern der Einstellungen"}), 500
+        
+        @self.app.route('/api/ha-settings', methods=['POST'])
+        def update_ha_settings():
+            """API: Home Assistant MQTT Einstellungen aktualisieren."""
+            data = request.get_json()
+            
+            # Validierung
+            required_fields = ['ha_mqtt_broker', 'ha_mqtt_port']
+            for field in required_fields:
+                if field not in data or not data[field]:
+                    return jsonify({"error": f"Feld '{field}' ist erforderlich"}), 400
+            
+            # Passwort nur aktualisieren wenn es nicht *** ist
+            if data.get('ha_mqtt_password') == '***':
+                data.pop('ha_mqtt_password', None)
+            
+            # Port zu Integer konvertieren
+            try:
+                data['ha_mqtt_port'] = int(data['ha_mqtt_port'])
+            except ValueError:
+                return jsonify({"error": "HA MQTT Port muss eine Zahl sein"}), 400
+            
+            # Einstellungen speichern
+            if self.settings.update_settings(data):
+                # Add-on über Änderungen benachrichtigen
+                if self.addon and hasattr(self.addon, 'reload_settings'):
+                    self.addon.reload_settings()
+                    
+                return jsonify({"success": True, "message": "HA MQTT Einstellungen gespeichert. Starten Sie das Add-on neu um Änderungen zu übernehmen."})
+            else:
+                return jsonify({"error": "Fehler beim Speichern der HA MQTT Einstellungen"}), 500
         
         @self.app.route('/api/decoders')
         def get_decoders():
@@ -1120,6 +1156,39 @@ class WebGUI:
                 </form>
             </div>
             
+            <!-- Home Assistant MQTT Konfiguration -->
+            <div class="section">
+                <h2>🏠 Home Assistant MQTT Broker</h2>
+                <form id="haSettingsForm">
+                    <div class="form-group">
+                        <label for="ha_mqtt_broker">HA MQTT Broker:</label>
+                        <input type="text" id="ha_mqtt_broker" name="ha_mqtt_broker" placeholder="core-mosquitto" required>
+                        <div class="help-text">Home Assistant MQTT Broker (Standard: core-mosquitto)</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="ha_mqtt_port">HA MQTT Port:</label>
+                        <input type="number" id="ha_mqtt_port" name="ha_mqtt_port" placeholder="1883" min="1" max="65535" required>
+                        <div class="help-text">Home Assistant MQTT Port (Standard: 1883)</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="ha_mqtt_username">HA MQTT Benutzername:</label>
+                        <input type="text" id="ha_mqtt_username" name="ha_mqtt_username" placeholder="Optional">
+                        <div class="help-text">Home Assistant MQTT Benutzername (Optional)</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="ha_mqtt_password">HA MQTT Passwort:</label>
+                        <input type="password" id="ha_mqtt_password" name="ha_mqtt_password" placeholder="Passwort">
+                        <div class="help-text">Home Assistant MQTT Passwort (Leer lassen um nicht zu ändern)</div>
+                    </div>
+                    
+                    <button type="submit" class="btn">💾 HA MQTT speichern</button>
+                    <button type="button" class="btn btn-secondary" onclick="loadSettings()">🔄 Neu laden</button>
+                </form>
+            </div>
+            
             <!-- Verbindungsstatus -->
             <div class="section">
                 <h2>📡 Verbindungsstatus</h2>
@@ -1150,6 +1219,7 @@ class WebGUI:
         
         // DOM Elemente
         const settingsForm = document.getElementById('settingsForm');
+        const haSettingsForm = document.getElementById('haSettingsForm');
         const alerts = document.getElementById('alerts');
         const connectionStatus = document.getElementById('connectionStatus');
         
@@ -1166,6 +1236,12 @@ class WebGUI:
                 document.getElementById('mqtt_password').value = settings.mqtt_password || '';
                 document.getElementById('base_topic').value = settings.base_topic || 'bssci';
                 document.getElementById('auto_discovery').checked = settings.auto_discovery || false;
+                
+                // Home Assistant MQTT Felder füllen
+                document.getElementById('ha_mqtt_broker').value = settings.ha_mqtt_broker || 'core-mosquitto';
+                document.getElementById('ha_mqtt_port').value = settings.ha_mqtt_port || 1883;
+                document.getElementById('ha_mqtt_username').value = settings.ha_mqtt_username || '';
+                document.getElementById('ha_mqtt_password').value = settings.ha_mqtt_password || '';
                 
             } catch (error) {
                 showAlert('Fehler beim Laden der Einstellungen', 'error');
@@ -1217,6 +1293,39 @@ class WebGUI:
                 
             } catch (error) {
                 showAlert('Fehler beim Speichern der Einstellungen', 'error');
+                console.error('Fehler:', error);
+            }
+        });
+        
+        // Home Assistant MQTT Einstellungen speichern
+        haSettingsForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(haSettingsForm);
+            const data = {
+                ha_mqtt_broker: formData.get('ha_mqtt_broker'),
+                ha_mqtt_port: formData.get('ha_mqtt_port'),
+                ha_mqtt_username: formData.get('ha_mqtt_username'),
+                ha_mqtt_password: formData.get('ha_mqtt_password')
+            };
+            
+            try {
+                const response = await fetch(BASE_URL + '/api/ha-settings', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showAlert(result.message, 'success');
+                } else {
+                    showAlert(result.error, 'error');
+                }
+                
+            } catch (error) {
+                showAlert('Fehler beim Speichern der HA MQTT Einstellungen', 'error');
                 console.error('Fehler:', error);
             }
         });

@@ -33,7 +33,11 @@ class SettingsManager:
                     'mqtt_username': '',
                     'mqtt_password': '',
                     'base_topic': 'bssci',
-                    'auto_discovery': True
+                    'auto_discovery': True,
+                    'ha_mqtt_broker': 'core-mosquitto',
+                    'ha_mqtt_port': 1883,
+                    'ha_mqtt_username': '',
+                    'ha_mqtt_password': ''
                 }
                 self.save_settings()
                 logging.info("Standard-Einstellungen erstellt")
@@ -46,7 +50,11 @@ class SettingsManager:
                 'mqtt_username': '',
                 'mqtt_password': '',
                 'base_topic': 'bssci',
-                'auto_discovery': True
+                'auto_discovery': True,
+                'ha_mqtt_broker': 'core-mosquitto',
+                'ha_mqtt_port': 1883,
+                'ha_mqtt_username': '',
+                'ha_mqtt_password': ''
             }
     
     def save_settings(self):
