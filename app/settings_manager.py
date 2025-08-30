@@ -12,7 +12,7 @@ from typing import Dict, Any
 class SettingsManager:
     """Verwaltet Add-on Einstellungen."""
     
-    def __init__(self, config_file: str = "/data/settings.json"):
+    def __init__(self, config_file: str = "settings.json"):
         """Initialisiere Settings Manager."""
         self.config_file = config_file
         self.settings = {}
@@ -60,8 +60,9 @@ class SettingsManager:
     def save_settings(self):
         """Speichere Einstellungen in Datei."""
         try:
-            # Verzeichnis erstellen falls es nicht existiert
-            os.makedirs(os.path.dirname(self.config_file), exist_ok=True)
+            # Verzeichnis erstellen falls es nicht existiert (nur wenn Verzeichnis vorhanden)
+            if os.path.dirname(self.config_file):
+                os.makedirs(os.path.dirname(self.config_file), exist_ok=True)
             
             with open(self.config_file, 'w') as f:
                 json.dump(self.settings, f, indent=2)

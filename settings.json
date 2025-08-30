@@ -1,0 +1,12 @@
+{
+  "mqtt_broker": "akahlig.selfhost.co",
+  "mqtt_port": 1887,
+  "mqtt_username": "",
+  "mqtt_password": "",
+  "base_topic": "bssci",
+  "auto_discovery": true,
+  "ha_mqtt_broker": "homeassistant.local",
+  "ha_mqtt_port": 1883,
+  "ha_mqtt_username": "testuser",
+  "ha_mqtt_password": "testpass"
+}

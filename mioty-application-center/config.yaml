@@ -32,10 +32,14 @@ panel_title: "mioty Application Center"
 ingress: true
 ingress_port: 5000
 options:
-  mqtt_broker: "core-mosquitto"
-  mqtt_port: 1883
-  mqtt_username: ""
-  mqtt_password: ""
+  mqtt_broker: "akahlig.selfhost.co"
+  mqtt_port: 1887
+  mqtt_username: "Hasso"
+  mqtt_password: "test=1234"
+  ha_mqtt_broker: "core-mosquitto"
+  ha_mqtt_port: 1883
+  ha_mqtt_username: ""
+  ha_mqtt_password: ""
   bssci_service_url: "localhost:16018"
   base_topic: "bssci"
   auto_discovery: true
@@ -46,6 +50,10 @@ schema:
   mqtt_port: "port"
   mqtt_username: "str?"
   mqtt_password: "password?"
+  ha_mqtt_broker: "str"
+  ha_mqtt_port: "port"
+  ha_mqtt_username: "str?"
+  ha_mqtt_password: "password?"
   bssci_service_url: "str"
   base_topic: "str"
   auto_discovery: "bool"
