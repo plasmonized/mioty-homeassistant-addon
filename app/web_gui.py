@@ -615,18 +615,31 @@ class WebGUI:
     <script>
         // Base URL für API Calls (Ingress-kompatibel)
         const getBaseUrl = () => {
-            // Für Home Assistant Ingress
+            // Für Home Assistant Ingress - improved detection
             if (window.location.pathname.includes('/ingress/')) {
-                return window.location.origin + window.location.pathname.split('/ingress/')[0] + '/ingress/' + window.location.pathname.split('/ingress/')[1].split('/')[0];
+                const pathParts = window.location.pathname.split('/ingress/');
+                if (pathParts.length >= 2) {
+                    const addonId = pathParts[1].split('/')[0];
+                    return window.location.origin + pathParts[0] + '/ingress/' + addonId;
+                }
             }
             // Für direkte Verbindung
             return window.location.origin;
         };
         const BASE_URL = getBaseUrl();
+        console.log('BASE_URL detected:', BASE_URL);
+        console.log('Current pathname:', window.location.pathname);
+        console.log('Is embedded (iframe):', window.self !== window.top);
         
-        // Navigation function for ingress compatibility
+        // Simplified navigation for embedded mode
         const navigateTo = (path) => {
-            window.location.href = BASE_URL + path;
+            const fullUrl = BASE_URL + path;
+            console.log('Navigating to:', fullUrl);
+            console.log('Path requested:', path);
+            
+            // Simple approach - just use window.location.href
+            // This should work in both embedded and direct access
+            window.location.href = fullUrl;
         };
         
         // DOM Elemente
@@ -1122,18 +1135,31 @@ class WebGUI:
     <script>
         // BASE_URL detection for ingress compatibility
         const getBaseUrl = () => {
-            // Für Home Assistant Ingress
+            // Für Home Assistant Ingress - improved detection
             if (window.location.pathname.includes('/ingress/')) {
-                return window.location.origin + window.location.pathname.split('/ingress/')[0] + '/ingress/' + window.location.pathname.split('/ingress/')[1].split('/')[0];
+                const pathParts = window.location.pathname.split('/ingress/');
+                if (pathParts.length >= 2) {
+                    const addonId = pathParts[1].split('/')[0];
+                    return window.location.origin + pathParts[0] + '/ingress/' + addonId;
+                }
             }
             // Für direkte Verbindung
             return window.location.origin;
         };
         const BASE_URL = getBaseUrl();
+        console.log('BASE_URL detected:', BASE_URL);
+        console.log('Current pathname:', window.location.pathname);
+        console.log('Is embedded (iframe):', window.self !== window.top);
         
-        // Navigation function for ingress compatibility
+        // Simplified navigation for embedded mode
         const navigateTo = (path) => {
-            window.location.href = BASE_URL + path;
+            const fullUrl = BASE_URL + path;
+            console.log('Navigating to:', fullUrl);
+            console.log('Path requested:', path);
+            
+            // Simple approach - just use window.location.href
+            // This should work in both embedded and direct access
+            window.location.href = fullUrl;
         };
         
         // DOM Elemente
@@ -1386,18 +1412,31 @@ class WebGUI:
     <script>
         // BASE_URL detection for ingress compatibility
         const getBaseUrl = () => {
-            // Für Home Assistant Ingress
+            // Für Home Assistant Ingress - improved detection
             if (window.location.pathname.includes('/ingress/')) {
-                return window.location.origin + window.location.pathname.split('/ingress/')[0] + '/ingress/' + window.location.pathname.split('/ingress/')[1].split('/')[0];
+                const pathParts = window.location.pathname.split('/ingress/');
+                if (pathParts.length >= 2) {
+                    const addonId = pathParts[1].split('/')[0];
+                    return window.location.origin + pathParts[0] + '/ingress/' + addonId;
+                }
             }
             // Für direkte Verbindung
             return window.location.origin;
         };
         const BASE_URL = getBaseUrl();
+        console.log('BASE_URL detected:', BASE_URL);
+        console.log('Current pathname:', window.location.pathname);
+        console.log('Is embedded (iframe):', window.self !== window.top);
         
-        // Navigation function for ingress compatibility
+        // Simplified navigation for embedded mode
         const navigateTo = (path) => {
-            window.location.href = BASE_URL + path;
+            const fullUrl = BASE_URL + path;
+            console.log('Navigating to:', fullUrl);
+            console.log('Path requested:', path);
+            
+            // Simple approach - just use window.location.href
+            // This should work in both embedded and direct access
+            window.location.href = fullUrl;
         };
         
         const uploadForm = document.getElementById('uploadForm');
