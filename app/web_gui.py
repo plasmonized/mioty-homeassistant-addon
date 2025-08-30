@@ -64,6 +64,28 @@ class WebGUI:
             basestations = self.addon.get_basestation_list()
             return jsonify(basestations)
         
+        @self.app.route('/api/status')
+        def get_status():
+            """API: System- und Verbindungsstatus."""
+            if not self.addon:
+                return jsonify({"error": "Add-on nicht verfügbar"}), 500
+            
+            mqtt_connected = False
+            mqtt_broker = 'Unbekannt'
+            
+            if hasattr(self.addon, 'mqtt_manager') and self.addon.mqtt_manager:
+                mqtt_connected = self.addon.mqtt_manager.connected
+                mqtt_broker = f"{self.addon.mqtt_manager.broker}:{self.addon.mqtt_manager.port}"
+            
+            status = {
+                'mqtt_connected': mqtt_connected,
+                'mqtt_broker': mqtt_broker,
+                'sensor_count': len(self.addon.sensors) if hasattr(self.addon, 'sensors') else 0,
+                'basestation_count': len(self.addon.base_stations) if hasattr(self.addon, 'base_stations') else 0
+            }
+            
+            return jsonify(status)
+        
         @self.app.route('/api/sensor/add', methods=['POST'])
         def add_sensor():
             """API: Neuen Sensor hinzufügen."""
@@ -112,9 +134,20 @@ class WebGUI:
         @self.app.route('/api/settings')
         def get_settings():
             """API: Aktuelle Einstellungen abrufen."""
-            settings = self.settings.get_all_settings()
-            # Passwort aus Sicherheitsgründen nicht zurückgeben
-            settings['mqtt_password'] = '***' if settings.get('mqtt_password') else ''
+            # Aktuelle Laufzeit-Konfiguration vom Add-on abrufen
+            if self.addon and hasattr(self.addon, 'config'):
+                settings = {
+                    'mqtt_broker': self.addon.config.get('mqtt_broker', 'localhost'),
+                    'mqtt_port': self.addon.config.get('mqtt_port', 1883),
+                    'mqtt_username': self.addon.config.get('mqtt_username', ''),
+                    'mqtt_password': '***' if self.addon.config.get('mqtt_password') else '',
+                    'base_topic': self.addon.config.get('base_topic', 'bssci'),
+                    'auto_discovery': self.addon.config.get('auto_discovery', True)
+                }
+            else:
+                # Fallback zu gespeicherten Einstellungen
+                settings = self.settings.get_all_settings()
+                settings['mqtt_password'] = '***' if settings.get('mqtt_password') else ''
             return jsonify(settings)
         
         @self.app.route('/api/settings', methods=['POST'])
@@ -1158,6 +1191,14 @@ class WebGUI:
         // Verbindungsstatus laden
         async function loadConnectionStatus() {
             try {
+                const response = await fetch(BASE_URL + '/api/status');
+                const status = await response.json();
+                
+                const mqttColor = status.mqtt_connected ? '#28a745' : '#dc3545';
+                const mqttText = status.mqtt_connected ? 
+                    `MQTT: Verbunden (${status.mqtt_broker})` : 
+                    'MQTT: Getrennt';
+                
                 connectionStatus.innerHTML = `
                     <div style="padding: 20px; background: #f8f9fa; border-radius: 8px;">
                         <div style="display: flex; align-items: center; margin-bottom: 10px;">
@@ -1165,12 +1206,16 @@ class WebGUI:
                             <strong>Web-GUI: Online</strong>
                         </div>
                         <div style="display: flex; align-items: center; margin-bottom: 10px;">
-                            <div style="width: 12px; height: 12px; background: #dc3545; border-radius: 50%; margin-right: 10px;"></div>
-                            <strong>MQTT: Getrennt (Demo-Modus)</strong>
+                            <div style="width: 12px; height: 12px; background: ${mqttColor}; border-radius: 50%; margin-right: 10px;"></div>
+                            <strong>${mqttText}</strong>
                         </div>
                         <div style="display: flex; align-items: center;">
                             <div style="width: 12px; height: 12px; background: #ffc107; border-radius: 50%; margin-right: 10px;"></div>
-                            <strong>BSSCI Service: Nicht verfügbar (Demo)</strong>
+                            <strong>Sensoren aktiv: ${status.sensor_count || 0}</strong>
+                        </div>
+                        <div style="display: flex; align-items: center; margin-top: 10px;">
+                            <div style="width: 12px; height: 12px; background: #17a2b8; border-radius: 50%; margin-right: 10px;"></div>
+                            <strong>Base Stations: ${status.basestation_count || 0}</strong>
                         </div>
                     </div>
                 `;
@@ -1180,6 +1225,9 @@ class WebGUI:
                 console.error('Fehler:', error);
             }
         }
+        
+        // Auto-refresh für Verbindungsstatus
+        setInterval(loadConnectionStatus, 5000); // Alle 5 Sekunden
         
         // Initialisierung
         document.addEventListener('DOMContentLoaded', () => {
