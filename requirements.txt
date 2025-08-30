@@ -1,8 +1,0 @@
-# BSSCI mioty Add-on Python Requirements
-paho-mqtt>=1.6.0
-flask>=2.3.0
-flask-cors>=4.0.0
-requests>=2.31.0
-websockets>=11.0.0
-msgpack>=1.0.0
-schedule>=1.2.0
