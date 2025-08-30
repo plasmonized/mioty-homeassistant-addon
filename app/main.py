@@ -187,7 +187,10 @@ class BSSCIAddon:
         
         # Home Assistant Discovery für Base Station
         if self.config['auto_discovery']:
-            self.create_basestation_discovery(bs_eui, data)
+            try:
+                self.create_basestation_discovery(bs_eui, data)
+            except AttributeError:
+                logging.debug(f"Base Station Discovery für {bs_eui} übersprungen")
         
         # Sensor registrieren
         if sensor_eui not in self.sensors:
