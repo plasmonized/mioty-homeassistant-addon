@@ -80,6 +80,7 @@ class BSSCIAddon:
             )
             self.mqtt_manager.set_data_callback(self.handle_sensor_data)
             self.mqtt_manager.set_config_callback(self.handle_sensor_config)
+            self.mqtt_manager.set_base_station_callback(self.handle_base_station_data)
             
             # BSSCI Client starten (optional, falls direkter Zugriff gewünscht)
             # self.bssci_client = BSSCIClient(self.config['bssci_service_url'])
@@ -172,6 +173,21 @@ class BSSCIAddon:
         
         # Hier würde die Konfiguration an das BSSCI Service Center weitergeleitet
         # Da wir über MQTT kommunizieren, nehmen wir an, dass das bereits geschehen ist
+    
+    def handle_base_station_data(self, bs_eui: str, data: Dict[str, Any]):
+        """Verarbeite Base Station Status-Daten."""
+        logging.info(f"Base Station Status empfangen von {bs_eui}")
+        
+        # Base Station Daten speichern
+        self.base_stations[bs_eui] = {
+            'last_seen': time.time(),
+            'data': data,
+            'status': 'online' if data else 'offline'
+        }
+        
+        # Home Assistant Discovery für Base Station
+        if self.config['auto_discovery']:
+            self.create_basestation_discovery(bs_eui, data)
         
         # Sensor registrieren
         if sensor_eui not in self.sensors:
