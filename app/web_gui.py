@@ -414,6 +414,38 @@ class WebGUI:
         .header h1 {
             font-size: 2.5em;
             margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .logo-icon {
+            font-size: 0.8em;
+            background: rgba(255,255,255,0.2);
+            padding: 10px 12px;
+            border-radius: 50%;
+            backdrop-filter: blur(10px);
+        }
+        
+        .nav-icon {
+            font-size: 1.2em;
+            margin-right: 8px;
+            opacity: 0.8;
+        }
+        
+        .section-icon {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+            color: white;
+            text-align: center;
+            line-height: 24px;
+            border-radius: 50%;
+            margin-right: 12px;
+            font-size: 14px;
+            font-weight: bold;
         }
         
         .header p {
@@ -597,14 +629,14 @@ class WebGUI:
 <body>
     <div class="container">
         <div class="header">
-            <h1>🚀 mioty Application Center</h1>
+            <h1><span class="logo-icon">⚡</span> mioty Application Center</h1>
             <p>für Home Assistant</p>
         </div>
         
         <div class="nav">
-            <a id="nav-sensors" href="#" class="nav-item active" onclick="navigateTo('/')">📊 Sensoren</a>
-            <a id="nav-decoders" href="#" class="nav-item" onclick="navigateTo('/decoders')">📝 Decoder</a>
-            <a id="nav-settings" href="#" class="nav-item" onclick="navigateTo('/settings')">⚙️ Einstellungen</a>
+            <a id="nav-sensors" href="#" class="nav-item active" onclick="navigateTo('/')"><span class="nav-icon">●</span> Sensoren</a>
+            <a id="nav-decoders" href="#" class="nav-item" onclick="navigateTo('/decoders')"><span class="nav-icon">◆</span> Decoder</a>
+            <a id="nav-settings" href="#" class="nav-item" onclick="navigateTo('/settings')"><span class="nav-icon">▲</span> Einstellungen</a>
         </div>
         
         <div class="content">
@@ -612,7 +644,7 @@ class WebGUI:
             
             <!-- Sensor hinzufügen -->
             <div class="section">
-                <h2>📡 Neuen Sensor hinzufügen</h2>
+                <h2><span class="section-icon">+</span> Neuen Sensor hinzufügen</h2>
                 <form id="addSensorForm">
                     <div class="form-group">
                         <label for="sensor_eui">Sensor EUI (16 Hex-Zeichen):</label>
@@ -642,13 +674,13 @@ class WebGUI:
             
             <!-- Sensor-Liste -->
             <div class="section">
-                <h2>📊 Registrierte Sensoren</h2>
+                <h2><span class="section-icon">●</span> Registrierte Sensoren</h2>
                 <div id="sensorList" class="loading">Lade Sensoren...</div>
             </div>
             
             <!-- Base Station Status -->
             <div class="section">
-                <h2>🏗️ Base Stations</h2>
+                <h2><span class="section-icon">■</span> Base Stations</h2>
                 <div id="baseStationList" class="loading">Lade Base Stations...</div>
             </div>
         </div>
@@ -989,6 +1021,38 @@ class WebGUI:
         .header h1 {
             font-size: 2.5em;
             margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .logo-icon {
+            font-size: 0.8em;
+            background: rgba(255,255,255,0.2);
+            padding: 10px 12px;
+            border-radius: 50%;
+            backdrop-filter: blur(10px);
+        }
+        
+        .nav-icon {
+            font-size: 1.2em;
+            margin-right: 8px;
+            opacity: 0.8;
+        }
+        
+        .section-icon {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+            color: white;
+            text-align: center;
+            line-height: 24px;
+            border-radius: 50%;
+            margin-right: 12px;
+            font-size: 14px;
+            font-weight: bold;
         }
         
         .header p {
@@ -1096,7 +1160,7 @@ class WebGUI:
 <body>
     <div class="container">
         <div class="header">
-            <h1>⚙️ mioty Application Center</h1>
+            <h1><span class="logo-icon">⚡</span> mioty Application Center</h1>
             <p>Einstellungen</p>
         </div>
         
