@@ -186,10 +186,22 @@ class BSSCIAddon:
                 if decoded_result.get('decoded'):
                     decoded_payload = decoded_result
                     logging.info(f"✅ Payload für {sensor_eui} erfolgreich dekodiert")
-                    logging.info(f"🔍 Dekodierte Daten: {json.dumps(decoded_result.get('data', {}), indent=2)}")
+                    logging.info(f"🔧 Decoder: {decoded_result.get('decoder_name', 'Unknown')}")
+                    
+                    # Saubere Darstellung der decodierten Daten
+                    decoded_data = decoded_result.get('data', {})
+                    if decoded_data:
+                        logging.info("📊 Dekodierte Daten:")
+                        for key, value in decoded_data.items():
+                            if isinstance(value, dict):
+                                logging.info(f"   {key}: {json.dumps(value, separators=(',', ':'))}")
+                            else:
+                                logging.info(f"   {key}: {value}")
+                    else:
+                        logging.info("📊 Dekodierte Daten: (leer)")
                 else:
                     logging.warning(f"❌ Payload für {sensor_eui} nicht dekodiert: {decoded_result.get('reason', 'Unknown')}")
-                    logging.info(f"Raw Payload Hex: {payload_bytes}")
+                    logging.info(f"🔍 Raw Payload Hex: {payload_bytes}")
             except Exception as e:
                 logging.error(f"Fehler beim Dekodieren von Sensor {sensor_eui}: {e}")
                 logging.info(f"Problematischer Raw Payload: {raw_payload}")
