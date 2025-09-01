@@ -346,6 +346,10 @@ try {{
         # Fallback: Einfache Pattern-Matching für häufige Sentinum-Muster
         logging.warning("Node.js nicht verfügbar, verwende vereinfachte JS Dekodierung")
         
+        # Prüfe auf Febris-Decoder basierend auf JS-Content
+        if 'febris' in js_content.lower() or 'base_id' in js_content:
+            return self._decode_febris_python(payload_bytes, metadata)
+        
         # Suche nach Temperatur/Humidity Pattern
         temp_pattern = r'temperature.*?(\d+(?:\.\d+)?)'
         humidity_pattern = r'humidity.*?(\d+(?:\.\d+)?)'
@@ -382,6 +386,147 @@ try {{
             'raw_data': payload_bytes,
             'warning': 'Simplified decoding used (Node.js not available)'
         }
+    
+    def _decode_febris_python(self, payload_bytes: List[int], metadata: Dict[str, Any]) -> Dict[str, Any]:
+        """Python-Implementierung des Febris TH Decoders."""
+        try:
+            bytes_data = payload_bytes
+            decoded = {}
+            
+            # Decode header
+            decoded['base_id'] = bytes_data[0] >> 4
+            decoded['major_version'] = bytes_data[0] & 0x0F
+            decoded['minor_version'] = bytes_data[1] >> 4
+            decoded['product_version'] = bytes_data[1] & 0x0F
+            decoded['up_cnt'] = bytes_data[2]
+            decoded['battery_voltage'] = ((bytes_data[3] << 8) | bytes_data[4]) / 1000.0
+            decoded['internal_temperature'] = ((bytes_data[5] << 8) | bytes_data[6]) / 10.0 - 100.0
+            
+            it = 7
+            
+            if decoded['minor_version'] >= 3:
+                # Luftfeuchte ist bei allen Varianten enthalten  
+                decoded['humidity'] = bytes_data[it]
+                it += 1
+                
+                if decoded['product_version'] & 0x01:  # Co2 und Druck enthalten
+                    decoded['pressure'] = (bytes_data[it] << 8) | bytes_data[it + 1]
+                    it += 2
+                    decoded['co2_ppm'] = (bytes_data[it] << 8) | bytes_data[it + 1]
+                    it += 2
+                else:
+                    it += 4  # Werte überspringen
+                
+                decoded['alarm'] = bytes_data[it]
+                it += 1
+                
+                # FIFO Werte wegwerfen
+                fifo_size = bytes_data[it] if it < len(bytes_data) else 0
+                it += 2 + fifo_size * 7
+                
+                # Taupunkt
+                if it + 1 < len(bytes_data):
+                    decoded['dew_point'] = ((bytes_data[it] << 8) | bytes_data[it + 1]) / 10.0 - 100.0
+                    it += 2
+                
+                # Wandtemperatur und Feuchte
+                if decoded['product_version'] & 0x04:
+                    if it + 4 < len(bytes_data):
+                        decoded['wall_temperature'] = ((bytes_data[it] << 8) | bytes_data[it + 1]) / 10.0 - 100.0
+                        it += 2
+                        decoded['therm_temperature'] = ((bytes_data[it] << 8) | bytes_data[it + 1]) / 10.0 - 100.0
+                        it += 2
+                        decoded['wall_humidity'] = bytes_data[it]
+                        it += 1
+                        
+            # Konvertiere zu erwartetes Format
+            formatted_data = {}
+            
+            if 'battery_voltage' in decoded:
+                formatted_data['battery_voltage'] = {
+                    'value': round(decoded['battery_voltage'], 2),
+                    'unit': 'V',
+                    'description': 'Battery Voltage'
+                }
+                
+            if 'humidity' in decoded:
+                formatted_data['humidity'] = {
+                    'value': round(decoded['humidity'], 1),
+                    'unit': '%RH',
+                    'description': 'Relative Humidity'
+                }
+                
+            if 'base_id' in decoded:
+                formatted_data['base_id'] = {
+                    'value': decoded['base_id'],
+                    'unit': '',
+                    'description': 'Base ID'
+                }
+                
+            if 'major_version' in decoded:
+                formatted_data['major_version'] = {
+                    'value': decoded['major_version'],
+                    'unit': '',
+                    'description': 'Major Version'
+                }
+                
+            if 'minor_version' in decoded:
+                formatted_data['minor_version'] = {
+                    'value': decoded['minor_version'],
+                    'unit': '',
+                    'description': 'Minor Version'
+                }
+                
+            if 'product_version' in decoded:
+                formatted_data['product_version'] = {
+                    'value': decoded['product_version'],
+                    'unit': '',
+                    'description': 'Product Version'
+                }
+                
+            if 'up_cnt' in decoded:
+                formatted_data['up_cnt'] = {
+                    'value': decoded['up_cnt'],
+                    'unit': '',
+                    'description': 'Up Count'
+                }
+                
+            if 'internal_temperature' in decoded:
+                formatted_data['internal_temperature'] = {
+                    'value': round(decoded['internal_temperature'], 1),
+                    'unit': '°C',
+                    'description': 'Internal Temperature'
+                }
+                
+            if 'alarm' in decoded:
+                formatted_data['alarm'] = {
+                    'value': decoded['alarm'],
+                    'unit': '',
+                    'description': 'Alarm'
+                }
+                
+            if 'dew_point' in decoded:
+                formatted_data['dew_point'] = {
+                    'value': round(decoded['dew_point'], 1),
+                    'unit': '°C',
+                    'description': 'Dew Point'
+                }
+            
+            return {
+                'decoded': True,
+                'decoder_type': 'febris_python',
+                'decoder_name': 'Febris TH (Python)',
+                'data': formatted_data,
+                'raw_data': payload_bytes
+            }
+            
+        except Exception as e:
+            logging.error(f"Fehler beim Febris Python Decoding: {e}")
+            return {
+                'decoded': False,
+                'reason': f'Febris Python decoding error: {str(e)}',
+                'raw_data': payload_bytes
+            }
     
     def get_available_decoders(self) -> Dict[str, Any]:
         """Gib alle verfügbaren Decoder zurück."""
