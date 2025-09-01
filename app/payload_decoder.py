@@ -708,8 +708,22 @@ try {{
             temp_raw = (bytes_data[5] << 8) | bytes_data[6]
             data['internal_temperature'] = (temp_raw / 10.0) - 100.0
             
-            # Bytes 7-8: Relative Humidity (0.01% RH)
-            data['humidity'] = ((bytes_data[7] << 8) | bytes_data[8]) / 100.0
+            # Bytes 7-8: Relative Humidity (DEBUGGING)
+            print(f"🔍 CRITICAL DEBUG - Byte 7: {hex(bytes_data[7])} = {bytes_data[7]}")
+            print(f"🔍 CRITICAL DEBUG - Byte 8: {hex(bytes_data[8])} = {bytes_data[8]}")
+            humidity_raw = (bytes_data[7] << 8) | bytes_data[8]
+            print(f"🔍 CRITICAL DEBUG - Raw: {humidity_raw}, Result: {humidity_raw / 100.0}%RH")
+            print(f"🔍 ERWARTET: 51.0%RH - REAL: {humidity_raw / 100.0}%RH")
+            
+            # VERSUCH: Andere Byte-Interpretation
+            alt_humidity1 = bytes_data[7]  # Nur Byte 7
+            alt_humidity2 = bytes_data[8]  # Nur Byte 8  
+            alt_humidity3 = (bytes_data[8] << 8) | bytes_data[7]  # Vertauscht
+            print(f"🧪 ALT1 (nur Byte7): {alt_humidity1}%RH")
+            print(f"🧪 ALT2 (nur Byte8): {alt_humidity2}%RH") 
+            print(f"🧪 ALT3 (vertauscht): {alt_humidity3 / 100.0}%RH")
+            
+            data['humidity'] = humidity_raw / 100.0
             
             # Alarm Status (falls verfügbar)
             if len(bytes_data) > 14:
