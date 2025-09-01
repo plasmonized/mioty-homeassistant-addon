@@ -1,8 +1,8 @@
 {
   "sensor_decoders": {
     "fca84a090000000a": {
-      "decoder_name": "juno_th",
-      "assigned_at": 1756729886.8589268
+      "decoder_name": "environmental_sensor",
+      "assigned_at": 1756731340.3329778
     },
     "fca84a030000127c": {
       "decoder_name": "febris_th",
@@ -101,6 +101,34 @@
       "description": "Sentinum JavaScript Decoder",
       "supported_devices": [],
       "created_at": 1756716940.7003171
+    },
+    "decoder_registry": {
+      "type": "blueprint",
+      "file_path": "decoders/decoder_registry.json",
+      "name": "decoder_registry",
+      "version": "1.0",
+      "description": "mioty Blueprint Decoder",
+      "supported_devices": [],
+      "payload_format": {},
+      "created_at": 1756729897.2725554
+    },
+    "temp_humidity_sentinum": {
+      "type": "javascript",
+      "file_path": "decoders/temp_humidity_sentinum.js",
+      "name": "Sentinum Temperature Humidity Decoder",
+      "version": "1.0",
+      "description": "Decodes temperature and humidity sensor data",
+      "supported_devices": [],
+      "created_at": 1756729993.7804954
+    },
+    "environmental_sensor": {
+      "type": "javascript",
+      "file_path": "decoders/environmental_sensor.js",
+      "name": "Environmental Sensor Decoder",
+      "version": "1.0",
+      "description": "Decoder f\u00fcr Environmental Sensor (FCA84A090000000A Format)",
+      "supported_devices": [],
+      "created_at": 1756731323.1806304
     }
   }
 }
