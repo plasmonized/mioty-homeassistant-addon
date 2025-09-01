@@ -1018,10 +1018,10 @@ try {{
             data['vendor_id'] = vendor_id
             data['vendor_id_hex'] = f"0x{vendor_id:04X}"
             
-            # Bytes 4-6: Device ID (3 Bytes, Little-Endian, letztes Byte ignorieren!)
-            # Beispiel: 00 01 73 00 -> nehme 01 73 -> Little-Endian: 73 01 = 371
+            # Bytes 4-6: Device ID (3 Bytes, Big-Endian, letztes Byte ignorieren!)
+            # Korrektur: Device ID ist ebenfalls Big-Endian wie Vendor ID
             device_id_bytes = bytes_data[5:7]  # Bytes 5-6 (Skip Byte 4 = 0x00)
-            device_id = device_id_bytes[0] | (device_id_bytes[1] << 8)  # Little-Endian
+            device_id = (device_id_bytes[0] << 8) | device_id_bytes[1]  # Big-Endian
             data['device_id'] = device_id
             data['device_id_hex'] = f"0x{device_id:04X}"
             
@@ -1030,7 +1030,7 @@ try {{
             logging.info(f"📱 Device ID: {device_id} (0x{device_id:04X})")
             logging.info(f"📊 PD-in: {pd_in_length} bytes")
             logging.info(f"🔧 Bytes 2-3 (Vendor): {bytes_data[2]:02X} {bytes_data[3]:02X}")
-            logging.info(f"🔧 Bytes 5-6 (Device): {bytes_data[5]:02X} {bytes_data[6]:02X} (Little-Endian)")
+            logging.info(f"🔧 Bytes 5-6 (Device): {bytes_data[5]:02X} {bytes_data[6]:02X} (Big-Endian)")
             
             # Prozessdaten extrahieren (falls vorhanden)
             pd_start_index = 7  # Nach dem korrigierten Header (nicht mehr 9!)
@@ -1106,10 +1106,10 @@ try {{
                     'raw_data': payload_bytes
                 }
             
-            # Extrahiere Vendor/Device ID aus Payload
+            # Extrahiere Vendor/Device ID aus Payload (beide Big-Endian)
             vendor_id = (payload_bytes[2] << 8) | payload_bytes[3]
             device_id_bytes = payload_bytes[5:7]
-            device_id = device_id_bytes[0] | (device_id_bytes[1] << 8)
+            device_id = (device_id_bytes[0] << 8) | device_id_bytes[1]
             
             logging.info(f"🔗 IODD-Dekodierung für Vendor {vendor_id} (0x{vendor_id:04X}), Device {device_id} (0x{device_id:04X})")
             
