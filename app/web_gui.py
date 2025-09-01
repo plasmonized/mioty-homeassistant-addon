@@ -1803,5 +1803,14 @@ class WebGUI:
             setInterval(loadDecoders, 30000);
         });
     </script>
+    
+    <!-- Sentinum Engine Credit -->
+    <div style="position: fixed; bottom: 10px; right: 15px; opacity: 0.6; font-size: 11px; color: #666; z-index: 1000; display: flex; align-items: center; background: rgba(255,255,255,0.9); padding: 4px 8px; border-radius: 12px; backdrop-filter: blur(5px); border: 1px solid rgba(255,107,53,0.2);">
+        <svg width="14" height="14" viewBox="0 0 24 24" style="margin-right: 4px; fill: #ff6b35;">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+        </svg>
+        <span style="font-weight: 500;">powered by</span>
+        <span style="margin-left: 3px; font-weight: 600; color: #ff6b35;">sentinum</span>
+    </div>
 </body>
 </html>'''
