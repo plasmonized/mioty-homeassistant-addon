@@ -34,7 +34,7 @@ LABEL \
     io.hass.description="mioty Application Center für die Verwaltung von mioty IoT Sensoren" \
     io.hass.arch="armhf|aarch64|amd64|armv7|i386" \
     io.hass.type="addon" \
-    io.hass.version="1.0.0"
+    io.hass.version="1.0.1"
 
 # Run
 CMD ["/run.sh"]

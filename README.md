@@ -573,7 +573,7 @@ Dieses Projekt steht unter der MIT-Lizenz. Siehe LICENSE Datei für Details.
 
 ---
 
-**Version:** 1.0.3  
+**Version:** 1.0.4  
 **Letzte Aktualisierung:** 30. August 2025  
 **Kompatibilität:** Home Assistant 2023.1.0+, BSSCI v1.0.0.0+  
 **Sprachen:** Deutsch (primär), Englisch (geplant)
