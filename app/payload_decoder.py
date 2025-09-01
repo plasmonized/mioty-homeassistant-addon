@@ -644,6 +644,8 @@ try {{
                 return self._decode_febris_sentinum(payload_bytes, metadata)
             elif 'juno' in js_content.lower():
                 return self._decode_juno_sentinum(payload_bytes, metadata)
+            elif sensor_type == 'IO-Link-Adapter':
+                return self._decode_iolink_adapter(payload_bytes, metadata)
             elif sensor_type == 'FEBR-Environmental':
                 return self._decode_febris_sentinum(payload_bytes, metadata)
             else:
@@ -670,6 +672,13 @@ try {{
         # Febris Utility (12+ bytes)
         if len(payload_bytes) >= 12 and 0x10 <= payload_bytes[0] <= 0x1F:
             return 'FEBR-Utility'
+            
+        # IO-Link Adapter Erkennung (mindestens 9 Bytes für Header)
+        if len(payload_bytes) >= 9:
+            control_byte = payload_bytes[0]
+            # IO-Link Format erkennen: Control Bits pattern prüfen
+            if (control_byte & 0x01) != 0:  # Control Bit 0 = 1
+                return 'IO-Link-Adapter'
         
         # Juno-ähnliche Sensoren
         if len(payload_bytes) >= 6 and payload_bytes[0] <= 0x0F:
@@ -708,21 +717,8 @@ try {{
             temp_raw = (bytes_data[5] << 8) | bytes_data[6]
             data['internal_temperature'] = (temp_raw / 10.0) - 100.0
             
-            # Bytes 7-8: Relative Humidity (DEBUGGING)
-            print(f"🔍 CRITICAL DEBUG - Byte 7: {hex(bytes_data[7])} = {bytes_data[7]}")
-            print(f"🔍 CRITICAL DEBUG - Byte 8: {hex(bytes_data[8])} = {bytes_data[8]}")
+            # Bytes 7-8: Relative Humidity (0.01% RH)
             humidity_raw = (bytes_data[7] << 8) | bytes_data[8]
-            print(f"🔍 CRITICAL DEBUG - Raw: {humidity_raw}, Result: {humidity_raw / 100.0}%RH")
-            print(f"🔍 ERWARTET: 51.0%RH - REAL: {humidity_raw / 100.0}%RH")
-            
-            # VERSUCH: Andere Byte-Interpretation
-            alt_humidity1 = bytes_data[7]  # Nur Byte 7
-            alt_humidity2 = bytes_data[8]  # Nur Byte 8  
-            alt_humidity3 = (bytes_data[8] << 8) | bytes_data[7]  # Vertauscht
-            print(f"🧪 ALT1 (nur Byte7): {alt_humidity1}%RH")
-            print(f"🧪 ALT2 (nur Byte8): {alt_humidity2}%RH") 
-            print(f"🧪 ALT3 (vertauscht): {alt_humidity3 / 100.0}%RH")
-            
             data['humidity'] = humidity_raw / 100.0
             
             # Alarm Status (falls verfügbar)
@@ -801,6 +797,115 @@ try {{
             result['decoder_type'] = 'sentinum_juno'
             result['decoder_name'] = 'Juno TH (Sentinum Engine)'
         return result
+    
+    def _decode_iolink_adapter(self, payload_bytes: List[int], metadata: Dict[str, Any]) -> Dict[str, Any]:
+        """Professionelle IO-Link Adapter Dekodierung mit Vendor/Device-ID Extraktion."""
+        try:
+            if len(payload_bytes) < 9:
+                return {
+                    'decoded': False,
+                    'reason': 'Payload zu kurz für IO-Link Adapter (mindestens 9 Bytes erforderlich)',
+                    'raw_data': payload_bytes
+                }
+            
+            bytes_data = payload_bytes
+            data = {}
+            
+            # Byte 0: Control Byte (verschiedene Control Bits)
+            control_byte = bytes_data[0]
+            data['control_byte'] = control_byte
+            data['control_bit_0'] = (control_byte & 0x01) != 0
+            data['control_bit_1'] = (control_byte & 0x02) != 0
+            data['control_bit_2'] = (control_byte & 0x04) != 0
+            data['control_bit_3'] = (control_byte & 0x08) != 0
+            
+            # Byte 1: PD-in length
+            pd_in_length = bytes_data[1]
+            data['pd_in_length'] = pd_in_length
+            
+            # Byte 2: PD-out length  
+            pd_out_length = bytes_data[2]
+            data['pd_out_length'] = pd_out_length
+            
+            # Bytes 3-4: Vendor ID (2 Bytes, Big Endian)
+            vendor_id = (bytes_data[3] << 8) | bytes_data[4]
+            data['vendor_id'] = vendor_id
+            data['vendor_id_hex'] = f"0x{vendor_id:04X}"
+            
+            # Bytes 5-8: Device ID (4 Bytes, aber letztes Byte ignorieren!)
+            # Bug-Fix: 0x00 01 73 -> ignore 0x00, take 01 73 -> 0x173 = 371
+            device_id_raw = bytes_data[5:8]  # Nur die ersten 3 Bytes nehmen
+            device_id = (device_id_raw[0] << 16) | (device_id_raw[1] << 8) | device_id_raw[2]
+            data['device_id'] = device_id
+            data['device_id_hex'] = f"0x{device_id:06X}"
+            
+            logging.info(f"🔗 IO-LINK ADAPTER ERKANNT!")
+            logging.info(f"🏭 Vendor ID: {vendor_id} (0x{vendor_id:04X})")
+            logging.info(f"📱 Device ID: {device_id} (0x{device_id:06X})")
+            logging.info(f"📊 PD-in: {pd_in_length} bytes, PD-out: {pd_out_length} bytes")
+            
+            # Prozessdaten extrahieren (falls vorhanden)
+            pd_start_index = 9  # Nach dem Header
+            if len(bytes_data) > pd_start_index:
+                pd_length = pd_in_length + pd_out_length
+                if len(bytes_data) >= pd_start_index + pd_length:
+                    process_data = bytes_data[pd_start_index:pd_start_index + pd_length]
+                    data['process_data'] = process_data
+                    data['process_data_hex'] = ' '.join([f"{b:02X}" for b in process_data])
+            
+            # Event Daten (falls vorhanden - letzte 4 Bytes)
+            if len(bytes_data) >= 4:
+                event_data = bytes_data[-4:-1]  # Letzte 3 Bytes für Event
+                adapter_event = bytes_data[-1]   # Letztes Byte für Adapter Event
+                data['event_data'] = event_data
+                data['adapter_event'] = adapter_event
+            
+            # Konvertiere zu erwartetes Format
+            formatted_data = {}
+            
+            for key, value in data.items():
+                # Bestimme Einheit und Beschreibung
+                unit = ''
+                description = key.replace('_', ' ').title()
+                
+                if key == 'vendor_id':
+                    description = 'Vendor ID'
+                elif key == 'device_id':
+                    description = 'Device ID'
+                elif key == 'vendor_id_hex':
+                    description = 'Vendor ID (Hex)'
+                elif key == 'device_id_hex':
+                    description = 'Device ID (Hex)'
+                elif 'length' in key:
+                    unit = 'bytes'
+                elif 'process_data' in key:
+                    description = 'Process Data'
+                    unit = 'hex'
+                
+                formatted_data[key] = {
+                    'value': value,
+                    'unit': unit,
+                    'description': description
+                }
+            
+            return {
+                'decoded': True,
+                'decoder_type': 'iolink_adapter',
+                'decoder_name': 'IO-Link Adapter (mioty)',
+                'data': formatted_data,
+                'raw_data': payload_bytes,
+                'vendor_id': vendor_id,
+                'device_id': device_id,
+                'ioddfinder_url': f"https://ioddfinder.com/devices?vendor={vendor_id}&device={device_id}"
+            }
+            
+        except Exception as e:
+            logging.error(f"IO-Link Adapter Dekodierung fehlgeschlagen: {e}")
+            return {
+                'decoded': False,
+                'reason': f'IO-Link decode error: {str(e)}',
+                'raw_data': payload_bytes
+            }
     
     def _decode_generic_sentinum(self, payload_bytes: List[int], metadata: Dict[str, Any], 
                                 sensor_type: str) -> Dict[str, Any]:
