@@ -13,8 +13,8 @@
       "assigned_at": 1756734487.0
     },
     "74731d0000000016": {
-      "decoder_name": "juno_th",
-      "assigned_at": 1756734487.0
+      "decoder_name": "ifm-000173-20160824-IODD1.0.1-de",
+      "assigned_at": 1756737106.0459278
     }
   },
   "decoder_files": {
@@ -71,6 +71,23 @@
       "description": "Sentinum JavaScript Decoder",
       "supported_devices": [],
       "created_at": 1756716940.7003171
+    },
+    "ifm-000173-20160824-IODD1.0.1-de": {
+      "type": "iodd",
+      "file_path": "decoders/ifm-000173-20160824-IODD1.0.1-de.xml",
+      "name": "Unknown Unknown",
+      "version": "1.0",
+      "description": "IODD f\u00fcr Unknown Unknown (VID:0, DID:0)",
+      "vendor_id": 0,
+      "device_id": 0,
+      "vendor_name": "Unknown",
+      "device_name": "Unknown",
+      "payload_length": 0,
+      "data_fields": [],
+      "supported_devices": [
+        "VID_0_DID_0"
+      ],
+      "created_at": 1756737073.7187343
     }
   }
 }

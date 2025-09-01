@@ -283,6 +283,14 @@ class PayloadDecoder:
                 return self._decode_with_blueprint(decoder_info, payload_bytes, metadata)
             elif decoder_info['type'] == 'javascript':
                 return self._decode_with_javascript(decoder_info, payload_bytes, metadata)
+            elif decoder_info['type'] == 'iodd':
+                return self._decode_with_iodd(decoder_info, payload_bytes, metadata)
+            else:
+                return {
+                    'decoded': False,
+                    'reason': f'Unsupported decoder type: {decoder_info["type"]}',
+                    'raw_data': payload_bytes
+                }
         except Exception as e:
             logging.error(f"Fehler beim Dekodieren für Sensor {sensor_eui}: {e}")
             return {
@@ -995,6 +1003,211 @@ try {{
                 'reason': f'IO-Link decode error: {str(e)}',
                 'raw_data': payload_bytes
             }
+    
+    def _decode_with_iodd(self, decoder_info: Dict[str, Any], 
+                         payload_bytes: List[int], metadata: Dict[str, Any]) -> Dict[str, Any]:
+        """Dekodiere mit IODD (IO Device Description) für IO-Link Sensoren."""
+        try:
+            # Zuerst IO-Link Adapter Informationen extrahieren
+            if len(payload_bytes) < 9:
+                return {
+                    'decoded': False,
+                    'reason': 'Payload zu kurz für IO-Link IODD (mindestens 9 Bytes erforderlich)',
+                    'raw_data': payload_bytes
+                }
+            
+            # Extrahiere Vendor/Device ID aus Payload
+            vendor_id = (payload_bytes[2] << 8) | payload_bytes[3]
+            device_id_bytes = payload_bytes[5:7]
+            device_id = device_id_bytes[0] | (device_id_bytes[1] << 8)
+            
+            logging.info(f"🔗 IODD-Dekodierung für Vendor {vendor_id} (0x{vendor_id:04X}), Device {device_id} (0x{device_id:04X})")
+            
+            # Zuerst die IO-Link Adapter-Basisdaten dekodieren
+            base_result = self._decode_iolink_adapter(payload_bytes, metadata)
+            if not base_result.get('decoded', False):
+                return base_result
+            
+            # IODD-Datei analysieren für zusätzliche Prozessdaten
+            iodd_data = self._parse_iodd_process_data(decoder_info, payload_bytes, vendor_id, device_id)
+            
+            # Kombiniere Basisdaten mit IODD-Prozessdaten
+            combined_data = base_result['data'].copy()
+            if iodd_data:
+                combined_data.update(iodd_data)
+            
+            return {
+                'decoded': True,
+                'decoder_type': 'iodd',
+                'decoder_name': f"IO-Link IODD (Vendor {vendor_id}, Device {device_id})",
+                'iodd_info': {
+                    'vendor_id': vendor_id,
+                    'device_id': device_id,
+                    'iodd_file': decoder_info.get('filename', 'unknown')
+                },
+                'data': combined_data,
+                'raw_data': payload_bytes
+            }
+            
+        except Exception as e:
+            logging.error(f"IODD Dekodierung fehlgeschlagen: {e}")
+            return {
+                'decoded': False,
+                'reason': f'IODD decode error: {str(e)}',
+                'raw_data': payload_bytes
+            }
+    
+    def _parse_iodd_process_data(self, decoder_info: Dict[str, Any], 
+                                payload_bytes: List[int], vendor_id: int, device_id: int) -> Dict[str, Any]:
+        """Parse IODD XML-Datei und dekodiere Prozessdaten entsprechend der Definition."""
+        try:
+            import xml.etree.ElementTree as ET
+            
+            # IODD-Datei laden
+            iodd_file_path = self.decoder_dir / decoder_info['filename']
+            if not iodd_file_path.exists():
+                logging.warning(f"IODD-Datei nicht gefunden: {iodd_file_path}")
+                return {}
+            
+            # XML parsen
+            tree = ET.parse(iodd_file_path)
+            root = tree.getroot()
+            
+            # Namespace handling für IODD
+            namespaces = {
+                'iodd': 'http://www.io-link.com/IODD/2010/10'
+            }
+            
+            # Prozessdaten-Start-Index (nach IO-Link Header)
+            pd_start_index = 7
+            pd_length = payload_bytes[1] if len(payload_bytes) > 1 else 0
+            
+            if len(payload_bytes) < pd_start_index + pd_length:
+                logging.warning(f"Nicht genügend Prozessdaten: erwartet {pd_length}, verfügbar {len(payload_bytes) - pd_start_index}")
+                return {}
+            
+            process_data = payload_bytes[pd_start_index:pd_start_index + pd_length]
+            
+            # IODD ProcessDataIn auslesen
+            process_data_in = root.find('.//iodd:ProcessDataIn', namespaces)
+            if process_data_in is None:
+                process_data_in = root.find('.//ProcessDataIn')  # Fallback ohne Namespace
+            
+            parsed_data = {}
+            
+            if process_data_in is not None:
+                # Bitlänge ermitteln
+                bit_length = process_data_in.get('bitLength', '0')
+                try:
+                    total_bits = int(bit_length)
+                    expected_bytes = (total_bits + 7) // 8  # Aufrunden auf Bytes
+                    
+                    logging.info(f"📋 IODD ProcessDataIn: {total_bits} Bits ({expected_bytes} Bytes), verfügbar: {len(process_data)} Bytes")
+                    
+                    # Prozessdaten mit IODD-Definition dekodieren
+                    if len(process_data) >= expected_bytes:
+                        parsed_data.update(self._decode_iodd_structured_data(process_data_in, process_data, namespaces))
+                    else:
+                        logging.warning(f"Prozessdaten zu kurz: {len(process_data)} < {expected_bytes}")
+                        
+                except ValueError:
+                    logging.warning(f"Ungültige bitLength in IODD: {bit_length}")
+            
+            # Falls keine strukturierte Daten gefunden, generische Dekodierung
+            if not parsed_data:
+                for i, byte_val in enumerate(process_data):
+                    parsed_data[f'process_byte_{i}'] = {
+                        'value': byte_val,
+                        'unit': 'hex',
+                        'description': f'Process Data Byte {i}'
+                    }
+            
+            return parsed_data
+            
+        except Exception as e:
+            logging.error(f"IODD ProcessData Parsing fehlgeschlagen: {e}")
+            return {}
+    
+    def _decode_iodd_structured_data(self, process_data_in, process_data: List[int], namespaces: Dict[str, str]) -> Dict[str, Any]:
+        """Dekodiere strukturierte IODD-Daten basierend auf XML-Definition."""
+        parsed_data = {}
+        
+        try:
+            # Suche nach Strukturelementen in der IODD
+            structures = process_data_in.findall('.//iodd:Struct', namespaces)
+            if not structures:
+                structures = process_data_in.findall('.//Struct')  # Fallback
+            
+            bit_offset = 0
+            
+            for struct in structures:
+                # Suche nach Variablen in der Struktur
+                variables = struct.findall('.//iodd:Variable', namespaces)
+                if not variables:
+                    variables = struct.findall('.//Variable')  # Fallback
+                
+                for var in variables:
+                    var_name = var.get('name', f'var_{bit_offset}')
+                    bit_length = int(var.get('bitLength', '8'))
+                    
+                    # Extrahiere Wert aus Prozessdaten
+                    value = self._extract_bits_from_bytes(process_data, bit_offset, bit_length)
+                    
+                    parsed_data[var_name] = {
+                        'value': value,
+                        'unit': '',
+                        'description': f'{var_name} ({bit_length} bits)'
+                    }
+                    
+                    bit_offset += bit_length
+            
+            # Falls keine Variablen gefunden, einfache Byte-Aufteilung
+            if not parsed_data:
+                for i, byte_val in enumerate(process_data):
+                    parsed_data[f'iodd_data_{i}'] = {
+                        'value': byte_val,
+                        'unit': '',
+                        'description': f'IODD Data Byte {i}'
+                    }
+            
+        except Exception as e:
+            logging.warning(f"IODD Strukturdekodierung fehlgeschlagen: {e}")
+            # Fallback: einfache Byte-Auflistung
+            for i, byte_val in enumerate(process_data):
+                parsed_data[f'iodd_fallback_{i}'] = {
+                    'value': byte_val,
+                    'unit': 'hex',
+                    'description': f'IODD Fallback Byte {i}'
+                }
+        
+        return parsed_data
+    
+    def _extract_bits_from_bytes(self, data: List[int], bit_offset: int, bit_length: int) -> int:
+        """Extrahiere spezifische Bits aus Byte-Array."""
+        if bit_length <= 0:
+            return 0
+        
+        byte_offset = bit_offset // 8
+        bit_in_byte = bit_offset % 8
+        
+        if byte_offset >= len(data):
+            return 0
+        
+        # Einfache Implementierung für ganze Bytes
+        if bit_length == 8 and bit_in_byte == 0:
+            return data[byte_offset]
+        
+        # Für andere Bit-Längen: vereinfachte Extraktion
+        value = 0
+        for i in range(bit_length):
+            current_byte_offset = (bit_offset + i) // 8
+            current_bit_in_byte = (bit_offset + i) % 8
+            
+            if current_byte_offset < len(data):
+                bit_value = (data[current_byte_offset] >> current_bit_in_byte) & 1
+                value |= bit_value << i
+        
+        return value
     
     def _decode_generic_sentinum(self, payload_bytes: List[int], metadata: Dict[str, Any], 
                                 sensor_type: str) -> Dict[str, Any]:
