@@ -1,5 +1,14 @@
 {
-  "sensor_decoders": {},
+  "sensor_decoders": {
+    "fca84a090000000a": {
+      "decoder_name": "juno_th",
+      "assigned_at": 1756729886.8589268
+    },
+    "fca84a030000127c": {
+      "decoder_name": "febris_th",
+      "assigned_at": 1756729897.2729912
+    }
+  },
   "decoder_files": {
     "temp_humidity_blueprint": {
       "type": "blueprint",
