@@ -346,8 +346,11 @@ try {{
         # Fallback: Einfache Pattern-Matching für häufige Sentinum-Muster
         logging.warning("Node.js nicht verfügbar, verwende vereinfachte JS Dekodierung")
         
+        # Prüfe auf Juno-Decoder basierend auf JS-Content
+        if 'juno' in js_content.lower():
+            return self._decode_juno_python(payload_bytes, metadata)
         # Prüfe auf Febris-Decoder basierend auf JS-Content
-        if 'febris' in js_content.lower() or 'base_id' in js_content:
+        elif 'febris' in js_content.lower() or 'base_id' in js_content:
             return self._decode_febris_python(payload_bytes, metadata)
         
         # Suche nach Temperatur/Humidity Pattern
@@ -525,6 +528,148 @@ try {{
             return {
                 'decoded': False,
                 'reason': f'Febris Python decoding error: {str(e)}',
+                'raw_data': payload_bytes
+            }
+    
+    def _decode_juno_python(self, payload_bytes: List[int], metadata: Dict[str, Any]) -> Dict[str, Any]:
+        """Python-Implementierung des Juno TH Decoders."""
+        try:
+            bytes_data = payload_bytes
+            decoded = {}
+            
+            # Attributes (Juno Format)
+            decoded['base_id'] = bytes_data[0] >> 4
+            decoded['major_version'] = bytes_data[0] & 0x0F
+            decoded['minor_version'] = bytes_data[1] >> 4
+            decoded['product_version'] = bytes_data[1] & 0x0F
+            
+            # Telemetry
+            decoded['up_cnt'] = bytes_data[2]
+            decoded['battery_voltage'] = ((bytes_data[3] << 8) | bytes_data[4]) / 1000.0
+            decoded['internal_temperature'] = bytes_data[5] - 128
+            
+            # Version-dependent payload (minor_version > 1)
+            if decoded['minor_version'] > 1:
+                idx = 6  # Start of variable size payload
+                
+                # Has Precision TH Sensor (product_version & 0x01)
+                if decoded['product_version'] & 0x01:
+                    if idx < len(bytes_data):
+                        user_data = bytes_data[idx]
+                        idx += 1
+                        
+                        # Alarms
+                        decoded['alarms'] = {
+                            'temperatureMaxAlarm': (user_data & (1 << 0)) != 0,
+                            'temperatureMinAlarm': (user_data & (1 << 1)) != 0,
+                            'temperatureDeltaAlarm': (user_data & (1 << 2)) != 0,
+                            'humidityMaxAlarm': (user_data & (1 << 3)) != 0,
+                            'humidityMinAlarm': (user_data & (1 << 4)) != 0,
+                            'humidityDeltaAlarm': (user_data & (1 << 5)) != 0
+                        }
+                        
+                        # Temperature and Humidity
+                        if idx + 2 < len(bytes_data):
+                            decoded['temperature'] = ((bytes_data[idx] << 8) | bytes_data[idx + 1]) / 10.0 - 100.0
+                            idx += 2
+                        if idx < len(bytes_data):
+                            decoded['humidity'] = bytes_data[idx]
+                            idx += 1
+                
+                # Has Acc Tilt functionality (product_version & 0x02)
+                if decoded['product_version'] & 0x02:
+                    if idx < len(bytes_data):
+                        decoded['orientation'] = bytes_data[idx]
+                        idx += 1
+                    if idx < len(bytes_data):
+                        decoded['open_alarm'] = bytes_data[idx]
+                        idx += 1
+                    if idx < len(bytes_data):
+                        decoded['opened_since_sent'] = bytes_data[idx]
+                        idx += 1
+                    if idx + 1 < len(bytes_data):
+                        decoded['opened_since_boot'] = (bytes_data[idx] << 8) | bytes_data[idx + 1]
+                        idx += 2
+            
+            # Konvertiere zu erwartetes Format
+            formatted_data = {}
+            
+            if 'battery_voltage' in decoded:
+                formatted_data['battery_voltage'] = {
+                    'value': round(decoded['battery_voltage'], 2),
+                    'unit': 'V',
+                    'description': 'Battery Voltage'
+                }
+                
+            if 'temperature' in decoded:
+                formatted_data['temperature'] = {
+                    'value': round(decoded['temperature'], 1),
+                    'unit': '°C',
+                    'description': 'Temperature'
+                }
+                
+            if 'humidity' in decoded:
+                formatted_data['humidity'] = {
+                    'value': round(decoded['humidity'], 1),
+                    'unit': '%RH',
+                    'description': 'Relative Humidity'
+                }
+                
+            if 'base_id' in decoded:
+                formatted_data['base_id'] = {
+                    'value': decoded['base_id'],
+                    'unit': '',
+                    'description': 'Base ID'
+                }
+                
+            if 'major_version' in decoded:
+                formatted_data['major_version'] = {
+                    'value': decoded['major_version'],
+                    'unit': '',
+                    'description': 'Major Version'
+                }
+                
+            if 'minor_version' in decoded:
+                formatted_data['minor_version'] = {
+                    'value': decoded['minor_version'],
+                    'unit': '',
+                    'description': 'Minor Version'
+                }
+                
+            if 'product_version' in decoded:
+                formatted_data['product_version'] = {
+                    'value': decoded['product_version'],
+                    'unit': '',
+                    'description': 'Product Version'
+                }
+                
+            if 'up_cnt' in decoded:
+                formatted_data['up_cnt'] = {
+                    'value': decoded['up_cnt'],
+                    'unit': '',
+                    'description': 'Up Count'
+                }
+                
+            if 'internal_temperature' in decoded:
+                formatted_data['internal_temperature'] = {
+                    'value': round(decoded['internal_temperature'], 1),
+                    'unit': '°C',
+                    'description': 'Internal Temperature'
+                }
+            
+            return {
+                'decoded': True,
+                'decoder_type': 'juno_python',
+                'decoder_name': 'Juno TH (Python)',
+                'data': formatted_data,
+                'raw_data': payload_bytes
+            }
+            
+        except Exception as e:
+            logging.error(f"Fehler beim Juno Python Decoding: {e}")
+            return {
+                'decoded': False,
+                'reason': f'Juno Python decoding error: {str(e)}',
                 'raw_data': payload_bytes
             }
     
