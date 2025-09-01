@@ -418,6 +418,23 @@ class WebGUI:
             color: white;
             padding: 30px;
             text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            right: 30px;
+            transform: translateY(-50%);
+            width: 60px;
+            height: 60px;
+            background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cGF0aCBkPSJNMTUgMTVMMzAgMEw0NSAxNUwzMCAzMFoiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4xKSIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMikiIHN0cm9rZS13aWR0aD0iMiIvPgogIDxwYXRoIGQ9Ik0wIDMwTDE1IDE1TDMwIDMwTDE1IDQ1WiIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjEpIiBzdHJva2U9InJnYmEoMjU1LDI1NSwyNTUsMC4yKSIgc3Ryb2tlLXdpZHRoPSIyIi8+CiAgPHBhdGggZD0iTTMwIDMwTDQ1IDE1TDYwIDMwTDQ1IDQ1WiIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjA1KSIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMykiIHN0cm9rZS13aWR0aD0iMiIvPgo8L3N2Zz4K');
+            background-size: contain;
+            background-repeat: no-repeat;
+            opacity: 0.15;
+            z-index: 1;
         }
         
         .nav {
@@ -659,14 +676,7 @@ class WebGUI:
 <body>
     <div class="container">
         <div class="header">
-            <h1><span class="logo-icon">⚡</span> mioty Application Center 
-                <span style="font-size: 0.6em; opacity: 0.8; margin-left: 10px; font-weight: 400; display: inline-flex; align-items: center;">
-                    <svg width="14" height="14" viewBox="0 0 24 24" style="margin-right: 4px; fill: rgba(255,255,255,0.7);">
-                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-                    </svg>
-                    powered by sentinum
-                </span>
-            </h1>
+            <h1><span class="logo-icon">⚡</span> mioty Application Center</h1>
             <p>für Home Assistant</p>
         </div>
         
@@ -1032,6 +1042,23 @@ class WebGUI:
             color: white;
             padding: 30px;
             text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            right: 30px;
+            transform: translateY(-50%);
+            width: 60px;
+            height: 60px;
+            background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cGF0aCBkPSJNMTUgMTVMMzAgMEw0NSAxNUwzMCAzMFoiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4xKSIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMikiIHN0cm9rZS13aWR0aD0iMiIvPgogIDxwYXRoIGQ9Ik0wIDMwTDE1IDE1TDMwIDMwTDE1IDQ1WiIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjEpIiBzdHJva2U9InJnYmEoMjU1LDI1NSwyNTUsMC4yKSIgc3Ryb2tlLXdpZHRoPSIyIi8+CiAgPHBhdGggZD0iTTMwIDMwTDQ1IDE1TDYwIDMwTDQ1IDQ1WiIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjA1KSIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMykiIHN0cm9rZS13aWR0aD0iMiIvPgo8L3N2Zz4K');
+            background-size: contain;
+            background-repeat: no-repeat;
+            opacity: 0.15;
+            z-index: 1;
         }
         
         .nav {
@@ -1197,14 +1224,7 @@ class WebGUI:
 <body>
     <div class="container">
         <div class="header">
-            <h1><span class="logo-icon">⚡</span> mioty Application Center 
-                <span style="font-size: 0.6em; opacity: 0.8; margin-left: 10px; font-weight: 400; display: inline-flex; align-items: center;">
-                    <svg width="14" height="14" viewBox="0 0 24 24" style="margin-right: 4px; fill: rgba(255,255,255,0.7);">
-                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-                    </svg>
-                    powered by sentinum
-                </span>
-            </h1>
+            <h1><span class="logo-icon">⚡</span> mioty Application Center</h1>
             <p>Einstellungen</p>
         </div>
         
@@ -1547,14 +1567,7 @@ class WebGUI:
 <body>
     <div class="container">
         <div class="header">
-            <h1>📝 mioty Application Center 
-                <span style="font-size: 0.6em; opacity: 0.8; margin-left: 10px; font-weight: 400; display: inline-flex; align-items: center;">
-                    <svg width="14" height="14" viewBox="0 0 24 24" style="margin-right: 4px; fill: rgba(255,255,255,0.7);">
-                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-                    </svg>
-                    powered by sentinum
-                </span>
-            </h1>
+            <h1>📝 mioty Application Center</h1>
             <p>Payload Decoder Verwaltung</p>
         </div>
         <div class="nav">
