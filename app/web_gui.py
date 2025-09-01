@@ -677,7 +677,7 @@ class WebGUI:
     <div class="container">
         <div class="header">
             <h1><span class="logo-icon">⚡</span> mioty Application Center</h1>
-            <p>für Home Assistant</p>
+            <p>für Home Assistant <span style="opacity: 0.6; font-size: 0.8em;">• powered by Sentinum</span></p>
         </div>
         
         <div class="nav">
@@ -1225,7 +1225,7 @@ class WebGUI:
     <div class="container">
         <div class="header">
             <h1><span class="logo-icon">⚡</span> mioty Application Center</h1>
-            <p>Einstellungen</p>
+            <p>Einstellungen <span style="opacity: 0.6; font-size: 0.8em;">• powered by Sentinum</span></p>
         </div>
         
         <div class="nav">
@@ -1568,7 +1568,7 @@ class WebGUI:
     <div class="container">
         <div class="header">
             <h1>📝 mioty Application Center</h1>
-            <p>Payload Decoder Verwaltung</p>
+            <p>Payload Decoder Verwaltung <span style="opacity: 0.6; font-size: 0.8em;">• powered by Sentinum</span></p>
         </div>
         <div class="nav">
             <a id="nav-sensors" href="#" class="nav-item" onclick="navigateTo('/')">📊 Sensoren</a>
