@@ -1,7 +1,7 @@
 {
   "sensor_decoders": {
     "fca84a090000000a": {
-      "decoder_name": "environmental_sensor",
+      "decoder_name": "febris_th",
       "assigned_at": 1756731340.3329778
     },
     "fca84a030000127c": {
