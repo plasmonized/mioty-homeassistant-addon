@@ -147,21 +147,16 @@ class PayloadDecoder:
             vendor_name = "Unknown"
             device_name = "Unknown"
             
-            # Versuche verschiedene Xpath-Ausdrücke für DeviceIdentity
-            xpath_variants = [
-                './/iodd:DeviceIdentity',
-                './/iodd11:DeviceIdentity', 
-                './/DeviceIdentity',
-                './/*[local-name()="DeviceIdentity"]'
-            ]
-            
-            for xpath in xpath_variants:
-                if xpath.startswith('.//*[local-name()'):
-                    device_identity = root.find(xpath)
-                else:
-                    device_identity = root.find(xpath, namespaces)
-                if device_identity is not None:
-                    break
+            # Vereinfachte, sichere Suche nach DeviceIdentity
+            try:
+                # Versuche mit Namespaces
+                device_identity = root.find('.//DeviceIdentity', namespaces)
+                if device_identity is None:
+                    # Fallback ohne Namespace
+                    device_identity = root.find('.//DeviceIdentity')
+            except Exception as e:
+                logging.warning(f"DeviceIdentity Suche fehlgeschlagen: {e}")
+                device_identity = None
             
             if device_identity is not None:
                 # Extrahiere VendorId - verschiedene Attributnamen möglich
@@ -183,17 +178,20 @@ class PayloadDecoder:
                 device_name = (device_identity.get('deviceName') or
                              device_identity.get('DeviceName') or "Unknown Device")
             
-            # Fallback: Suche nach VendorId und DeviceId in anderen Elementen
+            # Fallback: Suche nach VendorId und DeviceId in anderen Elementen (vereinfacht)
             if vendor_id == 0 or device_id == 0:
-                # Suche nach Vendor-Info im VendorName Element
-                vendor_info = root.find('.//*[local-name()="VendorName"]')
-                if vendor_info is not None and vendor_info.text:
-                    vendor_name = vendor_info.text
-                
-                # Suche nach Device-Info im DeviceName Element  
-                device_info = root.find('.//*[local-name()="DeviceName"]')
-                if device_info is not None and device_info.text:
-                    device_name = device_info.text
+                try:
+                    # Suche nach Vendor-Info im VendorName Element
+                    vendor_info = root.find('.//VendorName')
+                    if vendor_info is not None and vendor_info.text:
+                        vendor_name = vendor_info.text
+                    
+                    # Suche nach Device-Info im DeviceName Element  
+                    device_info = root.find('.//DeviceName')
+                    if device_info is not None and device_info.text:
+                        device_name = device_info.text
+                except Exception as e:
+                    logging.warning(f"Fallback-Suche fehlgeschlagen: {e}")
             
             # Spezialbehandlung für ExternalTextDocument (nur Übersetzungen)
             if root.tag.endswith('ExternalTextDocument'):
@@ -213,30 +211,48 @@ class PayloadDecoder:
                     vendor_id = 310  # IFM Vendor ID
                     device_id = 29441  # KQ-Sensor Device ID (aus Payload)
                 
-                # Extrahiere Produktinformationen aus Text-Elementen
-                for text_elem in root.findall('.//*[local-name()="Text"]'):
-                    text_id = text_elem.get('id', '')
-                    text_value = text_elem.get('value', '')
-                    
-                    if 'Product' in text_id and 'Name' in text_id:
-                        if 'KQ' in text_value:
-                            device_name = f"ifm {text_value} Kapazitiver Sensor"
-                            break
+                # Extrahiere Produktinformationen aus Text-Elementen (vereinfacht)
+                try:
+                    for text_elem in root.findall('.//Text'):
+                        text_id = text_elem.get('id', '')
+                        text_value = text_elem.get('value', '')
+                        
+                        if 'Product' in text_id and 'Name' in text_id:
+                            if 'KQ' in text_value:
+                                device_name = f"ifm {text_value} Kapazitiver Sensor"
+                                break
+                except Exception as e:
+                    logging.warning(f"Text-Element Extraktion fehlgeschlagen: {e}")
             
             logging.info(f"📋 IODD Analyse: VID={vendor_id}, DID={device_id}, Vendor='{vendor_name}', Device='{device_name}'")
             
-            # Extrahiere ProcessDataIn für Payload-Format
-            process_data_in = root.find(f'.//{namespace}ProcessDataIn')
+            # Extrahiere ProcessDataIn für Payload-Format (mit Namespace-sicherer Suche)
+            process_data_in = None
             payload_length = 0
             data_fields = []
             
+            # Sichere Suche nach ProcessDataIn
+            if namespaces:
+                for ns_prefix, ns_uri in namespaces.items():
+                    process_data_in = root.find(f'.//{{{ns_uri}}}ProcessDataIn')
+                    if process_data_in is not None:
+                        break
+            
+            # Fallback ohne Namespace
+            if process_data_in is None:
+                process_data_in = root.find('.//ProcessDataIn')
+            
             if process_data_in is not None:
                 # Berechne Bitlength und konvertiere zu Bytes
-                bitlength = int(process_data_in.get('bitLength', '0'))
-                payload_length = (bitlength + 7) // 8  # Aufrunden auf volle Bytes
+                bitlength_str = process_data_in.get('bitLength', '0')
+                try:
+                    bitlength = int(bitlength_str) if bitlength_str.isdigit() else 0
+                    payload_length = (bitlength + 7) // 8  # Aufrunden auf volle Bytes
+                except ValueError:
+                    payload_length = 0
                 
-                # Extrahiere Datenfelder
-                for var_item in process_data_in.findall(f'.//{namespace}Datatype/{namespace}SimpleDatatype/{namespace}SingleValue'):
+                # Extrahiere Datenfelder (vereinfacht für ExternalTextDocument)
+                for var_item in process_data_in.findall('.//SingleValue'):
                     field_name = var_item.get('name', 'unknown')
                     data_type = var_item.get('simpleDatatype', 'UIntegerT')
                     data_fields.append({
