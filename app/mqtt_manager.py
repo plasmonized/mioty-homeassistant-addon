@@ -122,6 +122,8 @@ class MQTTManager:
                 
         except Exception as e:
             logging.warning(f"Home Assistant MQTT Verbindung fehlgeschlagen: {e} - Discovery deaktiviert")
+            logging.info("💡 Tipp: Für Home Assistant Add-ons verwenden Sie 'core-mosquitto' als HA MQTT Broker")
+            logging.info(f"🔧 Debug: Versuche Verbindung zu {self.ha_broker}:{self.ha_port} mit User='{self.ha_username}'")
         
         if success:
             self.running = True
@@ -163,9 +165,18 @@ class MQTTManager:
         """Home Assistant MQTT Connect Callback."""
         if rc == 0:
             self.ha_connected = True
-            logging.info("Home Assistant MQTT erfolgreich verbunden")
+            logging.info("✅ Home Assistant MQTT erfolgreich verbunden - Discovery aktiviert!")
         else:
-            logging.error(f"Home Assistant MQTT Verbindung fehlgeschlagen: {rc}")
+            error_codes = {
+                1: "Falsche Protokoll-Version",
+                2: "Ungültige Client-ID", 
+                3: "Server nicht verfügbar",
+                4: "Ungültige Credentials",
+                5: "Nicht autorisiert"
+            }
+            error_msg = error_codes.get(rc, f"Unbekannter Fehler: {rc}")
+            logging.error(f"❌ Home Assistant MQTT Verbindung fehlgeschlagen: {error_msg}")
+            logging.error(f"🔧 Broker: {self.ha_broker}:{self.ha_port}, User: '{self.ha_username}'")
     
     def _on_ha_disconnect(self, client, userdata, rc):
         """Home Assistant MQTT Disconnect Callback."""
