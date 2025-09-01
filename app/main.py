@@ -163,7 +163,9 @@ class BSSCIAddon:
     
     def handle_sensor_data(self, sensor_eui: str, data: Dict[str, Any]):
         """Verarbeite eingehende Sensor-Daten."""
+        raw_payload = data.get('data', 'N/A')
         logging.info(f"Sensor-Daten empfangen von {sensor_eui}")
+        logging.info(f"Raw Payload: {raw_payload}")
         
         # Payload dekodieren falls Decoder zugewiesen ist
         decoded_payload = None
@@ -176,16 +178,21 @@ class BSSCIAddon:
                     'timestamp': data.get('rxTime'),
                     'base_station': data.get('bs_eui')
                 }
+                logging.info(f"Metadata: SNR={metadata.get('snr')}, RSSI={metadata.get('rssi')}, Base Station={metadata.get('base_station')}")
+                
                 decoded_result = self.decoder_manager.decode_sensor_payload(
                     sensor_eui, payload_bytes, metadata
                 )
                 if decoded_result.get('decoded'):
                     decoded_payload = decoded_result
-                    logging.info(f"Payload für {sensor_eui} erfolgreich dekodiert")
+                    logging.info(f"✅ Payload für {sensor_eui} erfolgreich dekodiert")
+                    logging.info(f"🔍 Dekodierte Daten: {json.dumps(decoded_result.get('data', {}), indent=2)}")
                 else:
-                    logging.debug(f"Payload für {sensor_eui} nicht dekodiert: {decoded_result.get('reason', 'Unknown')}")
+                    logging.warning(f"❌ Payload für {sensor_eui} nicht dekodiert: {decoded_result.get('reason', 'Unknown')}")
+                    logging.info(f"Raw Payload Hex: {payload_bytes}")
             except Exception as e:
                 logging.error(f"Fehler beim Dekodieren von Sensor {sensor_eui}: {e}")
+                logging.info(f"Problematischer Raw Payload: {raw_payload}")
         
         # Sensor-Daten speichern
         self.sensors[sensor_eui] = {

@@ -1,0 +1,97 @@
+{
+  "sensor_decoders": {},
+  "decoder_files": {
+    "temp_humidity_blueprint": {
+      "type": "blueprint",
+      "file_path": "decoders/temp_humidity_blueprint.json",
+      "name": "Temperature Humidity Sensor",
+      "version": "1.0",
+      "description": "Standard Temperature/Humidity Sensor Blueprint",
+      "supported_devices": [
+        "TH_SENSOR_V1",
+        "TH_SENSOR_V2"
+      ],
+      "payload_format": {
+        "temperature": {
+          "type": "uint16",
+          "length": 2,
+          "scale": 0.1,
+          "offset": -40.0,
+          "unit": "\u00b0C",
+          "description": "Temperature measurement"
+        },
+        "humidity": {
+          "type": "uint16",
+          "length": 2,
+          "scale": 0.01,
+          "offset": 0.0,
+          "unit": "%",
+          "description": "Relative humidity"
+        },
+        "battery": {
+          "type": "uint8",
+          "length": 1,
+          "scale": 0.1,
+          "offset": 0.0,
+          "unit": "V",
+          "description": "Battery voltage"
+        }
+      },
+      "created_at": 1756487232.3254724
+    },
+    "juno_th": {
+      "type": "javascript",
+      "file_path": "decoders/juno_th.js",
+      "name": "juno_th",
+      "version": "1.0",
+      "description": "Sentinum JavaScript Decoder",
+      "supported_devices": [],
+      "created_at": 1756716910.526337
+    },
+    "febris_th": {
+      "type": "javascript",
+      "file_path": "decoders/febris_th.js",
+      "name": "febris_th",
+      "version": "1.0",
+      "description": "Sentinum JavaScript Decoder",
+      "supported_devices": [],
+      "created_at": 1756716919.707331
+    },
+    "febris_scw": {
+      "type": "javascript",
+      "file_path": "decoders/febris_scw.js",
+      "name": "febris_scw",
+      "version": "1.0",
+      "description": "Sentinum JavaScript Decoder",
+      "supported_devices": [],
+      "created_at": 1756716924.3223279
+    },
+    "apollon-qtr": {
+      "type": "javascript",
+      "file_path": "decoders/apollon-qtr.js",
+      "name": "apollon-qtr",
+      "version": "1.0",
+      "description": "Sentinum JavaScript Decoder",
+      "supported_devices": [],
+      "created_at": 1756716930.306324
+    },
+    "febris_co2": {
+      "type": "javascript",
+      "file_path": "decoders/febris_co2.js",
+      "name": "febris_co2",
+      "version": "1.0",
+      "description": "Sentinum JavaScript Decoder",
+      "supported_devices": [],
+      "created_at": 1756716934.688321
+    },
+    "apollon-qpp": {
+      "type": "javascript",
+      "file_path": "decoders/apollon-qpp.js",
+      "name": "apollon-qpp",
+      "version": "1.0",
+      "description": "Sentinum JavaScript Decoder",
+      "supported_devices": [],
+      "created_at": 1756716940.7003171
+    }
+  }
+}
