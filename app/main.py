@@ -284,7 +284,14 @@ class BSSCIAddon:
         # Discovery Nachricht senden
         discovery_topic = f"homeassistant/sensor/{unique_id}/config"
         if self.mqtt_manager:
-            self.mqtt_manager.publish_discovery(discovery_topic, discovery_config)
+            logging.info(f"🔍 Sensor Discovery: {sensor_eui}")
+            logging.info(f"   📤 Topic: {discovery_topic}")
+            logging.info(f"   🏷️ Device: {device_name}")
+            success = self.mqtt_manager.publish_discovery(discovery_topic, discovery_config)
+            if success:
+                logging.info(f"✅ Sensor Discovery erfolgreich gesendet")
+            else:
+                logging.warning(f"❌ Sensor Discovery fehlgeschlagen (HA MQTT nicht verbunden)")
         
         # Status und Attribute senden
         state_value = len(data.get('data', []))
@@ -302,7 +309,10 @@ class BSSCIAddon:
         }
         
         if self.mqtt_manager:
-            self.mqtt_manager.publish_sensor_state(unique_id, state_value, attributes)
+            logging.debug(f"📊 Sensor Status Update: {sensor_eui} → {state_value} bytes")
+            success = self.mqtt_manager.publish_sensor_state(unique_id, state_value, attributes)
+            if not success:
+                logging.debug(f"⚠️ Sensor Status nicht gesendet (HA MQTT nicht verbunden)")
     
     def create_basestation_discovery(self, bs_eui: str, status: Dict[str, Any]):
         """Erstelle Home Assistant MQTT Discovery für Base Station."""
@@ -326,7 +336,14 @@ class BSSCIAddon:
         
         discovery_topic = f"homeassistant/sensor/{unique_id}/config"
         if self.mqtt_manager:
-            self.mqtt_manager.publish_discovery(discovery_topic, discovery_config)
+            logging.info(f"🏢 BaseStation Discovery: {bs_eui}")
+            logging.info(f"   📤 Topic: {discovery_topic}")
+            logging.info(f"   🏷️ Device: {device_name}")
+            success = self.mqtt_manager.publish_discovery(discovery_topic, discovery_config)
+            if success:
+                logging.info(f"✅ BaseStation Discovery erfolgreich gesendet")
+            else:
+                logging.warning(f"❌ BaseStation Discovery fehlgeschlagen (HA MQTT nicht verbunden)")
         
         # Status
         state_value = "online" if status.get('code', 1) == 0 else "offline"
@@ -341,7 +358,10 @@ class BSSCIAddon:
         }
         
         if self.mqtt_manager:
-            self.mqtt_manager.publish_sensor_state(unique_id, state_value, attributes)
+            logging.debug(f"📊 BaseStation Status Update: {bs_eui} → {state_value}")
+            success = self.mqtt_manager.publish_sensor_state(unique_id, state_value, attributes)
+            if not success:
+                logging.debug(f"⚠️ BaseStation Status nicht gesendet (HA MQTT nicht verbunden)")
     
     def assess_signal_quality(self, snr, rssi) -> str:
         """Bewerte Signalqualität."""

@@ -44,7 +44,9 @@ class MQTTManager:
         self.config_callback: Optional[Callable] = None
         self.base_station_callback: Optional[Callable] = None
         
-        logging.info(f"Dual MQTT Manager - mioty: {broker}:{port}, HA: {ha_broker}:{ha_port}")
+        logging.info(f"🔧 Dual MQTT Manager initialisiert:")
+        logging.info(f"   📡 mioty Data Client: {broker}:{port} (User: '{username}')")
+        logging.info(f"   🏠 HA Discovery Client: {ha_broker}:{ha_port} (User: '{ha_username}')")
     
     def set_data_callback(self, callback: Callable):
         """Setze Callback für Sensor-Daten."""
@@ -148,18 +150,18 @@ class MQTTManager:
         """MQTT Connect Callback."""
         if rc == 0:
             self.connected = True
-            logging.info("MQTT erfolgreich verbunden")
+            logging.info(f"✅ mioty MQTT Client verbunden: {self.broker}:{self.port}")
             
             # Topics abonnieren
             self._subscribe_topics()
             
         else:
-            logging.error(f"MQTT Verbindung fehlgeschlagen: {rc}")
+            logging.error(f"❌ mioty MQTT Verbindung fehlgeschlagen: {rc}")
     
     def _on_disconnect(self, client, userdata, rc):
         """MQTT Disconnect Callback."""
         self.connected = False
-        logging.warning("mioty MQTT Verbindung getrennt")
+        logging.warning(f"⚠️ mioty MQTT Client getrennt: {self.broker}:{self.port}")
     
     def _on_ha_connect(self, client, userdata, flags, rc):
         """Home Assistant MQTT Connect Callback."""
@@ -181,7 +183,7 @@ class MQTTManager:
     def _on_ha_disconnect(self, client, userdata, rc):
         """Home Assistant MQTT Disconnect Callback."""
         self.ha_connected = False
-        logging.warning("Home Assistant MQTT Verbindung getrennt")
+        logging.warning(f"⚠️ Home Assistant MQTT Client getrennt: {self.ha_broker}:{self.ha_port}")
     
     def _on_message(self, client, userdata, msg):
         """MQTT Message Callback."""
@@ -210,8 +212,11 @@ class MQTTManager:
         ]
         
         for topic in topics:
-            self.client.subscribe(topic)
-            logging.info(f"MQTT Topic abonniert: {topic}")
+            result = self.client.subscribe(topic)
+            if result[0] == mqtt.MQTT_ERR_SUCCESS:
+                logging.info(f"📋 Topic abonniert: {topic}")
+            else:
+                logging.error(f"❌ Topic-Abonnement fehlgeschlagen: {topic}")
     
     def _handle_bssci_message(self, topic_parts: list, payload: str):
         """Verarbeite BSSCI MQTT Nachrichten."""
