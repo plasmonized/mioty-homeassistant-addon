@@ -531,7 +531,6 @@ Die Web-GUI zeigt Real-time Status für:
 
 ### Datenschutz
 
-- **Verschlüsselung:** TLS für alle externen Verbindungen
 - **Lokale Verarbeitung:** Sensitive Daten verlassen Home Assistant nicht
 - **Access Control:** Home Assistant Benutzerberechtigungen
 
@@ -554,13 +553,6 @@ Die Web-GUI zeigt Real-time Status für:
 # - Sensor-Registrierungen
 # - MQTT Einstellungen
 ```
-
-### Wartungszyklen
-
-- **Tägliche:** Automatische Verbindungsüberwachung
-- **Wöchentliche:** Log-Rotation und Cleanup
-- **Monatliche:** Performance-Analyse und Optimierung
-
 ## 🤝 Support
 
 ### Community Support
@@ -569,22 +561,6 @@ Die Web-GUI zeigt Real-time Status für:
 - **Home Assistant Community:** mioty Integration Thread
 - **Documentation:** Wiki und README Updates
 
-### Enterprise Support
-
-Für professionelle Deployments:
-- Prioritärer Bug-Fix Support
-- Custom Decoder Development
-- Integration Consulting
-- SLA-basierte Wartung
-
-### Entwickler-Ressourcen
-
-```python
-# API Documentation
-# Custom Decoder Templates
-# Integration Examples
-# Testing Frameworks
-```
 
 ## 📝 Lizenz
 
