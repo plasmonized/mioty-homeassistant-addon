@@ -186,7 +186,6 @@ Das **mioty Application Center für Home Assistant** ist eine umfassende Add-on 
    mqtt_port: 1883
    mqtt_username: ""
    mqtt_password: ""
-   bssci_service_url: "your-bssci-server:16018"
    base_topic: "bssci"
    auto_discovery: true
    log_level: "info"
@@ -215,13 +214,13 @@ certfile: fullchain.pem
 keyfile: privkey.pem
 ```
 
-### BSSCI Service Integration
+### MQTT Integration
 
-Das Add-on kommuniziert mit einem vorhandenen BSSCI Service Center:
+Das Add-on kommuniziert komplett über MQTT - keine direkte BSSCI Service Center Verbindung erforderlich:
 
 ```
-BSSCI Service URL: http://your-server:16018
-Unterstützte Versionen: BSSCI v1.0.0.0+
+Alle Daten fließen über den MQTT Broker
+Base Topic: bssci/+
 Erforderliche Endpunkte:
   - /api/sensors
   - /api/basestations

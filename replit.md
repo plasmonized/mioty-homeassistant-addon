@@ -10,6 +10,11 @@ Preferred communication style: Simple, everyday language.
 
 # Recent Changes
 
+**01.09.2025 - Konfiguration bereinigt:**
+- Unnötige bssci_service_url Konfiguration entfernt (wird nicht verwendet - alles läuft über MQTT)
+- Dokumentation in README-Dateien aktualisiert 
+- Add-on-Konfiguration vereinfacht (config.yaml, run.sh bereinigt)
+
 **30.08.2025 - Konfiguration und Logo Updates:**
 - Fixed configuration dashboard to display actual runtime MQTT settings instead of defaults
 - Added live connection status API endpoint (/api/status) with auto-refresh

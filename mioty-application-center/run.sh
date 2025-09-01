@@ -10,7 +10,6 @@ MQTT_BROKER=$(bashio::config 'mqtt_broker')
 MQTT_PORT=$(bashio::config 'mqtt_port')
 MQTT_USERNAME=$(bashio::config 'mqtt_username')
 MQTT_PASSWORD=$(bashio::config 'mqtt_password')
-BSSCI_SERVICE_URL=$(bashio::config 'bssci_service_url')
 BASE_TOPIC=$(bashio::config 'base_topic')
 AUTO_DISCOVERY=$(bashio::config 'auto_discovery')
 LOG_LEVEL=$(bashio::config 'log_level')
@@ -21,7 +20,6 @@ export MQTT_BROKER="$MQTT_BROKER"
 export MQTT_PORT="$MQTT_PORT"
 export MQTT_USERNAME="$MQTT_USERNAME"
 export MQTT_PASSWORD="$MQTT_PASSWORD"
-export BSSCI_SERVICE_URL="$BSSCI_SERVICE_URL"
 export BASE_TOPIC="$BASE_TOPIC"
 export AUTO_DISCOVERY="$AUTO_DISCOVERY"
 export LOG_LEVEL="$LOG_LEVEL"
@@ -29,7 +27,6 @@ export WEB_PORT="$WEB_PORT"
 
 bashio::log.info "Starte mioty Application Center..."
 bashio::log.info "MQTT Broker: $MQTT_BROKER:$MQTT_PORT"
-bashio::log.info "BSSCI Service: $BSSCI_SERVICE_URL"
 bashio::log.info "Base Topic: $BASE_TOPIC"
 
 # Start the application

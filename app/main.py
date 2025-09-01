@@ -70,7 +70,7 @@ class BSSCIAddon:
                 'ha_mqtt_port': saved_settings.get('ha_mqtt_port') or int(os.getenv('HA_MQTT_PORT', '1883')),
                 'ha_mqtt_username': saved_settings.get('ha_mqtt_username') or os.getenv('HA_MQTT_USERNAME', ''),
                 'ha_mqtt_password': saved_settings.get('ha_mqtt_password') or os.getenv('HA_MQTT_PASSWORD', ''),
-                'bssci_service_url': os.getenv('BSSCI_SERVICE_URL', 'localhost:16018'),
+
                 'base_topic': saved_settings.get('base_topic') or os.getenv('BASE_TOPIC', 'bssci'),
                 'auto_discovery': saved_settings.get('auto_discovery', True) if saved_settings.get('auto_discovery') is not None else (os.getenv('AUTO_DISCOVERY', 'true').lower() == 'true'),
                 'web_port': int(os.getenv('WEB_PORT', '5000'))
@@ -88,7 +88,7 @@ class BSSCIAddon:
                 'ha_mqtt_port': int(os.getenv('HA_MQTT_PORT', '1883')),
                 'ha_mqtt_username': os.getenv('HA_MQTT_USERNAME', ''),
                 'ha_mqtt_password': os.getenv('HA_MQTT_PASSWORD', ''),
-                'bssci_service_url': os.getenv('BSSCI_SERVICE_URL', 'localhost:16018'),
+
                 'base_topic': os.getenv('BASE_TOPIC', 'bssci'),
                 'auto_discovery': os.getenv('AUTO_DISCOVERY', 'true').lower() == 'true',
                 'web_port': int(os.getenv('WEB_PORT', '5000'))

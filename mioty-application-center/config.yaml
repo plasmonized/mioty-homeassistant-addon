@@ -40,7 +40,6 @@ options:
   ha_mqtt_port: 1883
   ha_mqtt_username: ""
   ha_mqtt_password: ""
-  bssci_service_url: "localhost:16018"
   base_topic: "bssci"
   auto_discovery: true
   log_level: "info"
@@ -54,7 +53,6 @@ schema:
   ha_mqtt_port: "port"
   ha_mqtt_username: "str?"
   ha_mqtt_password: "password?"
-  bssci_service_url: "str"
   base_topic: "str"
   auto_discovery: "bool"
   log_level: "list(debug|info|warning|error)?"
