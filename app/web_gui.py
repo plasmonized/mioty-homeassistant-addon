@@ -250,7 +250,7 @@ class WebGUI:
             if file.filename == '':
                 return jsonify({"error": "Kein Dateiname"}), 400
             
-            if file and file.filename.endswith(('.js', '.json')):
+            if file and file.filename.endswith(('.js', '.json', '.xml')):
                 try:
                     content = file.read()
                     result = self.addon.decoder_manager.upload_decoder_file(file.filename, content)
@@ -263,7 +263,7 @@ class WebGUI:
                 except Exception as e:
                     return jsonify({"error": f"Upload-Fehler: {str(e)}"}), 500
             else:
-                return jsonify({"error": "Nur .js und .json Dateien werden unterstützt"}), 400
+                return jsonify({"error": "Nur .js, .json und .xml (IODD) Dateien werden unterstützt"}), 400
         
         @self.app.route('/api/decoder/assign', methods=['POST'])
         def assign_decoder():
@@ -350,6 +350,36 @@ class WebGUI:
                 return jsonify({"success": True, "message": "Decoder erfolgreich gelöscht"})
             else:
                 return jsonify({"error": "Fehler beim Löschen des Decoders"}), 500
+        
+        @self.app.route('/api/iolink/assign', methods=['POST'])
+        def assign_iodd_to_iolink():
+            """API: IODD einem IO-Link Adapter zuweisen basierend auf Vendor/Device ID."""
+            if not self.addon or not hasattr(self.addon, 'decoder_manager'):
+                return jsonify({"error": "Decoder Manager nicht verfügbar"}), 500
+            
+            data = request.get_json()
+            
+            required_fields = ['sensor_eui', 'vendor_id', 'device_id', 'iodd_name']
+            if not all(data.get(field) for field in required_fields):
+                return jsonify({"error": "sensor_eui, vendor_id, device_id und iodd_name sind erforderlich"}), 400
+            
+            success = self.addon.decoder_manager.assign_iodd_to_iolink_adapter(
+                data['sensor_eui'], data['vendor_id'], data['device_id'], data['iodd_name']
+            )
+            
+            if success:
+                return jsonify({"success": True, "message": "IODD erfolgreich dem IO-Link Adapter zugewiesen"})
+            else:
+                return jsonify({"error": "Fehler beim Zuweisen der IODD"}), 500
+        
+        @self.app.route('/api/iolink/adapters')
+        def get_iolink_adapters():
+            """API: Liste aller erkannten IO-Link Adapter mit Vendor/Device IDs."""
+            if not self.addon or not hasattr(self.addon, 'decoder_manager'):
+                return jsonify({"error": "Decoder Manager nicht verfügbar"}), 500
+            
+            adapters = self.addon.decoder_manager.get_iolink_adapters()
+            return jsonify({"adapters": adapters})
     
     def get_main_template(self) -> str:
         """Hauptseiten-Template."""

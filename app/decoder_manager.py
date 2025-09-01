@@ -7,6 +7,7 @@ import os
 import json
 import logging
 import shutil
+import time
 from typing import Dict, List, Any, Optional
 from pathlib import Path
 from payload_decoder import PayloadDecoder
@@ -139,10 +140,10 @@ module.exports = { decode };
         """Lade Decoder-Datei hoch."""
         try:
             # Validiere Dateiname
-            if not filename.endswith(('.js', '.json')):
+            if not filename.endswith(('.js', '.json', '.xml')):
                 return {
                     'success': False,
-                    'error': 'Nur .js und .json Dateien werden unterstützt'
+                    'error': 'Nur .js, .json und .xml (IODD) Dateien werden unterstützt'
                 }
             
             # Dekodiere Content falls nötig
@@ -165,6 +166,22 @@ module.exports = { decode };
                     return {
                         'success': False,
                         'error': f'Ungültige JSON-Datei: {str(e)}'
+                    }
+            
+            # Validiere XML für .xml (IODD) Dateien
+            elif filename.endswith('.xml'):
+                try:
+                    import xml.etree.ElementTree as ET
+                    ET.fromstring(content_str)
+                except ET.ParseError as e:
+                    return {
+                        'success': False,
+                        'error': f'Ungültige XML-Datei: {str(e)}'
+                    }
+                except Exception as e:
+                    return {
+                        'success': False,
+                        'error': f'XML-Verarbeitungsfehler: {str(e)}'
                     }
             
             # Upload über PayloadDecoder
@@ -253,7 +270,11 @@ module.exports = { decode };
             else:
                 self.payload_decoder.decoders.pop(test_eui, None)
             
-            return result
+            return result if result else {
+                'decoded': False,
+                'reason': 'Test fehlgeschlagen',
+                'raw_data': test_payload
+            }
             
         except Exception as e:
             logging.error(f"Fehler beim Testen des Decoders: {e}")
@@ -286,3 +307,87 @@ module.exports = { decode };
         except Exception as e:
             logging.error(f"Fehler beim Importieren der Decoder-Konfiguration: {e}")
             return False
+    
+    def assign_iodd_to_iolink_adapter(self, sensor_eui: str, vendor_id: int, device_id: int, iodd_name: str) -> bool:
+        """Weise IODD einem IO-Link Adapter basierend auf Vendor/Device ID zu."""
+        try:
+            # Verifiziere dass IODD existiert
+            decoders = self.payload_decoder.get_available_decoders()
+            if iodd_name not in decoders:
+                logging.error(f"IODD {iodd_name} nicht gefunden")
+                return False
+            
+            # Verifiziere dass es eine IODD-Datei ist
+            decoder_info = decoders[iodd_name]
+            if decoder_info.get('type') != 'iodd':
+                logging.error(f"Decoder {iodd_name} ist keine IODD-Datei")
+                return False
+            
+            # Verifiziere Vendor/Device ID Übereinstimmung
+            iodd_vendor_id = decoder_info.get('vendor_id', 0)
+            iodd_device_id = decoder_info.get('device_id', 0)
+            
+            if iodd_vendor_id != vendor_id or iodd_device_id != device_id:
+                logging.warning(f"Vendor/Device ID Mismatch: IODD({iodd_vendor_id},{iodd_device_id}) vs Adapter({vendor_id},{device_id})")
+                # Erlaube trotzdem Zuweisung für Flexibilität
+            
+            # Erstelle spezielle IO-Link Zuweisung
+            success = self.payload_decoder.assign_decoder(sensor_eui, iodd_name)
+            
+            if success:
+                # Speichere zusätzliche IO-Link Metadaten
+                if not hasattr(self.payload_decoder, 'iolink_assignments'):
+                    self.payload_decoder.iolink_assignments = {}
+                
+                self.payload_decoder.iolink_assignments[sensor_eui] = {
+                    'vendor_id': vendor_id,
+                    'device_id': device_id,
+                    'iodd_name': iodd_name,
+                    'assigned_at': time.time()
+                }
+                
+                logging.info(f"IODD {iodd_name} erfolgreich zu IO-Link Adapter {sensor_eui} zugewiesen (VID:{vendor_id}, DID:{device_id})")
+            
+            return success
+            
+        except Exception as e:
+            logging.error(f"Fehler beim Zuweisen der IODD: {e}")
+            return False
+    
+    def get_iolink_adapters(self) -> List[Dict[str, Any]]:
+        """Gib Liste aller erkannten IO-Link Adapter zurück."""
+        try:
+            # Sammle IO-Link Adapter aus Sensor-Daten
+            adapters = []
+            
+            # Prüfe alle Sensoren im System
+            if hasattr(self.payload_decoder, 'sensor_data_cache'):
+                for sensor_eui, sensor_data in self.payload_decoder.sensor_data_cache.items():
+                    # Prüfe ob der Sensor IO-Link Adapter Daten gesendet hat
+                    if 'vendor_id' in sensor_data and 'device_id' in sensor_data:
+                        adapter_info = {
+                            'sensor_eui': sensor_eui,
+                            'vendor_id': sensor_data['vendor_id'],
+                            'device_id': sensor_data['device_id'],
+                            'vendor_id_hex': f"0x{sensor_data['vendor_id']:04X}",
+                            'device_id_hex': f"0x{sensor_data['device_id']:04X}",
+                            'last_seen': sensor_data.get('last_seen', 0),
+                            'assigned_iodd': None
+                        }
+                        
+                        # Prüfe ob IODD zugewiesen ist
+                        if hasattr(self.payload_decoder, 'iolink_assignments'):
+                            assignment = self.payload_decoder.iolink_assignments.get(sensor_eui)
+                            if assignment:
+                                adapter_info['assigned_iodd'] = assignment['iodd_name']
+                        
+                        adapters.append(adapter_info)
+            
+            # Sortiere nach letztem Kontakt
+            adapters.sort(key=lambda x: x['last_seen'], reverse=True)
+            
+            return adapters
+            
+        except Exception as e:
+            logging.error(f"Fehler beim Abrufen der IO-Link Adapter: {e}")
+            return []

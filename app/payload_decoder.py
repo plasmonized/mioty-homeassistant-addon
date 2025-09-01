@@ -9,6 +9,8 @@ import logging
 import re
 import subprocess
 import tempfile
+import time
+import xml.etree.ElementTree as ET
 from typing import Dict, List, Any, Optional, Union
 from pathlib import Path
 
@@ -24,6 +26,10 @@ class PayloadDecoder:
         # Decoder Registry
         self.decoders = {}  # sensor_eui -> decoder_info
         self.decoder_files = {}  # decoder_name -> file_info
+        
+        # IO-Link spezifische Datenstrukturen
+        self.sensor_data_cache = {}  # sensor_eui -> sensor_data
+        self.iolink_assignments = {}  # sensor_eui -> iolink_assignment_info
         
         self.load_decoders()
         logging.info("Payload Decoder Engine initialisiert")
@@ -62,7 +68,7 @@ class PayloadDecoder:
     def _scan_decoder_directory(self):
         """Scanne Decoder-Verzeichnis nach neuen Dateien."""
         for file_path in self.decoder_dir.glob("*"):
-            if file_path.is_file() and file_path.suffix in ['.js', '.json']:
+            if file_path.is_file() and file_path.suffix in ['.js', '.json', '.xml']:
                 decoder_name = file_path.stem
                 if decoder_name not in self.decoder_files:
                     # Neuer Decoder gefunden, analysiere ihn
@@ -79,6 +85,9 @@ class PayloadDecoder:
             elif file_path.suffix == '.js':
                 # Sentinum JavaScript Decoder
                 return self._analyze_js_decoder(file_path)
+            elif file_path.suffix == '.xml':
+                # IODD (IO Device Description) Decoder
+                return self._analyze_iodd_decoder(file_path)
         except Exception as e:
             logging.error(f"Fehler beim Analysieren der Decoder-Datei {file_path}: {e}")
         return None
@@ -119,6 +128,86 @@ class PayloadDecoder:
             'created_at': file_path.stat().st_mtime
         }
     
+    def _analyze_iodd_decoder(self, file_path: Path) -> Dict[str, Any]:
+        """Analysiere IODD (IO Device Description) XML-Datei."""
+        try:
+            tree = ET.parse(file_path)
+            root = tree.getroot()
+            
+            # Entferne Namespace aus XML Tags
+            if '}' in root.tag:
+                namespace = root.tag.split('}')[0] + '}'
+            else:
+                namespace = ''
+            
+            # Extrahiere DeviceIdentity
+            device_identity = root.find(f'.//{namespace}DeviceIdentity')
+            vendor_id = 0
+            device_id = 0
+            vendor_name = "Unknown"
+            device_name = "Unknown"
+            
+            if device_identity is not None:
+                vendor_id = int(device_identity.get('vendorId', '0'))
+                device_id = int(device_identity.get('deviceId', '0'))
+                vendor_name = device_identity.get('vendorName', 'Unknown')
+                device_name = device_identity.get('deviceName', 'Unknown')
+            
+            # Extrahiere ProcessDataIn für Payload-Format
+            process_data_in = root.find(f'.//{namespace}ProcessDataIn')
+            payload_length = 0
+            data_fields = []
+            
+            if process_data_in is not None:
+                # Berechne Bitlength und konvertiere zu Bytes
+                bitlength = int(process_data_in.get('bitLength', '0'))
+                payload_length = (bitlength + 7) // 8  # Aufrunden auf volle Bytes
+                
+                # Extrahiere Datenfelder
+                for var_item in process_data_in.findall(f'.//{namespace}Datatype/{namespace}SimpleDatatype/{namespace}SingleValue'):
+                    field_name = var_item.get('name', 'unknown')
+                    data_type = var_item.get('simpleDatatype', 'UIntegerT')
+                    data_fields.append({
+                        'name': field_name,
+                        'type': data_type
+                    })
+            
+            return {
+                'type': 'iodd',
+                'file_path': str(file_path),
+                'name': f"{vendor_name} {device_name}",
+                'version': root.get('version', '1.0'),
+                'description': f"IODD für {vendor_name} {device_name} (VID:{vendor_id}, DID:{device_id})",
+                'vendor_id': vendor_id,
+                'device_id': device_id,
+                'vendor_name': vendor_name,
+                'device_name': device_name,
+                'payload_length': payload_length,
+                'data_fields': data_fields,
+                'supported_devices': [f"VID_{vendor_id}_DID_{device_id}"],
+                'created_at': file_path.stat().st_mtime
+            }
+            
+        except ET.ParseError as e:
+            logging.error(f"XML-Parser-Fehler in IODD-Datei {file_path}: {e}")
+            # Fallback für ungültige XML-Dateien
+            return {
+                'type': 'iodd',
+                'file_path': str(file_path),
+                'name': file_path.stem,
+                'version': '1.0',
+                'description': f"IODD-Datei (XML-Parser-Fehler: {e})",
+                'vendor_id': 0,
+                'device_id': 0,
+                'vendor_name': 'Unknown',
+                'device_name': file_path.stem,
+                'payload_length': 0,
+                'data_fields': [],
+                'supported_devices': [],
+                'created_at': file_path.stat().st_mtime,
+                'parse_error': str(e)
+            }
+    
     def upload_decoder(self, filename: str, content: Union[str, bytes]) -> bool:
         """Lade neue Decoder-Datei hoch."""
         try:
@@ -129,8 +218,8 @@ class PayloadDecoder:
                 with open(file_path, 'wb') as f:
                     f.write(content)
             else:
-                with open(file_path, 'w') as f:
-                    f.write(content)
+                with open(file_path, 'w', encoding='utf-8') as f:
+                    f.write(str(content))
             
             # Analysiere neue Datei
             decoder_info = self._analyze_decoder_file(file_path)
@@ -139,10 +228,13 @@ class PayloadDecoder:
                 self.save_decoders()
                 logging.info(f"Decoder {filename} erfolgreich hochgeladen")
                 return True
+            else:
+                logging.error(f"Decoder-Analyse fehlgeschlagen für {filename}")
+                return False
             
         except Exception as e:
             logging.error(f"Fehler beim Hochladen des Decoders {filename}: {e}")
-        return False
+            return False
     
     def assign_decoder(self, sensor_eui: str, decoder_name: str) -> bool:
         """Weise Decoder einem Sensor zu."""
