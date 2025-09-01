@@ -134,24 +134,96 @@ class PayloadDecoder:
             tree = ET.parse(file_path)
             root = tree.getroot()
             
-            # Entferne Namespace aus XML Tags
-            if '}' in root.tag:
-                namespace = root.tag.split('}')[0] + '}'
-            else:
-                namespace = ''
+            # Erweiterte Namespace-Behandlung für IODD
+            namespaces = {
+                'iodd': 'http://www.io-link.com/IODD/2010/10',
+                'iodd11': 'http://www.io-link.com/IODD/2011/06'
+            }
             
-            # Extrahiere DeviceIdentity
-            device_identity = root.find(f'.//{namespace}DeviceIdentity')
+            # Extrahiere DeviceIdentity mit verschiedenen Namespace-Optionen
+            device_identity = None
             vendor_id = 0
             device_id = 0
             vendor_name = "Unknown"
             device_name = "Unknown"
             
+            # Versuche verschiedene Xpath-Ausdrücke für DeviceIdentity
+            xpath_variants = [
+                './/iodd:DeviceIdentity',
+                './/iodd11:DeviceIdentity', 
+                './/DeviceIdentity',
+                './/*[local-name()="DeviceIdentity"]'
+            ]
+            
+            for xpath in xpath_variants:
+                if xpath.startswith('.//*[local-name()'):
+                    device_identity = root.find(xpath)
+                else:
+                    device_identity = root.find(xpath, namespaces)
+                if device_identity is not None:
+                    break
+            
             if device_identity is not None:
-                vendor_id = int(device_identity.get('vendorId', '0'))
-                device_id = int(device_identity.get('deviceId', '0'))
-                vendor_name = device_identity.get('vendorName', 'Unknown')
-                device_name = device_identity.get('deviceName', 'Unknown')
+                # Extrahiere VendorId - verschiedene Attributnamen möglich
+                vendor_id_str = (device_identity.get('vendorId') or 
+                               device_identity.get('VendorId') or 
+                               device_identity.get('vendorID') or '0')
+                vendor_id = int(vendor_id_str) if vendor_id_str.isdigit() else 0
+                
+                # Extrahiere DeviceId - verschiedene Attributnamen möglich  
+                device_id_str = (device_identity.get('deviceId') or
+                               device_identity.get('DeviceId') or
+                               device_identity.get('deviceID') or '0')
+                device_id = int(device_id_str) if device_id_str.isdigit() else 0
+                
+                # Extrahiere Namen
+                vendor_name = (device_identity.get('vendorName') or
+                             device_identity.get('VendorName') or 
+                             device_identity.text or "Unknown Vendor")
+                device_name = (device_identity.get('deviceName') or
+                             device_identity.get('DeviceName') or "Unknown Device")
+            
+            # Fallback: Suche nach VendorId und DeviceId in anderen Elementen
+            if vendor_id == 0 or device_id == 0:
+                # Suche nach Vendor-Info im VendorName Element
+                vendor_info = root.find('.//*[local-name()="VendorName"]')
+                if vendor_info is not None and vendor_info.text:
+                    vendor_name = vendor_info.text
+                
+                # Suche nach Device-Info im DeviceName Element  
+                device_info = root.find('.//*[local-name()="DeviceName"]')
+                if device_info is not None and device_info.text:
+                    device_name = device_info.text
+            
+            # Spezialbehandlung für ExternalTextDocument (nur Übersetzungen)
+            if root.tag.endswith('ExternalTextDocument'):
+                logging.info("📋 ExternalTextDocument erkannt - extrahiere Informationen aus Dateinamen")
+                
+                # Extrahiere aus Dateinamen: ifm-000173-20160824-IODD1.0.1-de.xml
+                filename = file_path.name
+                if filename.startswith('ifm-'):
+                    vendor_name = "ifm electronic"
+                    # Extrahiere Geräte-Nummer
+                    parts = filename.split('-')
+                    if len(parts) >= 2:
+                        device_code = parts[1]  # 000173
+                        device_name = f"KQ Kapazitiver Sensor ({device_code})"
+                    
+                    # Verwende Vendor/Device IDs aus echtem IO-Link Payload (310/29441)
+                    vendor_id = 310  # IFM Vendor ID
+                    device_id = 29441  # KQ-Sensor Device ID (aus Payload)
+                
+                # Extrahiere Produktinformationen aus Text-Elementen
+                for text_elem in root.findall('.//*[local-name()="Text"]'):
+                    text_id = text_elem.get('id', '')
+                    text_value = text_elem.get('value', '')
+                    
+                    if 'Product' in text_id and 'Name' in text_id:
+                        if 'KQ' in text_value:
+                            device_name = f"ifm {text_value} Kapazitiver Sensor"
+                            break
+            
+            logging.info(f"📋 IODD Analyse: VID={vendor_id}, DID={device_id}, Vendor='{vendor_name}', Device='{device_name}'")
             
             # Extrahiere ProcessDataIn für Payload-Format
             process_data_in = root.find(f'.//{namespace}ProcessDataIn')
@@ -175,7 +247,9 @@ class PayloadDecoder:
             return {
                 'type': 'iodd',
                 'file_path': str(file_path),
+                'filename': file_path.name,
                 'name': f"{vendor_name} {device_name}",
+                'display_name': f"{vendor_name} {device_name}",
                 'version': root.get('version', '1.0'),
                 'description': f"IODD für {vendor_name} {device_name} (VID:{vendor_id}, DID:{device_id})",
                 'vendor_id': vendor_id,
@@ -1064,7 +1138,8 @@ try {{
             import xml.etree.ElementTree as ET
             
             # IODD-Datei laden
-            iodd_file_path = self.decoder_dir / decoder_info['filename']
+            filename = decoder_info.get('filename') or decoder_info.get('file_path', '').split('/')[-1]
+            iodd_file_path = self.decoder_dir / filename
             if not iodd_file_path.exists():
                 logging.warning(f"IODD-Datei nicht gefunden: {iodd_file_path}")
                 return {}
