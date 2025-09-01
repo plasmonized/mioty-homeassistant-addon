@@ -18,44 +18,6 @@
     }
   },
   "decoder_files": {
-    "temp_humidity_blueprint": {
-      "type": "blueprint",
-      "file_path": "decoders/temp_humidity_blueprint.json",
-      "name": "Temperature Humidity Sensor",
-      "version": "1.0",
-      "description": "Standard Temperature/Humidity Sensor Blueprint",
-      "supported_devices": [
-        "TH_SENSOR_V1",
-        "TH_SENSOR_V2"
-      ],
-      "payload_format": {
-        "temperature": {
-          "type": "uint16",
-          "length": 2,
-          "scale": 0.1,
-          "offset": -40.0,
-          "unit": "\u00b0C",
-          "description": "Temperature measurement"
-        },
-        "humidity": {
-          "type": "uint16",
-          "length": 2,
-          "scale": 0.01,
-          "offset": 0.0,
-          "unit": "%",
-          "description": "Relative humidity"
-        },
-        "battery": {
-          "type": "uint8",
-          "length": 1,
-          "scale": 0.1,
-          "offset": 0.0,
-          "unit": "V",
-          "description": "Battery voltage"
-        }
-      },
-      "created_at": 1756487232.3254724
-    },
     "juno_th": {
       "type": "javascript",
       "file_path": "decoders/juno_th.js",
@@ -109,34 +71,6 @@
       "description": "Sentinum JavaScript Decoder",
       "supported_devices": [],
       "created_at": 1756716940.7003171
-    },
-    "decoder_registry": {
-      "type": "blueprint",
-      "file_path": "decoders/decoder_registry.json",
-      "name": "decoder_registry",
-      "version": "1.0",
-      "description": "mioty Blueprint Decoder",
-      "supported_devices": [],
-      "payload_format": {},
-      "created_at": 1756729897.2725554
-    },
-    "temp_humidity_sentinum": {
-      "type": "javascript",
-      "file_path": "decoders/temp_humidity_sentinum.js",
-      "name": "Sentinum Temperature Humidity Decoder",
-      "version": "1.0",
-      "description": "Decodes temperature and humidity sensor data",
-      "supported_devices": [],
-      "created_at": 1756729993.7804954
-    },
-    "environmental_sensor": {
-      "type": "javascript",
-      "file_path": "decoders/environmental_sensor.js",
-      "name": "Environmental Sensor Decoder",
-      "version": "1.0",
-      "description": "Decoder f\u00fcr Environmental Sensor (FCA84A090000000A Format)",
-      "supported_devices": [],
-      "created_at": 1756731323.1806304
     }
   }
 }
