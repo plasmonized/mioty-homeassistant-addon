@@ -823,33 +823,30 @@ try {{
             pd_in_length = bytes_data[1]
             data['pd_in_length'] = pd_in_length
             
-            # Byte 2: PD-out length  
-            pd_out_length = bytes_data[2]
-            data['pd_out_length'] = pd_out_length
-            
-            # Bytes 3-4: Vendor ID (2 Bytes, Big Endian)
-            vendor_id = (bytes_data[3] << 8) | bytes_data[4]
+            # Bytes 2-3: Vendor ID (2 Bytes, Big Endian)
+            vendor_id = (bytes_data[2] << 8) | bytes_data[3]
             data['vendor_id'] = vendor_id
             data['vendor_id_hex'] = f"0x{vendor_id:04X}"
             
-            # Bytes 5-8: Device ID (4 Bytes, aber letztes Byte ignorieren!)
-            # Bug-Fix: 0x00 01 73 -> ignore 0x00, take 01 73 -> 0x173 = 371
-            device_id_raw = bytes_data[5:8]  # Nur die ersten 3 Bytes nehmen
-            device_id = (device_id_raw[0] << 16) | (device_id_raw[1] << 8) | device_id_raw[2]
+            # Bytes 4-6: Device ID (3 Bytes, Little-Endian, letztes Byte ignorieren!)
+            # Beispiel: 00 01 73 00 -> nehme 01 73 -> Little-Endian: 73 01 = 371
+            device_id_bytes = bytes_data[5:7]  # Bytes 5-6 (Skip Byte 4 = 0x00)
+            device_id = device_id_bytes[0] | (device_id_bytes[1] << 8)  # Little-Endian
             data['device_id'] = device_id
-            data['device_id_hex'] = f"0x{device_id:06X}"
+            data['device_id_hex'] = f"0x{device_id:04X}"
             
             logging.info(f"🔗 IO-LINK ADAPTER ERKANNT!")
             logging.info(f"🏭 Vendor ID: {vendor_id} (0x{vendor_id:04X})")
-            logging.info(f"📱 Device ID: {device_id} (0x{device_id:06X})")
-            logging.info(f"📊 PD-in: {pd_in_length} bytes, PD-out: {pd_out_length} bytes")
+            logging.info(f"📱 Device ID: {device_id} (0x{device_id:04X})")
+            logging.info(f"📊 PD-in: {pd_in_length} bytes")
+            logging.info(f"🔧 Bytes 2-3 (Vendor): {bytes_data[2]:02X} {bytes_data[3]:02X}")
+            logging.info(f"🔧 Bytes 5-6 (Device): {bytes_data[5]:02X} {bytes_data[6]:02X} (Little-Endian)")
             
             # Prozessdaten extrahieren (falls vorhanden)
-            pd_start_index = 9  # Nach dem Header
+            pd_start_index = 7  # Nach dem korrigierten Header (nicht mehr 9!)
             if len(bytes_data) > pd_start_index:
-                pd_length = pd_in_length + pd_out_length
-                if len(bytes_data) >= pd_start_index + pd_length:
-                    process_data = bytes_data[pd_start_index:pd_start_index + pd_length]
+                if len(bytes_data) >= pd_start_index + pd_in_length:
+                    process_data = bytes_data[pd_start_index:pd_start_index + pd_in_length]
                     data['process_data'] = process_data
                     data['process_data_hex'] = ' '.join([f"{b:02X}" for b in process_data])
             
