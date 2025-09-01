@@ -342,53 +342,11 @@ try {{
     
     def _simple_js_decode(self, js_content: str, payload_bytes: List[int], 
                          metadata: Dict[str, Any]) -> Dict[str, Any]:
-        """Vereinfachte JavaScript Dekodierung ohne Node.js."""
-        # Fallback: Einfache Pattern-Matching für häufige Sentinum-Muster
-        logging.warning("Node.js nicht verfügbar, verwende vereinfachte JS Dekodierung")
+        """Verbesserte JavaScript Dekodierung mit Sentinum Engine Logik."""
+        logging.warning("Node.js nicht verfügbar, verwende verbesserte Sentinum Engine")
         
-        # Prüfe auf Juno-Decoder basierend auf JS-Content
-        if 'juno' in js_content.lower():
-            return self._decode_juno_python(payload_bytes, metadata)
-        # Prüfe auf Febris-Decoder basierend auf JS-Content
-        elif 'febris' in js_content.lower() or 'base_id' in js_content:
-            return self._decode_febris_python(payload_bytes, metadata)
-        
-        # Suche nach Temperatur/Humidity Pattern
-        temp_pattern = r'temperature.*?(\d+(?:\.\d+)?)'
-        humidity_pattern = r'humidity.*?(\d+(?:\.\d+)?)'
-        
-        decoded_data = {}
-        
-        # Einfache Heuristiken für common sensor data
-        if len(payload_bytes) >= 2:
-            # Typisches Temp/Humidity Format
-            temp_raw = (payload_bytes[0] << 8 | payload_bytes[1]) if len(payload_bytes) >= 2 else 0
-            temp = (temp_raw - 400) / 10.0  # Häufiges Sentinum-Format
-            
-            decoded_data['temperature'] = {
-                'value': round(temp, 1),
-                'unit': '°C',
-                'description': 'Temperature'
-            }
-        
-        if len(payload_bytes) >= 4:
-            humidity_raw = (payload_bytes[2] << 8 | payload_bytes[3]) if len(payload_bytes) >= 4 else 0
-            humidity = humidity_raw / 100.0
-            
-            decoded_data['humidity'] = {
-                'value': round(humidity, 1),
-                'unit': '%',
-                'description': 'Relative Humidity'
-            }
-        
-        return {
-            'decoded': True,
-            'decoder_type': 'javascript_simplified',
-            'decoder_name': 'Simple JS Decoder',
-            'data': decoded_data,
-            'raw_data': payload_bytes,
-            'warning': 'Simplified decoding used (Node.js not available)'
-        }
+        # Verwende professionelle Sentinum-Engine Logik
+        return self._sentinum_engine_decode(js_content, payload_bytes, metadata)
     
     def _decode_febris_python(self, payload_bytes: List[int], metadata: Dict[str, Any]) -> Dict[str, Any]:
         """Python-Implementierung des Febris TH Decoders."""
@@ -670,6 +628,214 @@ try {{
             return {
                 'decoded': False,
                 'reason': f'Juno Python decoding error: {str(e)}',
+                'raw_data': payload_bytes
+            }
+    
+    def _sentinum_engine_decode(self, js_content: str, payload_bytes: List[int], 
+                               metadata: Dict[str, Any]) -> Dict[str, Any]:
+        """Professionelle Sentinum Engine Dekodierung in Python."""
+        try:
+            # 1. Sensor-Typ basierend auf Payload erkennen
+            sensor_type = self._detect_sensor_type(payload_bytes)
+            logging.info(f"Erkannter Sensor-Typ: {sensor_type}")
+            
+            # 2. Spezifischen Decoder basierend auf JS-Content und Sensor-Typ wählen
+            if 'febris' in js_content.lower() and sensor_type == 'FEBR-Environmental':
+                return self._decode_febris_sentinum(payload_bytes, metadata)
+            elif 'juno' in js_content.lower():
+                return self._decode_juno_sentinum(payload_bytes, metadata)
+            elif sensor_type == 'FEBR-Environmental':
+                return self._decode_febris_sentinum(payload_bytes, metadata)
+            else:
+                # Fallback zu generischem Decoder
+                return self._decode_generic_sentinum(payload_bytes, metadata, sensor_type)
+                
+        except Exception as e:
+            logging.error(f"Sentinum Engine Fehler: {e}")
+            return {
+                'decoded': False,
+                'reason': f'Sentinum Engine error: {str(e)}',
+                'raw_data': payload_bytes
+            }
+    
+    def _detect_sensor_type(self, payload_bytes: List[int]) -> str:
+        """Sensor-Typ basierend auf Payload erkennen."""
+        if len(payload_bytes) < 2:
+            return 'Unknown'
+        
+        # Febris Environmental (17 bytes, startet mit 0x11)
+        if len(payload_bytes) == 17 and payload_bytes[0] == 0x11:
+            return 'FEBR-Environmental'
+        
+        # Febris Utility (12+ bytes)
+        if len(payload_bytes) >= 12 and 0x10 <= payload_bytes[0] <= 0x1F:
+            return 'FEBR-Utility'
+        
+        # Juno-ähnliche Sensoren
+        if len(payload_bytes) >= 6 and payload_bytes[0] <= 0x0F:
+            return 'Juno-TH'
+        
+        return 'Generic-mioty'
+    
+    def _decode_febris_sentinum(self, payload_bytes: List[int], metadata: Dict[str, Any]) -> Dict[str, Any]:
+        """Professionelle Febris TH Dekodierung basierend auf Sentinum Engine."""
+        try:
+            if len(payload_bytes) < 17:
+                return {
+                    'decoded': False,
+                    'reason': 'Payload zu kurz für Febris TH (mindestens 17 Bytes erforderlich)',
+                    'raw_data': payload_bytes
+                }
+            
+            bytes_data = payload_bytes
+            data = {}
+            
+            # Byte 0: Base ID (obere 4 Bits) und Major Version (untere 4 Bits)
+            data['base_id'] = (bytes_data[0] >> 4) & 0x0F
+            data['major_version'] = bytes_data[0] & 0x0F
+            
+            # Byte 1: Minor Version (obere 4 Bits) und Product Version (untere 4 Bits)
+            data['minor_version'] = (bytes_data[1] >> 4) & 0x0F
+            data['product_version'] = bytes_data[1] & 0x0F
+            
+            # Byte 2: Upload Counter
+            data['up_cnt'] = bytes_data[2]
+            
+            # Bytes 3-4: Battery Voltage (mV)
+            data['battery_voltage'] = ((bytes_data[3] << 8) | bytes_data[4]) / 1000.0
+            
+            # Bytes 5-6: Internal Temperature (0.1°C - 100°C offset)
+            temp_raw = (bytes_data[5] << 8) | bytes_data[6]
+            data['internal_temperature'] = (temp_raw / 10.0) - 100.0
+            
+            # Bytes 7-8: Relative Humidity (0.01% RH)
+            data['humidity'] = ((bytes_data[7] << 8) | bytes_data[8]) / 100.0
+            
+            # Alarm Status (falls verfügbar)
+            if len(bytes_data) > 14:
+                data['alarm'] = bytes_data[14]
+            
+            # Taupunkt berechnen (Magnus-Formel)
+            if 'internal_temperature' in data and 'humidity' in data:
+                temp = data['internal_temperature']
+                rh = data['humidity']
+                
+                # Magnus-Formel für Taupunkt
+                a = 17.27
+                b = 237.7
+                import math
+                alpha = ((a * temp) / (b + temp)) + math.log(rh / 100.0)
+                data['dew_point'] = (b * alpha) / (a - alpha)
+            
+            # Konvertiere zu erwartetes Format
+            formatted_data = {}
+            
+            for key, value in data.items():
+                if key in ['networkBaseType', 'networkSubType']:
+                    continue
+                
+                # Bestimme Einheit und Beschreibung
+                unit = ''
+                description = key.replace('_', ' ').title()
+                
+                if 'temperature' in key.lower():
+                    unit = '°C'
+                elif key == 'humidity':
+                    unit = '%RH'
+                    description = 'Relative Humidity'
+                elif 'battery' in key.lower() and 'voltage' in key.lower():
+                    unit = 'V'
+                    description = 'Battery Voltage'
+                elif 'dew_point' in key:
+                    unit = '°C'
+                    description = 'Dew Point'
+                
+                if isinstance(value, (int, float)):
+                    formatted_data[key] = {
+                        'value': round(value, 2),
+                        'unit': unit,
+                        'description': description
+                    }
+                else:
+                    formatted_data[key] = {
+                        'value': value,
+                        'unit': unit,
+                        'description': description
+                    }
+            
+            return {
+                'decoded': True,
+                'decoder_type': 'sentinum_febris',
+                'decoder_name': 'Febris TH (Sentinum Engine)',
+                'data': formatted_data,
+                'raw_data': payload_bytes
+            }
+            
+        except Exception as e:
+            logging.error(f"Febris Sentinum Decoder Fehler: {e}")
+            return {
+                'decoded': False,
+                'reason': f'Febris Sentinum decoding error: {str(e)}',
+                'raw_data': payload_bytes
+            }
+    
+    def _decode_juno_sentinum(self, payload_bytes: List[int], metadata: Dict[str, Any]) -> Dict[str, Any]:
+        """Verbesserte Juno TH Dekodierung basierend auf Sentinum Engine."""
+        # Verwende die bereits implementierte Juno-Logik, aber mit Sentinum-Format
+        result = self._decode_juno_python(payload_bytes, metadata)
+        if result.get('decoded'):
+            result['decoder_type'] = 'sentinum_juno'
+            result['decoder_name'] = 'Juno TH (Sentinum Engine)'
+        return result
+    
+    def _decode_generic_sentinum(self, payload_bytes: List[int], metadata: Dict[str, Any], 
+                                sensor_type: str) -> Dict[str, Any]:
+        """Generischer Sentinum Decoder für unbekannte Sensoren."""
+        try:
+            data = {}
+            
+            # Basis-Parsing für mioty-Sensoren
+            if len(payload_bytes) >= 6:
+                # Standard mioty Header
+                data['sensor_id'] = payload_bytes[0]
+                data['packet_type'] = payload_bytes[1] if len(payload_bytes) > 1 else 0
+                
+                # Einfache Werte extrahieren
+                if len(payload_bytes) >= 4:
+                    value1 = (payload_bytes[2] << 8) | payload_bytes[3]
+                    data['value1'] = value1
+                
+                if len(payload_bytes) >= 6:
+                    value2 = (payload_bytes[4] << 8) | payload_bytes[5]
+                    data['value2'] = value2
+            
+            formatted_data = {}
+            for key, value in data.items():
+                formatted_data[key] = {
+                    'value': value,
+                    'unit': '',
+                    'description': key.replace('_', ' ').title()
+                }
+            
+            # Raw Data als Hex hinzufügen
+            formatted_data['raw_hex'] = {
+                'value': ' '.join(f'{b:02X}' for b in payload_bytes),
+                'unit': 'hex',
+                'description': 'Raw Hex Data'
+            }
+            
+            return {
+                'decoded': True,
+                'decoder_type': 'sentinum_generic',
+                'decoder_name': f'Generic {sensor_type} (Sentinum Engine)',
+                'data': formatted_data,
+                'raw_data': payload_bytes
+            }
+            
+        except Exception as e:
+            return {
+                'decoded': False,
+                'reason': f'Generic Sentinum decoding error: {str(e)}',
                 'raw_data': payload_bytes
             }
     

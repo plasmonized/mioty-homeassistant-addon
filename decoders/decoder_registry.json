@@ -7,6 +7,14 @@
     "fca84a030000127c": {
       "decoder_name": "febris_th",
       "assigned_at": 1756729897.2729912
+    },
+    "fca84a0300001276": {
+      "decoder_name": "febris_th",
+      "assigned_at": 1756734487.0
+    },
+    "74731d0000000016": {
+      "decoder_name": "juno_th",
+      "assigned_at": 1756734487.0
     }
   },
   "decoder_files": {
