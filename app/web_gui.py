@@ -6,7 +6,7 @@ Flask-basierte Benutzeroberfläche für Sensor-Management
 import logging
 import json
 from typing import Any, Dict
-from flask import Flask, render_template_string, request, jsonify, redirect, url_for
+from flask import Flask, render_template, render_template_string, request, jsonify, redirect, url_for
 from flask_cors import CORS
 from settings_manager import SettingsManager
 
@@ -20,7 +20,7 @@ class WebGUI:
         self.addon = addon_instance
         self.settings = SettingsManager()
         
-        self.app = Flask(__name__)
+        self.app = Flask(__name__, template_folder='templates')
         CORS(self.app)
         
         # Erweiterte HTTP-Protokollierung aktivieren
@@ -163,7 +163,12 @@ class WebGUI:
                 logging.warning("⚠️  Nicht in Home Assistant Ingress! Add-on läuft in externer Umgebung.")
                 logging.info("💡 Für volle Home Assistant Integration: Add-on in HA installieren")
             
-            return render_template_string(self.get_main_template(), ingress_path=ingress_path)
+            # Versuche zuerst separate Template-Datei, dann Fallback zum eingebetteten Template
+            try:
+                return render_template('index.html', ingress_path=ingress_path)
+            except:
+                logging.info("Verwende eingebettetes Template als Fallback")
+                return render_template_string(self.get_main_template(), ingress_path=ingress_path)
         
         @self.app.route('/settings')
         def settings():

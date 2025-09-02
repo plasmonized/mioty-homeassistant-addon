@@ -25,6 +25,9 @@ COPY app/ /opt/
 COPY run.sh /
 RUN chmod a+x /run.sh
 
+# Force cache bust for templates (version 1.0.4.5)
+RUN echo "Template update: 1.0.4.5" > /opt/version.txt
+
 # Set work directory
 WORKDIR /opt
 
