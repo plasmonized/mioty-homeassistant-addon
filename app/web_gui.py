@@ -87,7 +87,7 @@ class WebGUI:
             """Protokolliere Response-Details und setze Cache-Control Headers."""
             
             # WICHTIG: Cache-Control Headers für Browser-Cache-Probleme
-            if request.path.endswith(('.html', '.css', '.js')) or request.path in ['/', '/settings', '/decoders']:
+            if request.path and (request.path.endswith(('.html', '.css', '.js')) or request.path in ['/', '/settings', '/decoders']):
                 response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
                 response.headers['Pragma'] = 'no-cache'
                 response.headers['Expires'] = '0'

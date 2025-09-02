@@ -10,6 +10,13 @@ Preferred communication style: Simple, everyday language.
 
 # Recent Changes
 
+**02.09.2025 - Browser-Cache Problem behoben (Version 1.0.4.5):**
+- **KRITISCHES CACHE-PROBLEM BEHOBEN:** Anti-Cache Headers implementiert (Cache-Control: no-cache, no-store, must-revalidate)
+- Browser-Cache-Problem gelöst, das altes Dashboard nach Add-on Updates anzeigte
+- Automatische Cache-Verhinderung für alle GUI-Seiten (/, /settings, /decoders)
+- Pragma und Expires Headers für vollständige Browser-Kompatibilität
+- Cache-Control Logging für besseres Debugging hinzugefügt
+
 **02.09.2025 - Erweiterte HTTP-Debugging Implementierung (Version 1.0.4.4):**
 - Vollständige HTTP-Request-Protokollierung mit allen Headers und Parametern
 - Home Assistant Ingress-Erkennung und automatische Umgebungsdetektion
