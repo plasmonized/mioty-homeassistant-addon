@@ -23,10 +23,111 @@ class WebGUI:
         self.app = Flask(__name__)
         CORS(self.app)
         
+        # Erweiterte HTTP-Protokollierung aktivieren
+        self.setup_logging()
+        
         # Routen definieren
         self.setup_routes()
         
         logging.info(f"Web GUI initialisiert auf Port {port}")
+    
+    def setup_logging(self):
+        """Konfiguriere erweiterte HTTP-Protokollierung für Debugging."""
+        
+        @self.app.before_request
+        def log_request_details():
+            """Protokolliere detaillierte Request-Informationen."""
+            logging.info("=" * 80)
+            logging.info("🔍 HTTP REQUEST DEBUGGING")
+            logging.info("-" * 40)
+            logging.info(f"📍 Method: {request.method}")
+            logging.info(f"📍 URL: {request.url}")
+            logging.info(f"📍 Path: {request.path}")
+            logging.info(f"📍 Remote IP: {request.remote_addr}")
+            logging.info(f"📍 User Agent: {request.headers.get('User-Agent', 'N/A')}")
+            
+            # Home Assistant Ingress Header Analysis
+            logging.info("-" * 40)
+            logging.info("🏠 HOME ASSISTANT INGRESS ANALYSIS")
+            ha_headers = [
+                'X-Ingress-Path',
+                'X-Real-IP', 
+                'X-Forwarded-For',
+                'X-Forwarded-Host',
+                'X-Forwarded-Proto',
+                'Host',
+                'Origin',
+                'Referer'
+            ]
+            
+            for header in ha_headers:
+                value = request.headers.get(header, 'NICHT GESETZT')
+                if value != 'NICHT GESETZT':
+                    logging.info(f"📧 {header}: {value}")
+                else:
+                    logging.warning(f"⚠️  {header}: NICHT GESETZT")
+            
+            # Alle Header für vollständige Analyse
+            logging.info("-" * 40)
+            logging.info("📧 ALLE REQUEST HEADERS:")
+            for key, value in request.headers:
+                logging.info(f"   {key}: {value}")
+            
+            # Query Parameters
+            if request.args:
+                logging.info("-" * 40)
+                logging.info("🔗 QUERY PARAMETERS:")
+                for key, value in request.args.items():
+                    logging.info(f"   {key}: {value}")
+            
+            logging.info("=" * 80)
+        
+        @self.app.after_request
+        def log_response_details(response):
+            """Protokolliere Response-Details."""
+            logging.info("📤 RESPONSE DETAILS:")
+            logging.info(f"   Status: {response.status}")
+            logging.info(f"   Content-Type: {response.content_type}")
+            logging.info(f"   Content-Length: {response.content_length}")
+            
+            # Response Headers für Ingress-Debugging
+            logging.info("📧 RESPONSE HEADERS:")
+            for key, value in response.headers:
+                logging.info(f"   {key}: {value}")
+            
+            return response
+        
+        # HTTP Error Handler
+        @self.app.errorhandler(404)
+        def handle_404(error):
+            """Handle 404 Fehler mit detailliertem Logging."""
+            logging.error("❌ 404 ERROR - PAGE NOT FOUND")
+            logging.error(f"   Requested URL: {request.url}")
+            logging.error(f"   Requested Path: {request.path}")
+            logging.error(f"   Method: {request.method}")
+            logging.error(f"   Remote IP: {request.remote_addr}")
+            return jsonify({"error": "Page not found", "path": request.path}), 404
+        
+        @self.app.errorhandler(500)
+        def handle_500(error):
+            """Handle 500 Fehler mit detailliertem Logging."""
+            logging.error("❌ 500 ERROR - INTERNAL SERVER ERROR")
+            logging.error(f"   Error: {str(error)}")
+            logging.error(f"   URL: {request.url}")
+            logging.error(f"   Method: {request.method}")
+            return jsonify({"error": "Internal server error"}), 500
+        
+        @self.app.errorhandler(Exception)
+        def handle_exception(error):
+            """Handle alle unbehandelten Ausnahmen."""
+            logging.error("💥 UNHANDLED EXCEPTION")
+            logging.error(f"   Exception Type: {type(error).__name__}")
+            logging.error(f"   Exception Message: {str(error)}")
+            logging.error(f"   URL: {request.url}")
+            logging.error(f"   Method: {request.method}")
+            import traceback
+            logging.error(f"   Traceback: {traceback.format_exc()}")
+            return jsonify({"error": "Application error", "details": str(error)}), 500
     
     def setup_routes(self):
         """Definiere Web-Routen."""
@@ -36,6 +137,24 @@ class WebGUI:
             """Hauptseite."""
             # Get the ingress path from Home Assistant header
             ingress_path = request.headers.get('X-Ingress-Path', '')
+            
+            # Spezielle Ingress-Debugging für Hauptseite
+            logging.info("🏠 INDEX PAGE INGRESS DEBUGGING")
+            logging.info(f"   X-Ingress-Path: {ingress_path}")
+            logging.info(f"   Host Header: {request.headers.get('Host', 'N/A')}")
+            logging.info(f"   Request URL: {request.url}")
+            logging.info(f"   Base URL: {request.base_url}")
+            logging.info(f"   URL Root: {request.url_root}")
+            
+            # Home Assistant Ingress Detection
+            is_ha_ingress = bool(ingress_path) or 'hassio' in request.headers.get('Host', '').lower()
+            environment = "Home Assistant Ingress" if is_ha_ingress else "Development/External"
+            
+            logging.info(f"🔍 ENVIRONMENT DETECTION: {environment}")
+            if not is_ha_ingress:
+                logging.warning("⚠️  Nicht in Home Assistant Ingress! Add-on läuft in externer Umgebung.")
+                logging.info("💡 Für volle Home Assistant Integration: Add-on in HA installieren")
+            
             return render_template_string(self.get_main_template(), ingress_path=ingress_path)
         
         @self.app.route('/settings')
@@ -43,6 +162,12 @@ class WebGUI:
             """Einstellungsseite."""
             # Get the ingress path from Home Assistant header
             ingress_path = request.headers.get('X-Ingress-Path', '')
+            
+            # Spezielle Ingress-Debugging für Einstellungsseite
+            logging.info("⚙️ SETTINGS PAGE INGRESS DEBUGGING")
+            logging.info(f"   X-Ingress-Path: {ingress_path}")
+            logging.info(f"   Request URL: {request.url}")
+            
             return render_template_string(self.get_settings_template(), ingress_path=ingress_path)
         
         @self.app.route('/decoders')
@@ -50,6 +175,12 @@ class WebGUI:
             """Decoder-Verwaltungsseite."""
             # Get the ingress path from Home Assistant header
             ingress_path = request.headers.get('X-Ingress-Path', '')
+            
+            # Spezielle Ingress-Debugging für Decoder-Seite
+            logging.info("🔧 DECODERS PAGE INGRESS DEBUGGING")
+            logging.info(f"   X-Ingress-Path: {ingress_path}")
+            logging.info(f"   Request URL: {request.url}")
+            
             return render_template_string(self.get_decoders_template(), ingress_path=ingress_path)
         
         @self.app.route('/api/sensors')
