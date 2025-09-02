@@ -10,6 +10,14 @@ Preferred communication style: Simple, everyday language.
 
 # Recent Changes
 
+**02.09.2025 - Erweiterte HTTP-Debugging Implementierung (Version 1.0.4.4):**
+- Vollständige HTTP-Request-Protokollierung mit allen Headers und Parametern
+- Home Assistant Ingress-Erkennung und automatische Umgebungsdetektion
+- Detaillierte Response-Debugging mit Status-Codes und Headers
+- Spezielle Ingress-Debugging für alle Hauptseiten (Index, Settings, Decoders)
+- HTTP-Fehler-Handler mit umfassendem Logging für Troubleshooting
+- Warnsystem für externe/Development-Umgebung vs. Home Assistant Ingress
+
 **01.09.2025 - Konfiguration bereinigt:**
 - Unnötige bssci_service_url Konfiguration entfernt (wird nicht verwendet - alles läuft über MQTT)
 - Dokumentation in README-Dateien aktualisiert 
