@@ -76,16 +76,28 @@ class WebGUI:
             if not self.addon:
                 return jsonify({"error": "Add-on nicht verfügbar"}), 500
             
+            # mioty MQTT Status
             mqtt_connected = False
             mqtt_broker = 'Unbekannt'
             
+            # Home Assistant MQTT Status
+            ha_mqtt_connected = False
+            ha_mqtt_broker = 'Unbekannt'
+            
             if hasattr(self.addon, 'mqtt_manager') and self.addon.mqtt_manager:
+                # mioty MQTT Client Status
                 mqtt_connected = self.addon.mqtt_manager.connected
                 mqtt_broker = f"{self.addon.mqtt_manager.broker}:{self.addon.mqtt_manager.port}"
+                
+                # Home Assistant MQTT Client Status
+                ha_mqtt_connected = self.addon.mqtt_manager.ha_connected
+                ha_mqtt_broker = f"{self.addon.mqtt_manager.ha_broker}:{self.addon.mqtt_manager.ha_port}"
             
             status = {
                 'mqtt_connected': mqtt_connected,
                 'mqtt_broker': mqtt_broker,
+                'ha_mqtt_connected': ha_mqtt_connected,
+                'ha_mqtt_broker': ha_mqtt_broker,
                 'sensor_count': len(self.addon.sensors) if hasattr(self.addon, 'sensors') else 0,
                 'basestation_count': len(self.addon.base_stations) if hasattr(self.addon, 'base_stations') else 0
             }
@@ -1466,8 +1478,13 @@ class WebGUI:
                 
                 const mqttColor = status.mqtt_connected ? '#28a745' : '#dc3545';
                 const mqttText = status.mqtt_connected ? 
-                    `MQTT: Verbunden (${status.mqtt_broker})` : 
-                    'MQTT: Getrennt';
+                    `mioty MQTT: Verbunden (${status.mqtt_broker})` : 
+                    'mioty MQTT: Getrennt';
+                
+                const haMqttColor = status.ha_mqtt_connected ? '#28a745' : '#dc3545';
+                const haMqttText = status.ha_mqtt_connected ? 
+                    `HA MQTT: Verbunden (${status.ha_mqtt_broker})` : 
+                    `HA MQTT: Getrennt (${status.ha_mqtt_broker})`;
                 
                 connectionStatus.innerHTML = `
                     <div style="padding: 20px; background: #f8f9fa; border-radius: 8px;">
@@ -1478,6 +1495,10 @@ class WebGUI:
                         <div style="display: flex; align-items: center; margin-bottom: 10px;">
                             <div style="width: 12px; height: 12px; background: ${mqttColor}; border-radius: 50%; margin-right: 10px;"></div>
                             <strong>${mqttText}</strong>
+                        </div>
+                        <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                            <div style="width: 12px; height: 12px; background: ${haMqttColor}; border-radius: 50%; margin-right: 10px;"></div>
+                            <strong>${haMqttText}</strong>
                         </div>
                         <div style="display: flex; align-items: center;">
                             <div style="width: 12px; height: 12px; background: #ffc107; border-radius: 50%; margin-right: 10px;"></div>
