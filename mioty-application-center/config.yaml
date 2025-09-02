@@ -32,10 +32,10 @@ panel_title: "mioty Application Center"
 ingress: true
 ingress_port: 5000
 options:
-  mqtt_broker: "akahlig.selfhost.co"
-  mqtt_port: 1887
-  mqtt_username: "Hasso"
-  mqtt_password: "test=1234"
+  mqtt_broker: "your-mqtt-broker.com"
+  mqtt_port: 1883
+  mqtt_username: "your-username"
+  mqtt_password: "your-password"
   ha_mqtt_broker: "core-mosquitto"
   ha_mqtt_port: 1883
   ha_mqtt_username: ""

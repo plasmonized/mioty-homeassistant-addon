@@ -14,10 +14,10 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'app'))
 # Set demo environment variables
 # Update these with your real MQTT broker credentials
 os.environ.update({
-    'MQTT_BROKER': 'akahlig.selfhost.co',  
-    'MQTT_PORT': '1887',
-    'MQTT_USERNAME': 'Hasso',
-    'MQTT_PASSWORD': 'test=1234',
+    'MQTT_BROKER': 'your-mqtt-broker.com',  
+    'MQTT_PORT': '1883',
+    'MQTT_USERNAME': 'your-username',
+    'MQTT_PASSWORD': 'your-password',
     'BSSCI_SERVICE_URL': os.getenv('BSSCI_SERVICE_URL', 'localhost:16018'),
     'BASE_TOPIC': 'bssci',
     'AUTO_DISCOVERY': 'true',

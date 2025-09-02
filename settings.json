@@ -1,11 +1,11 @@
 {
-  "mqtt_broker": "akahlig.selfhost.co",
-  "mqtt_port": 1887,
+  "mqtt_broker": "your-mqtt-broker.com",
+  "mqtt_port": 1883,
   "mqtt_username": "",
   "mqtt_password": "",
   "base_topic": "bssci",
   "auto_discovery": true,
-  "ha_mqtt_broker": "192.168.0.238",
+  "ha_mqtt_broker": "core-mosquitto",
   "ha_mqtt_port": 1883,
   "ha_mqtt_username": "",
   "ha_mqtt_password": ""

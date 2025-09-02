@@ -1,0 +1,73 @@
+# Logs
+*.log
+*.log.*
+logs/
+
+# Runtime data
+*.pid
+*.seed
+*.pid.lock
+
+# Dependency directories
+node_modules/
+venv/
+__pycache__/
+
+# Environment variables and secrets
+.env
+.env.local
+.env.production
+.env.staging
+
+# Personal configuration files
+settings.json.local
+config.local.yaml
+
+# Home Assistant specific
+/data/
+/config/
+secrets.yaml
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Build outputs
+dist/
+build/
+*.tar.gz
+*.zip
+
+# Coverage reports
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+
+# Testing
+.pytest_cache/
+.tox/
+
+# Credentials backup (just in case)
+*credentials*
+*secrets*
+*.key
+*.pem
+*.cert

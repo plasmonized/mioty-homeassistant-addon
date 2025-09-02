@@ -62,10 +62,10 @@ class BSSCIAddon:
             
             # Kombiniere gespeicherte Einstellungen mit Environment Variables als Fallback
             config = {
-                'mqtt_broker': saved_settings.get('mqtt_broker') or os.getenv('MQTT_BROKER', 'akahlig.selfhost.co'),
-                'mqtt_port': saved_settings.get('mqtt_port') or int(os.getenv('MQTT_PORT', '1887')),
-                'mqtt_username': saved_settings.get('mqtt_username') or os.getenv('MQTT_USERNAME', 'Hasso'),
-                'mqtt_password': saved_settings.get('mqtt_password') or os.getenv('MQTT_PASSWORD', 'test=1234'),
+                'mqtt_broker': saved_settings.get('mqtt_broker') or os.getenv('MQTT_BROKER', 'your-mqtt-broker.com'),
+                'mqtt_port': saved_settings.get('mqtt_port') or int(os.getenv('MQTT_PORT', '1883')),
+                'mqtt_username': saved_settings.get('mqtt_username') or os.getenv('MQTT_USERNAME', 'your-username'),
+                'mqtt_password': saved_settings.get('mqtt_password') or os.getenv('MQTT_PASSWORD', 'your-password'),
                 'ha_mqtt_broker': saved_settings.get('ha_mqtt_broker') or os.getenv('HA_MQTT_BROKER', 'core-mosquitto'),
                 'ha_mqtt_port': saved_settings.get('ha_mqtt_port') or int(os.getenv('HA_MQTT_PORT', '1883')),
                 'ha_mqtt_username': saved_settings.get('ha_mqtt_username') or os.getenv('HA_MQTT_USERNAME', ''),
@@ -80,10 +80,10 @@ class BSSCIAddon:
             logging.warning(f"Konnte gespeicherte Einstellungen nicht laden: {e}, verwende Environment Variables")
             # Fallback zu Environment Variables
             return {
-                'mqtt_broker': os.getenv('MQTT_BROKER', 'akahlig.selfhost.co'),
-                'mqtt_port': int(os.getenv('MQTT_PORT', '1887')),
-                'mqtt_username': os.getenv('MQTT_USERNAME', 'Hasso'),
-                'mqtt_password': os.getenv('MQTT_PASSWORD', 'test=1234'),
+                'mqtt_broker': os.getenv('MQTT_BROKER', 'your-mqtt-broker.com'),
+                'mqtt_port': int(os.getenv('MQTT_PORT', '1883')),
+                'mqtt_username': os.getenv('MQTT_USERNAME', 'your-username'),
+                'mqtt_password': os.getenv('MQTT_PASSWORD', 'your-password'),
                 'ha_mqtt_broker': os.getenv('HA_MQTT_BROKER', 'core-mosquitto'),
                 'ha_mqtt_port': int(os.getenv('HA_MQTT_PORT', '1883')),
                 'ha_mqtt_username': os.getenv('HA_MQTT_USERNAME', ''),
