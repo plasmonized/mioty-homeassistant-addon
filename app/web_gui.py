@@ -84,7 +84,15 @@ class WebGUI:
         
         @self.app.after_request
         def log_response_details(response):
-            """Protokolliere Response-Details."""
+            """Protokolliere Response-Details und setze Cache-Control Headers."""
+            
+            # WICHTIG: Cache-Control Headers für Browser-Cache-Probleme
+            if request.path.endswith(('.html', '.css', '.js')) or request.path in ['/', '/settings', '/decoders']:
+                response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+                response.headers['Pragma'] = 'no-cache'
+                response.headers['Expires'] = '0'
+                logging.info("🚫 Cache-Control Headers gesetzt (Anti-Cache)")
+            
             logging.info("📤 RESPONSE DETAILS:")
             logging.info(f"   Status: {response.status}")
             logging.info(f"   Content-Type: {response.content_type}")
