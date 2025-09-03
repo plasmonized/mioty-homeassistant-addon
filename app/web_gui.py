@@ -87,11 +87,16 @@ class WebGUI:
         def log_response_details(response):
             """Protokolliere Response-Details und setze Cache-Control Headers."""
             
-            # WICHTIG: Cache-Control Headers für Browser-Cache-Probleme
+            # AGGRESSIVE IFRAME CACHE-BUSTING für Replit
             if hasattr(request, 'path') and request.path and (request.path.endswith(('.html', '.css', '.js')) or request.path in ['/', '/settings', '/decoders']):
-                response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+                response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0, private'
                 response.headers['Pragma'] = 'no-cache'
                 response.headers['Expires'] = '0'
+                response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+                response.headers['Vary'] = '*'
+                # Eindeutige ETag für jeden Request
+                import time
+                response.headers['ETag'] = f'"{int(time.time() * 1000)}"'
                 logging.info("🚫 Cache-Control Headers gesetzt (Anti-Cache)")
             
             logging.info("📤 RESPONSE DETAILS:")

@@ -191,7 +191,7 @@ class MQTTManager:
             topic = msg.topic
             payload = msg.payload.decode('utf-8')
             
-            logging.debug(f"MQTT Nachricht: {topic}")
+            logging.info(f"📨 MQTT Nachricht empfangen: {topic} (Payload: {len(payload)} bytes)")
             
             # Parse Topic
             topic_parts = topic.split('/')

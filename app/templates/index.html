@@ -233,7 +233,34 @@
             }
         }
         
-        // Auto-refresh
+        // REPLIT IFRAME CACHE-BUSTING LÖSUNG
+        function addCacheBuster(url) {
+            const separator = url.includes('?') ? '&' : '?';
+            return url + separator + 'cb=' + Date.now();
+        }
+        
+        // Force refresh für iframe
+        if (window.parent !== window) {
+            console.log('🔄 IFRAME ERKANNT - Cache-Busting aktiviert für Replit!');
+            // Überschreibe fetch mit automatischem Cache-Busting
+            const originalFetch = window.fetch;
+            window.fetch = function(url, options = {}) {
+                if (typeof url === 'string' && (url.startsWith('/api/') || url.startsWith('${BASE_URL}/api/'))) {
+                    url = addCacheBuster(url);
+                    console.log('🚀 Cache-Buster URL:', url);
+                }
+                // Force no-cache headers
+                options.cache = 'no-store';
+                options.headers = {
+                    ...options.headers,
+                    'Cache-Control': 'no-cache',
+                    'Pragma': 'no-cache'
+                };
+                return originalFetch(url, options);
+            };
+        }
+        
+        // Auto-refresh mit verbessertem Error-Handling
         function startAutoRefresh() {
             loadSensors();
             loadBaseStations();
