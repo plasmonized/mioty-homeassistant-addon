@@ -16,6 +16,7 @@ Preferred communication style: Simple, everyday language.
 - **TEMPLATE-PFAD KORRIGIERT:** Flask Template-Folder konfiguration behoben für korrekte Template-Erkennung
 - **VERALTETES FALLBACK ELIMINIERT:** Eingebettetes Template-System entfernt um Versionskonflikte zu verhindern
 - **DOCKER CACHE-BUSTING:** Dynamische Versionsangaben und Debugging-Output im Dockerfile implementiert
+- **SETTINGS CACHE-BUSTING BEHOBEN:** Cache-Busting zu Settings/Decoder Templates hinzugefügt für korrekte API-Calls
 - **🎯 BESTÄTIGT:** Embedded-Ansicht in Home Assistant funktioniert perfekt mit Live-Daten und Navigation
 
 **03.09.2025 - Replit iframe Cache-Busting & HA MQTT Integration (Version 1.0.4.6):**

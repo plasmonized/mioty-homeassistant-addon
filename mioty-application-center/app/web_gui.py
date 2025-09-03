@@ -972,7 +972,41 @@ class WebGUI:
         console.log('Ingress path from server:', INGRESS_PATH);
         console.log('BASE_URL resolved:', BASE_URL);
         console.log('Current pathname:', window.location.pathname);
-        console.log('Is embedded (iframe):', window.self !== window.top);
+        console.log('Is embedded (iframe):', window.parent !== window);
+        
+        // HOME ASSISTANT INGRESS CACHE-BUSTING LÖSUNG
+        function addCacheBuster(url) {
+            const separator = url.includes('?') ? '&' : '?';
+            return url + separator + 'cb=' + Date.now() + '&t=' + Math.random();
+        }
+        
+        // Erkenne Home Assistant Ingress Environment  
+        const isHomeAssistantIngress = window.location.pathname.includes('/api/hassio_ingress/') || 
+                                      document.referrer.includes('homeassistant') || 
+                                      window.parent !== window;
+        
+        if (isHomeAssistantIngress) {
+            console.log('🏠 HOME ASSISTANT INGRESS ERKANNT - Cache-Busting aktiviert!');
+            
+            // Überschreibe fetch mit automatischem Cache-Busting
+            const originalFetch = window.fetch;
+            window.fetch = function(url, options = {}) {
+                if (typeof url === 'string' && (url.startsWith('/api/') || url.startsWith(BASE_URL + '/api/'))) {
+                    url = addCacheBuster(url);
+                    console.log('⚙️ Cache-Buster URL:', url);
+                }
+                // Aggressive no-cache headers für Home Assistant
+                options.cache = 'no-store';
+                options.headers = {
+                    ...options.headers,
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache',
+                    'Expires': '0',
+                    'X-Requested-With': 'XMLHttpRequest'
+                };
+                return originalFetch(url, options);
+            };
+        }
         
         // Simplified navigation for embedded mode
         const navigateTo = (path) => {
@@ -1254,7 +1288,10 @@ class WebGUI:
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>mioty Application Center Einstellungen</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>mioty Application Center Einstellungen v1.0.4.6.1</title>
     <style>
         * {
             margin: 0;
@@ -1573,7 +1610,41 @@ class WebGUI:
         console.log('Ingress path from server:', INGRESS_PATH);
         console.log('BASE_URL resolved:', BASE_URL);
         console.log('Current pathname:', window.location.pathname);
-        console.log('Is embedded (iframe):', window.self !== window.top);
+        console.log('Is embedded (iframe):', window.parent !== window);
+        
+        // HOME ASSISTANT INGRESS CACHE-BUSTING LÖSUNG
+        function addCacheBuster(url) {
+            const separator = url.includes('?') ? '&' : '?';
+            return url + separator + 'cb=' + Date.now() + '&t=' + Math.random();
+        }
+        
+        // Erkenne Home Assistant Ingress Environment  
+        const isHomeAssistantIngress = window.location.pathname.includes('/api/hassio_ingress/') || 
+                                      document.referrer.includes('homeassistant') || 
+                                      window.parent !== window;
+        
+        if (isHomeAssistantIngress) {
+            console.log('🏠 HOME ASSISTANT INGRESS ERKANNT - Cache-Busting aktiviert!');
+            
+            // Überschreibe fetch mit automatischem Cache-Busting
+            const originalFetch = window.fetch;
+            window.fetch = function(url, options = {}) {
+                if (typeof url === 'string' && (url.startsWith('/api/') || url.startsWith(BASE_URL + '/api/'))) {
+                    url = addCacheBuster(url);
+                    console.log('⚙️ Cache-Buster URL:', url);
+                }
+                // Aggressive no-cache headers für Home Assistant
+                options.cache = 'no-store';
+                options.headers = {
+                    ...options.headers,
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache',
+                    'Expires': '0',
+                    'X-Requested-With': 'XMLHttpRequest'
+                };
+                return originalFetch(url, options);
+            };
+        }
         
         // Simplified navigation for embedded mode
         const navigateTo = (path) => {
@@ -1889,7 +1960,41 @@ class WebGUI:
         console.log('Ingress path from server:', INGRESS_PATH);
         console.log('BASE_URL resolved:', BASE_URL);
         console.log('Current pathname:', window.location.pathname);
-        console.log('Is embedded (iframe):', window.self !== window.top);
+        console.log('Is embedded (iframe):', window.parent !== window);
+        
+        // HOME ASSISTANT INGRESS CACHE-BUSTING LÖSUNG
+        function addCacheBuster(url) {
+            const separator = url.includes('?') ? '&' : '?';
+            return url + separator + 'cb=' + Date.now() + '&t=' + Math.random();
+        }
+        
+        // Erkenne Home Assistant Ingress Environment  
+        const isHomeAssistantIngress = window.location.pathname.includes('/api/hassio_ingress/') || 
+                                      document.referrer.includes('homeassistant') || 
+                                      window.parent !== window;
+        
+        if (isHomeAssistantIngress) {
+            console.log('🏠 HOME ASSISTANT INGRESS ERKANNT - Cache-Busting aktiviert!');
+            
+            // Überschreibe fetch mit automatischem Cache-Busting
+            const originalFetch = window.fetch;
+            window.fetch = function(url, options = {}) {
+                if (typeof url === 'string' && (url.startsWith('/api/') || url.startsWith(BASE_URL + '/api/'))) {
+                    url = addCacheBuster(url);
+                    console.log('⚙️ Cache-Buster URL:', url);
+                }
+                // Aggressive no-cache headers für Home Assistant
+                options.cache = 'no-store';
+                options.headers = {
+                    ...options.headers,
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache',
+                    'Expires': '0',
+                    'X-Requested-With': 'XMLHttpRequest'
+                };
+                return originalFetch(url, options);
+            };
+        }
         
         // Simplified navigation for embedded mode
         const navigateTo = (path) => {
