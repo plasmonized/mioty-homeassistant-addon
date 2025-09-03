@@ -1291,7 +1291,7 @@ class WebGUI:
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>mioty Application Center Einstellungen v1.0.4.6.4</title>
+    <title>mioty Application Center Einstellungen v1.0.4.6.5</title>
     <style>
         * {
             margin: 0;

@@ -10,6 +10,9 @@ Preferred communication style: Simple, everyday language.
 
 # Recent Changes
 
+**03.09.2025 - Version Update (Version 1.0.4.6.5) - ✅ AKTUELL:**
+- **VERSIONSNUMMER ERHÖHT:** Aktuelle Produktionsversion für Home Assistant Add-on Store
+
 **03.09.2025 - Home Assistant BASE_URL Settings Fix (Version 1.0.4.6.4) - ✅ ERFOLGREICH:**
 - **HOME ASSISTANT BASE_URL PROBLEM BEHOBEN:** POST-Requests für Settings verwenden jetzt korrekte BASE_URL für HA Ingress
 - **SETTINGS-SPEICHERN FUNKTIONIERT:** Sowohl normale MQTT als auch HA MQTT Settings funktionieren in echter HA Umgebung
