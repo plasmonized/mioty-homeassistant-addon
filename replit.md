@@ -10,7 +10,13 @@ Preferred communication style: Simple, everyday language.
 
 # Recent Changes
 
-**03.09.2025 - Version Update (Version 1.0.4.6.5) - ✅ AKTUELL:**
+**03.09.2025 - Universal JavaScript Cache-Busting Fix (Version 1.0.4.6.6) - ✅ AKTUELL:**
+- **DIREKTER PORT-5000-ZUGRIFF REPARIERT:** JavaScript funktioniert jetzt sowohl für Ingress als auch direkten Zugriff
+- **UNIVERSAL CACHE-BUSTING:** Cache-Busting für alle Zugriffsmethoden aktiviert (nicht nur Ingress)
+- **SETTINGS-SPEICHERN FUNKTIONIERT:** Sowohl über Home Assistant als auch über direkten Port-5000-Zugriff
+- **DUAL-MODUS UNTERSTÜTZUNG:** System erkennt automatisch die Zugriffsmethode und passt sich an
+
+**03.09.2025 - Version Update (Version 1.0.4.6.5) - ✅ ERFOLGREICH:**
 - **VERSIONSNUMMER ERHÖHT:** Aktuelle Produktionsversion für Home Assistant Add-on Store
 
 **03.09.2025 - Home Assistant BASE_URL Settings Fix (Version 1.0.4.6.4) - ✅ ERFOLGREICH:**

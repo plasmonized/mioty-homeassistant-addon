@@ -985,28 +985,32 @@ class WebGUI:
                                       document.referrer.includes('homeassistant') || 
                                       window.parent !== window;
         
+        // IMMER Cache-Busting aktivieren - sowohl für Ingress als auch direkten Zugriff
+        console.log('🔧 UNIVERSAL CACHE-BUSTING AKTIVIERT - Funktioniert für alle Zugriffsmethoden!');
         if (isHomeAssistantIngress) {
-            console.log('🏠 HOME ASSISTANT INGRESS ERKANNT - Cache-Busting aktiviert!');
-            
-            // Überschreibe fetch mit automatischem Cache-Busting
-            const originalFetch = window.fetch;
-            window.fetch = function(url, options = {}) {
-                if (typeof url === 'string' && (url.startsWith('/api/') || url.startsWith(BASE_URL + '/api/'))) {
-                    url = addCacheBuster(url);
-                    console.log('⚙️ Cache-Buster URL:', url);
-                }
-                // Aggressive no-cache headers für Home Assistant
-                options.cache = 'no-store';
-                options.headers = {
-                    ...options.headers,
-                    'Cache-Control': 'no-cache, no-store, must-revalidate',
-                    'Pragma': 'no-cache',
-                    'Expires': '0',
-                    'X-Requested-With': 'XMLHttpRequest'
-                };
-                return originalFetch(url, options);
-            };
+            console.log('🏠 HOME ASSISTANT INGRESS ERKANNT');
+        } else {
+            console.log('🔗 DIREKTER ZUGRIFF ERKANNT (Port 5000)');
         }
+        
+        // Überschreibe fetch mit automatischem Cache-Busting
+        const originalFetch = window.fetch;
+        window.fetch = function(url, options = {}) {
+            if (typeof url === 'string' && (url.startsWith('/api/') || url.startsWith(BASE_URL + '/api/'))) {
+                url = addCacheBuster(url);
+                console.log('⚙️ Cache-Buster URL:', url);
+            }
+            // No-cache headers für beide Zugriffsmethoden
+            options.cache = 'no-store';
+            options.headers = {
+                ...options.headers,
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0',
+                'X-Requested-With': 'XMLHttpRequest'
+            };
+            return originalFetch(url, options);
+        };
         
         // Simplified navigation for embedded mode
         const navigateTo = (path) => {
@@ -1291,7 +1295,7 @@ class WebGUI:
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>mioty Application Center Einstellungen v1.0.4.6.5</title>
+    <title>mioty Application Center Einstellungen v1.0.4.6.6</title>
     <style>
         * {
             margin: 0;
@@ -1623,28 +1627,32 @@ class WebGUI:
                                       document.referrer.includes('homeassistant') || 
                                       window.parent !== window;
         
+        // IMMER Cache-Busting aktivieren - sowohl für Ingress als auch direkten Zugriff
+        console.log('🔧 UNIVERSAL CACHE-BUSTING AKTIVIERT - Funktioniert für alle Zugriffsmethoden!');
         if (isHomeAssistantIngress) {
-            console.log('🏠 HOME ASSISTANT INGRESS ERKANNT - Cache-Busting aktiviert!');
-            
-            // Überschreibe fetch mit automatischem Cache-Busting
-            const originalFetch = window.fetch;
-            window.fetch = function(url, options = {}) {
-                if (typeof url === 'string' && (url.startsWith('/api/') || url.startsWith(BASE_URL + '/api/'))) {
-                    url = addCacheBuster(url);
-                    console.log('⚙️ Cache-Buster URL:', url);
-                }
-                // Aggressive no-cache headers für Home Assistant
-                options.cache = 'no-store';
-                options.headers = {
-                    ...options.headers,
-                    'Cache-Control': 'no-cache, no-store, must-revalidate',
-                    'Pragma': 'no-cache',
-                    'Expires': '0',
-                    'X-Requested-With': 'XMLHttpRequest'
-                };
-                return originalFetch(url, options);
-            };
+            console.log('🏠 HOME ASSISTANT INGRESS ERKANNT');
+        } else {
+            console.log('🔗 DIREKTER ZUGRIFF ERKANNT (Port 5000)');
         }
+        
+        // Überschreibe fetch mit automatischem Cache-Busting
+        const originalFetch = window.fetch;
+        window.fetch = function(url, options = {}) {
+            if (typeof url === 'string' && (url.startsWith('/api/') || url.startsWith(BASE_URL + '/api/'))) {
+                url = addCacheBuster(url);
+                console.log('⚙️ Cache-Buster URL:', url);
+            }
+            // No-cache headers für beide Zugriffsmethoden
+            options.cache = 'no-store';
+            options.headers = {
+                ...options.headers,
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0',
+                'X-Requested-With': 'XMLHttpRequest'
+            };
+            return originalFetch(url, options);
+        };
         
         // Simplified navigation for embedded mode
         const navigateTo = (path) => {
@@ -1999,28 +2007,32 @@ class WebGUI:
                                       document.referrer.includes('homeassistant') || 
                                       window.parent !== window;
         
+        // IMMER Cache-Busting aktivieren - sowohl für Ingress als auch direkten Zugriff
+        console.log('🔧 UNIVERSAL CACHE-BUSTING AKTIVIERT - Funktioniert für alle Zugriffsmethoden!');
         if (isHomeAssistantIngress) {
-            console.log('🏠 HOME ASSISTANT INGRESS ERKANNT - Cache-Busting aktiviert!');
-            
-            // Überschreibe fetch mit automatischem Cache-Busting
-            const originalFetch = window.fetch;
-            window.fetch = function(url, options = {}) {
-                if (typeof url === 'string' && (url.startsWith('/api/') || url.startsWith(BASE_URL + '/api/'))) {
-                    url = addCacheBuster(url);
-                    console.log('⚙️ Cache-Buster URL:', url);
-                }
-                // Aggressive no-cache headers für Home Assistant
-                options.cache = 'no-store';
-                options.headers = {
-                    ...options.headers,
-                    'Cache-Control': 'no-cache, no-store, must-revalidate',
-                    'Pragma': 'no-cache',
-                    'Expires': '0',
-                    'X-Requested-With': 'XMLHttpRequest'
-                };
-                return originalFetch(url, options);
-            };
+            console.log('🏠 HOME ASSISTANT INGRESS ERKANNT');
+        } else {
+            console.log('🔗 DIREKTER ZUGRIFF ERKANNT (Port 5000)');
         }
+        
+        // Überschreibe fetch mit automatischem Cache-Busting
+        const originalFetch = window.fetch;
+        window.fetch = function(url, options = {}) {
+            if (typeof url === 'string' && (url.startsWith('/api/') || url.startsWith(BASE_URL + '/api/'))) {
+                url = addCacheBuster(url);
+                console.log('⚙️ Cache-Buster URL:', url);
+            }
+            // No-cache headers für beide Zugriffsmethoden
+            options.cache = 'no-store';
+            options.headers = {
+                ...options.headers,
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0',
+                'X-Requested-With': 'XMLHttpRequest'
+            };
+            return originalFetch(url, options);
+        };
         
         // Simplified navigation for embedded mode
         const navigateTo = (path) => {
