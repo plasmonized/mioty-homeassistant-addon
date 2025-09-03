@@ -1706,6 +1706,8 @@ class WebGUI:
         settingsForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
+            console.log('🔧 SETTINGS: Form submit gestartet...');
+            
             const formData = new FormData(settingsForm);
             const data = {
                 mqtt_broker: formData.get('mqtt_broker'),
@@ -1716,12 +1718,23 @@ class WebGUI:
                 auto_discovery: formData.get('auto_discovery') === 'on'
             };
             
+            console.log('🔧 SETTINGS: Daten zu speichern:', data);
+            
             try {
-                const response = await fetch(BASE_URL + '/api/settings', {
+                console.log('🔧 SETTINGS: Sending POST to /api/settings');
+                const response = await fetch('/api/settings', {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
                     body: JSON.stringify(data)
                 });
+                
+                console.log('🔧 SETTINGS: Response status:', response.status);
                 
                 const result = await response.json();
                 
@@ -1741,6 +1754,8 @@ class WebGUI:
         haSettingsForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
+            console.log('🔧 HA-SETTINGS: Form submit gestartet...');
+            
             const formData = new FormData(haSettingsForm);
             const data = {
                 ha_mqtt_broker: formData.get('ha_mqtt_broker'),
@@ -1749,12 +1764,23 @@ class WebGUI:
                 ha_mqtt_password: formData.get('ha_mqtt_password')
             };
             
+            console.log('🔧 HA-SETTINGS: Daten zu speichern:', data);
+            
             try {
-                const response = await fetch(BASE_URL + '/api/ha-settings', {
+                console.log('🔧 HA-SETTINGS: Sending POST to /api/ha-settings');
+                const response = await fetch('/api/ha-settings', {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
                     body: JSON.stringify(data)
                 });
+                
+                console.log('🔧 HA-SETTINGS: Response status:', response.status);
                 
                 const result = await response.json();
                 
