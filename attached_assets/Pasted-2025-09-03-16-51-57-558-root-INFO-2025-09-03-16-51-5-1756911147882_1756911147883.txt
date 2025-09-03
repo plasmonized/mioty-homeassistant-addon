@@ -1,0 +1,155 @@
+2025-09-03 16:51:57,558 - root - INFO - ----------------------------------------
+2025-09-03 16:51:57,558 - root - INFO - 📧 ALLE REQUEST HEADERS:
+2025-09-03 16:51:57,558 - root - INFO -    Host: 192.168.0.177:8123
+2025-09-03 16:51:57,558 - root - INFO -    User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 Edg/139.0.0.0
+2025-09-03 16:51:57,558 - root - INFO -    X-Remote-User-Id: f933e7cd533449439af67b8f04471613
+2025-09-03 16:51:57,558 - root - INFO -    X-Remote-User-Name: alex
+2025-09-03 16:51:57,558 - root - INFO -    X-Remote-User-Display-Name: Alex Kahlig
+2025-09-03 16:51:57,558 - root - INFO -    Connection: keep-alive
+2025-09-03 16:51:57,559 - root - INFO -    Expires: 0
+2025-09-03 16:51:57,559 - root - INFO -    Cache-Control: no-cache, no-store, must-revalidate
+2025-09-03 16:51:57,559 - root - INFO -    X-Requested-With: XMLHttpRequest
+2025-09-03 16:51:57,559 - root - INFO -    Pragma: no-cache
+2025-09-03 16:51:57,559 - root - INFO -    Dnt: 1
+2025-09-03 16:51:57,559 - root - INFO -    Content-Type: application/json
+2025-09-03 16:51:57,559 - root - INFO -    Accept: */*
+2025-09-03 16:51:57,559 - root - INFO -    Origin: http://192.168.0.177:8123
+2025-09-03 16:51:57,560 - root - INFO -    Accept-Language: de,de-DE;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6
+2025-09-03 16:51:57,560 - root - INFO -    Cookie: ingress_session=0cefbe68696d3899b3bfafa50142ae05269cd849771fc2fe272feb46c9b4d0177cf1527f8d8826473b9e00adb017dea179373ebd831c80eef538474e2cdad0d5
+2025-09-03 16:51:57,560 - root - INFO -    X-Hass-Source: core.ingress
+2025-09-03 16:51:57,560 - root - INFO -    X-Ingress-Path: /api/hassio_ingress/IuwQ0xNs3UqoEDEEc6NSXKjUy6h2RyAV2fGg_gJWqBI
+2025-09-03 16:51:57,560 - root - INFO -    X-Forwarded-For: 192.168.0.91, 172.30.32.1
+2025-09-03 16:51:57,560 - root - INFO -    X-Forwarded-Host: 192.168.0.177:8123
+2025-09-03 16:51:57,560 - root - INFO -    X-Forwarded-Proto: http
+2025-09-03 16:51:57,560 - root - INFO -    Accept-Encoding: gzip, deflate, br
+2025-09-03 16:51:57,560 - root - INFO -    Content-Length: 154
+2025-09-03 16:51:57,561 - root - INFO - ----------------------------------------
+2025-09-03 16:51:57,561 - root - INFO - 🔗 QUERY PARAMETERS:
+2025-09-03 16:51:57,561 - root - INFO -    cb: 1756911117316
+2025-09-03 16:51:57,561 - root - INFO -    t: 0.30609626729283634
+2025-09-03 16:51:57,561 - root - INFO - ================================================================================
+2025-09-03 16:51:57,561 - root - INFO - Einstellungen gespeichert
+2025-09-03 16:51:57,562 - root - INFO - 📤 RESPONSE DETAILS:
+2025-09-03 16:51:57,562 - root - INFO -    Status: 200 OK
+2025-09-03 16:51:57,562 - root - INFO -    Content-Type: application/json
+2025-09-03 16:51:57,562 - root - INFO -    Content-Length: 122
+2025-09-03 16:51:57,562 - root - INFO - 📧 RESPONSE HEADERS:
+2025-09-03 16:51:57,562 - root - INFO -    Content-Type: application/json
+2025-09-03 16:51:57,562 - root - INFO -    Content-Length: 122
+2025-09-03 16:51:57,563 - werkzeug - INFO - 172.30.32.2 - - [03/Sep/2025 16:51:57] "POST /api/settings?cb=1756911117316&t=0.30609626729283634 HTTP/1.1" 200 -
+2025-09-03 16:51:59,088 - root - INFO - ================================================================================
+2025-09-03 16:51:59,088 - root - INFO - 🔍 HTTP REQUEST DEBUGGING
+2025-09-03 16:51:59,088 - root - INFO - ----------------------------------------
+2025-09-03 16:51:59,089 - root - INFO - 📍 Method: GET
+2025-09-03 16:51:59,089 - root - INFO - 📍 URL: http://192.168.0.177:8123/api/settings?cb=1756911118848&t=0.22499305166679717
+2025-09-03 16:51:59,089 - root - INFO - 📍 Path: /api/settings
+2025-09-03 16:51:59,089 - root - INFO - 📍 Remote IP: 172.30.32.2
+2025-09-03 16:51:59,089 - root - INFO - 📍 User Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 Edg/139.0.0.0
+2025-09-03 16:51:59,089 - root - INFO - ----------------------------------------
+2025-09-03 16:51:59,089 - root - INFO - 🏠 HOME ASSISTANT INGRESS ANALYSIS
+2025-09-03 16:51:59,090 - root - INFO - 📧 X-Ingress-Path: /api/hassio_ingress/IuwQ0xNs3UqoEDEEc6NSXKjUy6h2RyAV2fGg_gJWqBI
+2025-09-03 16:51:59,090 - root - WARNING - ⚠️  X-Real-IP: NICHT GESETZT
+2025-09-03 16:51:59,090 - root - INFO - 📧 X-Forwarded-For: 192.168.0.91, 172.30.32.1
+2025-09-03 16:51:59,090 - root - INFO - 📧 X-Forwarded-Host: 192.168.0.177:8123
+2025-09-03 16:51:59,090 - root - INFO - 📧 X-Forwarded-Proto: http
+2025-09-03 16:51:59,090 - root - INFO - 📧 Host: 192.168.0.177:8123
+2025-09-03 16:51:59,091 - root - WARNING - ⚠️  Origin: NICHT GESETZT
+2025-09-03 16:51:59,091 - root - WARNING - ⚠️  Referer: NICHT GESETZT
+2025-09-03 16:51:59,091 - root - INFO - ----------------------------------------
+2025-09-03 16:51:59,091 - root - INFO - 📧 ALLE REQUEST HEADERS:
+2025-09-03 16:51:59,091 - root - INFO -    Host: 192.168.0.177:8123
+2025-09-03 16:51:59,091 - root - INFO -    User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 Edg/139.0.0.0
+2025-09-03 16:51:59,091 - root - INFO -    X-Remote-User-Id: f933e7cd533449439af67b8f04471613
+2025-09-03 16:51:59,091 - root - INFO -    X-Remote-User-Name: alex
+2025-09-03 16:51:59,092 - root - INFO -    X-Remote-User-Display-Name: Alex Kahlig
+2025-09-03 16:51:59,092 - root - INFO -    Connection: keep-alive
+2025-09-03 16:51:59,092 - root - INFO -    Expires: 0
+2025-09-03 16:51:59,092 - root - INFO -    Cache-Control: no-cache, no-store, must-revalidate
+2025-09-03 16:51:59,092 - root - INFO -    X-Requested-With: XMLHttpRequest
+2025-09-03 16:51:59,092 - root - INFO -    Pragma: no-cache
+2025-09-03 16:51:59,092 - root - INFO -    Dnt: 1
+2025-09-03 16:51:59,092 - root - INFO -    Accept: */*
+2025-09-03 16:51:59,092 - root - INFO -    Accept-Language: de,de-DE;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6
+2025-09-03 16:51:59,092 - root - INFO -    Cookie: ingress_session=0cefbe68696d3899b3bfafa50142ae05269cd849771fc2fe272feb46c9b4d0177cf1527f8d8826473b9e00adb017dea179373ebd831c80eef538474e2cdad0d5
+2025-09-03 16:51:59,092 - root - INFO -    X-Hass-Source: core.ingress
+2025-09-03 16:51:59,093 - root - INFO -    X-Ingress-Path: /api/hassio_ingress/IuwQ0xNs3UqoEDEEc6NSXKjUy6h2RyAV2fGg_gJWqBI
+2025-09-03 16:51:59,093 - root - INFO -    X-Forwarded-For: 192.168.0.91, 172.30.32.1
+2025-09-03 16:51:59,093 - root - INFO -    X-Forwarded-Host: 192.168.0.177:8123
+2025-09-03 16:51:59,093 - root - INFO -    X-Forwarded-Proto: http
+2025-09-03 16:51:59,093 - root - INFO -    Accept-Encoding: gzip, deflate, br
+2025-09-03 16:51:59,093 - root - INFO -    Content-Length: 0
+2025-09-03 16:51:59,093 - root - INFO - ----------------------------------------
+2025-09-03 16:51:59,093 - root - INFO - 🔗 QUERY PARAMETERS:
+2025-09-03 16:51:59,093 - root - INFO -    cb: 1756911118848
+2025-09-03 16:51:59,094 - root - INFO -    t: 0.22499305166679717
+2025-09-03 16:51:59,094 - root - INFO - ================================================================================
+2025-09-03 16:51:59,094 - root - INFO - 📤 RESPONSE DETAILS:
+2025-09-03 16:51:59,094 - root - INFO -    Status: 200 OK
+2025-09-03 16:51:59,094 - root - INFO -    Content-Type: application/json
+2025-09-03 16:51:59,094 - root - INFO -    Content-Length: 245
+2025-09-03 16:51:59,094 - root - INFO - 📧 RESPONSE HEADERS:
+2025-09-03 16:51:59,094 - root - INFO -    Content-Type: application/json
+2025-09-03 16:51:59,095 - root - INFO -    Content-Length: 245
+2025-09-03 16:51:59,095 - werkzeug - INFO - 172.30.32.2 - - [03/Sep/2025 16:51:59] "GET /api/settings?cb=1756911118848&t=0.22499305166679717 HTTP/1.1" 200 -
+2025-09-03 16:52:02,057 - root - INFO - ================================================================================
+2025-09-03 16:52:02,058 - root - INFO - 🔍 HTTP REQUEST DEBUGGING
+2025-09-03 16:52:02,058 - root - INFO - ----------------------------------------
+2025-09-03 16:52:02,058 - root - INFO - 📍 Method: GET
+2025-09-03 16:52:02,058 - root - INFO - 📍 URL: http://192.168.0.177:8123/api/status?cb=1756911121810&t=0.09356312463669592
+2025-09-03 16:52:02,058 - root - INFO - 📍 Path: /api/status
+2025-09-03 16:52:02,058 - root - INFO - 📍 Remote IP: 172.30.32.2
+2025-09-03 16:52:02,058 - root - INFO - 📍 User Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 Edg/139.0.0.0
+2025-09-03 16:52:02,058 - root - INFO - ----------------------------------------
+2025-09-03 16:52:02,059 - root - INFO - 🏠 HOME ASSISTANT INGRESS ANALYSIS
+2025-09-03 16:52:02,059 - root - INFO - 📧 X-Ingress-Path: /api/hassio_ingress/IuwQ0xNs3UqoEDEEc6NSXKjUy6h2RyAV2fGg_gJWqBI
+2025-09-03 16:52:02,059 - root - WARNING - ⚠️  X-Real-IP: NICHT GESETZT
+2025-09-03 16:52:02,059 - root - INFO - 📧 X-Forwarded-For: 192.168.0.91, 172.30.32.1
+2025-09-03 16:52:02,059 - root - INFO - 📧 X-Forwarded-Host: 192.168.0.177:8123
+2025-09-03 16:52:02,059 - root - INFO - 📧 X-Forwarded-Proto: http
+2025-09-03 16:52:02,059 - root - INFO - 📧 Host: 192.168.0.177:8123
+2025-09-03 16:52:02,059 - root - WARNING - ⚠️  Origin: NICHT GESETZT
+2025-09-03 16:52:02,059 - root - WARNING - ⚠️  Referer: NICHT GESETZT
+2025-09-03 16:52:02,059 - root - INFO - ----------------------------------------
+2025-09-03 16:52:02,059 - root - INFO - 📧 ALLE REQUEST HEADERS:
+2025-09-03 16:52:02,059 - root - INFO -    Host: 192.168.0.177:8123
+2025-09-03 16:52:02,060 - root - INFO -    User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 Edg/139.0.0.0
+2025-09-03 16:52:02,060 - root - INFO -    X-Remote-User-Id: f933e7cd533449439af67b8f04471613
+2025-09-03 16:52:02,060 - root - INFO -    X-Remote-User-Name: alex
+2025-09-03 16:52:02,060 - root - INFO -    X-Remote-User-Display-Name: Alex Kahlig
+2025-09-03 16:52:02,060 - root - INFO -    Connection: keep-alive
+2025-09-03 16:52:02,060 - root - INFO -    Expires: 0
+2025-09-03 16:52:02,060 - root - INFO -    Cache-Control: no-cache, no-store, must-revalidate
+2025-09-03 16:52:02,060 - root - INFO -    X-Requested-With: XMLHttpRequest
+2025-09-03 16:52:02,060 - root - INFO -    Pragma: no-cache
+2025-09-03 16:52:02,060 - root - INFO -    Dnt: 1
+2025-09-03 16:52:02,060 - root - INFO -    Accept: */*
+2025-09-03 16:52:02,060 - root - INFO -    Accept-Language: de,de-DE;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6
+2025-09-03 16:52:02,060 - root - INFO -    Cookie: ingress_session=0cefbe68696d3899b3bfafa50142ae05269cd849771fc2fe272feb46c9b4d0177cf1527f8d8826473b9e00adb017dea179373ebd831c80eef538474e2cdad0d5
+2025-09-03 16:52:02,060 - root - INFO -    X-Hass-Source: core.ingress
+2025-09-03 16:52:02,061 - root - INFO -    X-Ingress-Path: /api/hassio_ingress/IuwQ0xNs3UqoEDEEc6NSXKjUy6h2RyAV2fGg_gJWqBI
+2025-09-03 16:52:02,061 - root - INFO -    X-Forwarded-For: 192.168.0.91, 172.30.32.1
+2025-09-03 16:52:02,061 - root - INFO -    X-Forwarded-Host: 192.168.0.177:8123
+2025-09-03 16:52:02,061 - root - INFO -    X-Forwarded-Proto: http
+2025-09-03 16:52:02,061 - root - INFO -    Accept-Encoding: gzip, deflate, br
+2025-09-03 16:52:02,061 - root - INFO -    Content-Length: 0
+2025-09-03 16:52:02,061 - root - INFO - ----------------------------------------
+2025-09-03 16:52:02,061 - root - INFO - 🔗 QUERY PARAMETERS:
+2025-09-03 16:52:02,061 - root - INFO -    cb: 1756911121810
+2025-09-03 16:52:02,061 - root - INFO -    t: 0.09356312463669592
+2025-09-03 16:52:02,061 - root - INFO - ================================================================================
+2025-09-03 16:52:02,062 - root - INFO - 📤 RESPONSE DETAILS:
+2025-09-03 16:52:02,062 - root - INFO -    Status: 200 OK
+2025-09-03 16:52:02,062 - root - INFO -    Content-Type: application/json
+2025-09-03 16:52:02,062 - root - INFO -    Content-Length: 165
+2025-09-03 16:52:02,062 - root - INFO - 📧 RESPONSE HEADERS:
+2025-09-03 16:52:02,062 - root - INFO -    Content-Type: application/json
+2025-09-03 16:52:02,062 - root - INFO -    Content-Length: 165
+2025-09-03 16:52:02,062 - werkzeug - INFO - 172.30.32.2 - - [03/Sep/2025 16:52:02] "GET /api/status?cb=1756911121810&t=0.09356312463669592 HTTP/1.1" 200 -
+s6-rc: info: service legacy-services: stopping
+s6-rc: info: service legacy-services successfully stopped
+s6-rc: info: service legacy-cont-init: stopping
+s6-rc: info: service legacy-cont-init successfully stopped
+s6-rc: info: service fix-attrs: stopping
+s6-rc: info: service fix-attrs successfully stopped
+s6-rc: info: service s6rc-oneshot-runner: stopping
+s6-rc: info: service s6rc-oneshot-runner successfully stopped
