@@ -10,6 +10,11 @@ Preferred communication style: Simple, everyday language.
 
 # Recent Changes
 
+**03.09.2025 - Home Assistant BASE_URL Settings Fix (Version 1.0.4.6.4) - ✅ ERFOLGREICH:**
+- **HOME ASSISTANT BASE_URL PROBLEM BEHOBEN:** POST-Requests für Settings verwenden jetzt korrekte BASE_URL für HA Ingress
+- **SETTINGS-SPEICHERN FUNKTIONIERT:** Sowohl normale MQTT als auch HA MQTT Settings funktionieren in echter HA Umgebung
+- **INGRESS KOMPATIBILITÄT PERFEKT:** Vollständige Funktionalität in Home Assistant iframe mit `/api/hassio_ingress/...` Pfaden
+
 **03.09.2025 - JavaScript Settings Fix & UI-Verbesserungen (Version 1.0.4.6.3) - ✅ ERFOLGREICH:**
 - **MQTT SETTINGS JAVASCRIPT REPARIERT:** POST-Requests für Settings-Speichern funktionieren jetzt in Home Assistant iframe
 - **DEBUG-AUSGABEN AKTIVIERT:** Vollständige Debugging-Konsole für Settings-Funktionen implementiert  

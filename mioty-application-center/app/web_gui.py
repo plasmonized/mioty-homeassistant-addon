@@ -1291,7 +1291,7 @@ class WebGUI:
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>mioty Application Center Einstellungen v1.0.4.6.3</title>
+    <title>mioty Application Center Einstellungen v1.0.4.6.4</title>
     <style>
         * {
             margin: 0;
@@ -1721,8 +1721,8 @@ class WebGUI:
             console.log('🔧 SETTINGS: Daten zu speichern:', data);
             
             try {
-                console.log('🔧 SETTINGS: Sending POST to /api/settings');
-                const response = await fetch('/api/settings', {
+                console.log('🔧 SETTINGS: Sending POST to BASE_URL + /api/settings');
+                const response = await fetch(BASE_URL + '/api/settings', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1767,8 +1767,8 @@ class WebGUI:
             console.log('🔧 HA-SETTINGS: Daten zu speichern:', data);
             
             try {
-                console.log('🔧 HA-SETTINGS: Sending POST to /api/ha-settings');
-                const response = await fetch('/api/ha-settings', {
+                console.log('🔧 HA-SETTINGS: Sending POST to BASE_URL + /api/ha-settings');
+                const response = await fetch(BASE_URL + '/api/ha-settings', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
