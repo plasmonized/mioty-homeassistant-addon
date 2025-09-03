@@ -10,6 +10,12 @@ Preferred communication style: Simple, everyday language.
 
 # Recent Changes
 
+**03.09.2025 - JavaScript Settings Fix & UI-Verbesserungen (Version 1.0.4.6.3) - ✅ ERFOLGREICH:**
+- **MQTT SETTINGS JAVASCRIPT REPARIERT:** POST-Requests für Settings-Speichern funktionieren jetzt in Home Assistant iframe
+- **DEBUG-AUSGABEN AKTIVIERT:** Vollständige Debugging-Konsole für Settings-Funktionen implementiert  
+- **SENTINUM BRANDING INTEGRIERT:** Sentinum Logo im Header und "Powered by Sentinum" Footer hinzugefügt
+- **UI BEREINIGT:** Grüner Versionsbalken entfernt für professionelleres Design
+
 **03.09.2025 - Settings Cache-Busting & Embedded UI Fix (Version 1.0.4.6.2) - ✅ ERFOLGREICH:**
 - **SETTINGS CACHE-BUSTING IMPLEMENTIERT:** Aggressive Cache-Busting für Settings/Decoder Templates aktiviert
 - **EMBEDDED UI VOLLSTÄNDIG FUNKTIONAL:** MQTT-Konfiguration über embedded Settings-Seite möglich
