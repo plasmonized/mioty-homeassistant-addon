@@ -10,6 +10,13 @@ Preferred communication style: Simple, everyday language.
 
 # Recent Changes
 
+**03.09.2025 - Replit iframe Cache-Busting & HA MQTT Integration (Version 1.0.4.6):**
+- **REPLIT IFRAME CACHE-BUSTING:** Aggressive Cache-Busting mit Timestamps für iframe-Umgebung implementiert
+- **HOME ASSISTANT MQTT INTEGRATION:** Vollständige HA MQTT Verbindung konfiguriert (Base Station Discovery funktioniert)
+- **JAVASCRIPT CACHE-OVERRIDE:** Automatisches Cache-Busting für alle API-Calls in iframe-Umgebungen
+- **HTTP HEADERS ERWEITERT:** X-Frame-Options, Vary, ETag Headers für bessere Cache-Kontrolle
+- **EXTERNE ABHÄNGIGKEIT DOKUMENTIERT:** containerized-mioty-Service-Center Referenz in README hinzugefügt
+
 **02.09.2025 - Browser-Cache Problem behoben (Version 1.0.4.5):**
 - **KRITISCHES CACHE-PROBLEM BEHOBEN:** Anti-Cache Headers implementiert (Cache-Control: no-cache, no-store, must-revalidate)
 - Browser-Cache-Problem gelöst, das altes Dashboard nach Add-on Updates anzeigte

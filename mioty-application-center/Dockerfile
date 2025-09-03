@@ -25,8 +25,8 @@ COPY app/ /opt/
 COPY run.sh /
 RUN chmod a+x /run.sh
 
-# Force cache bust for templates (version 1.0.4.5)
-RUN echo "Template update: 1.0.4.5" > /opt/version.txt
+# Force cache bust for templates (version 1.0.4.6)
+RUN echo "Template update: 1.0.4.6" > /opt/version.txt
 
 # Set work directory
 WORKDIR /opt
@@ -37,7 +37,7 @@ LABEL \
     io.hass.description="mioty Application Center für die Verwaltung von mioty IoT Sensoren" \
     io.hass.arch="armhf|aarch64|amd64|armv7|i386" \
     io.hass.type="addon" \
-    io.hass.version="1.0.1"
+    io.hass.version="1.0.4.6"
 
 # Run
 CMD ["/run.sh"]
