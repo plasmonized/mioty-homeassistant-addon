@@ -231,12 +231,15 @@ class WebGUI:
             # Konvertiere Dictionary zu Liste für Frontend
             bs_list = []
             for eui, data in basestations_dict.items():
+                # Sichere Zugriffe auf Base Station-Daten
+                status_data = data.get('data', {}) if isinstance(data.get('data'), dict) else {}
+                
                 bs_info = {
                     'eui': eui,
-                    'status': 'Online',
+                    'status': data.get('status', 'Online'),
                     'last_update': self._format_timestamp(data.get('last_seen', 0)),
-                    'cpu_usage': data.get('status', {}).get('cpu_usage', 'N/A'),
-                    'memory_usage': data.get('status', {}).get('memory_usage', 'N/A')
+                    'cpu_usage': status_data.get('cpu_usage', 'N/A'),
+                    'memory_usage': status_data.get('memory_usage', 'N/A')
                 }
                 bs_list.append(bs_info)
             
