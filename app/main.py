@@ -230,6 +230,7 @@ class BSSCIAddon:
     
     def handle_base_station_data(self, bs_eui: str, data: Dict[str, Any]):
         """Verarbeite Base Station Status-Daten."""
+        logging.info(f"🏢 HANDLE_BASE_STATION_DATA AUFGERUFEN für {bs_eui}")
         logging.info(f"Base Station Status empfangen von {bs_eui}")
         
         # Base Station Daten speichern
@@ -238,6 +239,8 @@ class BSSCIAddon:
             'data': data,
             'status': 'online' if data else 'offline'
         }
+        
+        logging.info(f"🗄️ Base Station {bs_eui} in Dictionary gespeichert. Anzahl Base Stations: {len(self.base_stations)}")
         
         # Home Assistant Discovery für Base Station
         if self.config['auto_discovery']:

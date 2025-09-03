@@ -200,73 +200,47 @@ class WebGUI:
         @self.app.route('/api/sensors')
         def get_sensors():
             """API: Liste aller Sensoren."""
-            try:
-                if self.addon and hasattr(self.addon, 'get_sensor_list'):
-                    sensors = self.addon.get_sensor_list()
-                    
-                    # Wenn keine echten Sensoren vorhanden, Demo-Daten verwenden
-                    if not sensors:
-                        sensors = self._get_demo_sensors()
-                        logging.info("📊 Demo-Sensor-Daten werden verwendet")
-                else:
-                    sensors = self._get_demo_sensors()
-                    logging.info("📊 Add-on nicht verfügbar - Demo-Sensor-Daten werden verwendet")
-                
-                # Konvertiere zu Liste für Frontend
-                if isinstance(sensors, dict):
-                    sensor_list = []
-                    for eui, data in sensors.items():
-                        sensor_info = {
-                            'eui': eui,
-                            'sensor_type': 'mioty IoT Sensor',
-                            'last_update': self._format_timestamp(data.get('last_seen', 0)),
-                            'snr': data.get('data', {}).get('snr', 'N/A'),
-                            'rssi': data.get('data', {}).get('rssi', 'N/A'),
-                            'signal_quality': data.get('signal_quality', 'Unknown')
-                        }
-                        sensor_list.append(sensor_info)
-                    return jsonify(sensor_list)
-                else:
-                    return jsonify(sensors)
-                    
-            except Exception as e:
-                logging.error(f"Fehler in /api/sensors: {e}")
-                return jsonify(self._get_demo_sensors_list())
+            if not self.addon:
+                return jsonify({"error": "Add-on nicht verfügbar"}), 500
+            
+            sensors_dict = self.addon.get_sensor_list()
+            
+            # Konvertiere Dictionary zu Liste für Frontend
+            sensor_list = []
+            for eui, data in sensors_dict.items():
+                sensor_info = {
+                    'eui': eui,
+                    'sensor_type': 'mioty IoT Sensor',
+                    'last_update': self._format_timestamp(data.get('last_seen', 0)),
+                    'snr': data.get('data', {}).get('snr', 'N/A'),
+                    'rssi': data.get('data', {}).get('rssi', 'N/A'),
+                    'signal_quality': data.get('signal_quality', 'Unknown')
+                }
+                sensor_list.append(sensor_info)
+            
+            return jsonify(sensor_list)
         
         @self.app.route('/api/basestations')
         def get_basestations():
             """API: Liste aller Base Stations."""
-            try:
-                if self.addon and hasattr(self.addon, 'get_basestation_list'):
-                    basestations = self.addon.get_basestation_list()
-                    
-                    # Wenn keine echten Base Stations vorhanden, Demo-Daten verwenden
-                    if not basestations:
-                        basestations = self._get_demo_basestations()
-                        logging.info("📊 Demo-BaseStation-Daten werden verwendet")
-                else:
-                    basestations = self._get_demo_basestations()
-                    logging.info("📊 Add-on nicht verfügbar - Demo-BaseStation-Daten werden verwendet")
-                
-                # Konvertiere zu Liste für Frontend
-                if isinstance(basestations, dict):
-                    bs_list = []
-                    for eui, data in basestations.items():
-                        bs_info = {
-                            'eui': eui,
-                            'status': 'Online',
-                            'last_update': self._format_timestamp(data.get('last_seen', 0)),
-                            'cpu_usage': data.get('status', {}).get('cpu_usage', 'N/A'),
-                            'memory_usage': data.get('status', {}).get('memory_usage', 'N/A')
-                        }
-                        bs_list.append(bs_info)
-                    return jsonify(bs_list)
-                else:
-                    return jsonify(basestations)
-                    
-            except Exception as e:
-                logging.error(f"Fehler in /api/basestations: {e}")
-                return jsonify(self._get_demo_basestations_list())
+            if not self.addon:
+                return jsonify({"error": "Add-on nicht verfügbar"}), 500
+            
+            basestations_dict = self.addon.get_basestation_list()
+            
+            # Konvertiere Dictionary zu Liste für Frontend
+            bs_list = []
+            for eui, data in basestations_dict.items():
+                bs_info = {
+                    'eui': eui,
+                    'status': 'Online',
+                    'last_update': self._format_timestamp(data.get('last_seen', 0)),
+                    'cpu_usage': data.get('status', {}).get('cpu_usage', 'N/A'),
+                    'memory_usage': data.get('status', {}).get('memory_usage', 'N/A')
+                }
+                bs_list.append(bs_info)
+            
+            return jsonify(bs_list)
         
         @self.app.route('/api/status')
         def get_status():
@@ -1204,84 +1178,6 @@ class WebGUI:
             except:
                 return "Unbekannt"
         return "Nie"
-    
-    def _get_demo_sensors(self):
-        """Gibt Demo-Sensor-Daten zurück."""
-        current_time = time.time()
-        return {
-            "00:0A:F7:FF:FE:12:34:56": {
-                "last_seen": current_time - 30,
-                "data": {
-                    "snr": 12.5,
-                    "rssi": -85,
-                    "data": "01A203B4",
-                    "cnt": 42,
-                    "rxTime": current_time - 30,
-                    "bs_eui": "BS001234567890AB"
-                },
-                "signal_quality": "Gut"
-            },
-            "00:0A:F7:FF:FE:56:78:90": {
-                "last_seen": current_time - 120,
-                "data": {
-                    "snr": 8.2,
-                    "rssi": -92,
-                    "data": "FF00AA55",
-                    "cnt": 158,
-                    "rxTime": current_time - 120,
-                    "bs_eui": "BS001234567890AB"
-                },
-                "signal_quality": "Mittel"
-            }
-        }
-    
-    def _get_demo_basestations(self):
-        """Gibt Demo-BaseStation-Daten zurück."""
-        current_time = time.time()
-        return {
-            "BS001234567890AB": {
-                "last_seen": current_time - 15,
-                "status": {
-                    "cpu_usage": "25%",
-                    "memory_usage": "45%",
-                    "uptime": "7 days",
-                    "duty_cycle": "2.1%"
-                }
-            }
-        }
-    
-    def _get_demo_sensors_list(self):
-        """Gibt Demo-Sensor-Liste für Frontend zurück."""
-        return [
-            {
-                "eui": "00:0A:F7:FF:FE:12:34:56",
-                "sensor_type": "mioty IoT Sensor (Demo)",
-                "last_update": "vor 30 Sekunden",
-                "snr": "12.5 dB",
-                "rssi": "-85 dBm",
-                "signal_quality": "Gut"
-            },
-            {
-                "eui": "00:0A:F7:FF:FE:56:78:90", 
-                "sensor_type": "mioty IoT Sensor (Demo)",
-                "last_update": "vor 2 Minuten",
-                "snr": "8.2 dB",
-                "rssi": "-92 dBm",
-                "signal_quality": "Mittel"
-            }
-        ]
-    
-    def _get_demo_basestations_list(self):
-        """Gibt Demo-BaseStation-Liste für Frontend zurück."""
-        return [
-            {
-                "eui": "BS001234567890AB",
-                "status": "Online (Demo)",
-                "last_update": "vor 15 Sekunden",
-                "cpu_usage": "25%",
-                "memory_usage": "45%"
-            }
-        ]
 
     def run(self):
         """Starte Flask Server."""
