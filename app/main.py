@@ -414,6 +414,64 @@ class BSSCIAddon:
             hours = (seconds % 86400) // 3600
             return f"{days}d {hours}h"
     
+    def reload_settings(self):
+        """Lade Einstellungen neu und wende sie auf laufendes System an."""
+        logging.info("🔄 Settings werden neu geladen...")
+        
+        try:
+            # Neue Settings laden
+            old_config = self.config.copy()
+            self.config = self.load_config()
+            
+            # Prüfen ob MQTT Settings geändert wurden
+            mqtt_changed = (
+                old_config.get('mqtt_broker') != self.config.get('mqtt_broker') or
+                old_config.get('mqtt_port') != self.config.get('mqtt_port') or
+                old_config.get('mqtt_username') != self.config.get('mqtt_username') or
+                old_config.get('mqtt_password') != self.config.get('mqtt_password') or
+                old_config.get('ha_mqtt_broker') != self.config.get('ha_mqtt_broker') or
+                old_config.get('ha_mqtt_port') != self.config.get('ha_mqtt_port') or
+                old_config.get('ha_mqtt_username') != self.config.get('ha_mqtt_username') or
+                old_config.get('ha_mqtt_password') != self.config.get('ha_mqtt_password') or
+                old_config.get('base_topic') != self.config.get('base_topic')
+            )
+            
+            if mqtt_changed and self.mqtt_manager:
+                logging.info("⚙️  MQTT Settings geändert - Verbindung wird neu aufgebaut...")
+                
+                # Alte Verbindung trennen
+                self.mqtt_manager.disconnect()
+                
+                # Neue MQTT Manager Instanz erstellen
+                self.mqtt_manager = MQTTManager(
+                    # Externe mioty MQTT Verbindung
+                    broker=self.config['mqtt_broker'],
+                    port=self.config['mqtt_port'],
+                    username=self.config['mqtt_username'],
+                    password=self.config['mqtt_password'],
+                    base_topic=self.config['base_topic'],
+                    # Home Assistant MQTT Verbindung
+                    ha_broker=self.config['ha_mqtt_broker'],
+                    ha_port=self.config['ha_mqtt_port'],
+                    ha_username=self.config['ha_mqtt_username'],
+                    ha_password=self.config['ha_mqtt_password']
+                )
+                
+                # Callbacks neu setzen
+                self.mqtt_manager.set_data_callback(self.handle_sensor_data)
+                self.mqtt_manager.set_config_callback(self.handle_sensor_config)
+                self.mqtt_manager.set_base_station_callback(self.handle_base_station_data)
+                
+                # Neue Verbindung aufbauen
+                self.mqtt_manager.connect()
+                
+                logging.info("✅ MQTT Settings erfolgreich aktualisiert!")
+            else:
+                logging.info("✅ Settings aktualisiert (keine MQTT Änderungen)")
+                
+        except Exception as e:
+            logging.error(f"❌ Fehler beim Neuladen der Settings: {e}")
+    
     def process_status_updates(self):
         """Verarbeite regelmäßige Status-Updates."""
         # Hier könnte regelmäßige Überwachung implementiert werden
