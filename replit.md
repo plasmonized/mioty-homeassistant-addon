@@ -10,7 +10,13 @@ Preferred communication style: Simple, everyday language.
 
 # Recent Changes
 
-**03.09.2025 - Settings-Persistierung Problem behoben (Version 1.0.4.6.7) - ✅ AKTUELL:**
+**03.09.2025 - Settings-Persistierung beim Add-on Neustart behoben (Version 1.0.4.6.8) - ✅ AKTUELL:**
+- **KRITISCHES PERSISTIERUNG-PROBLEM BEHOBEN:** Settings-Dateipfad für Add-on Container-Umgebung repariert
+- **ABSOLUTER PFAD-ZUGRIFF:** Settings werden nun aus korrektem Verzeichnis geladen (../settings.json)
+- **CONTAINER-KOMPATIBILITÄT:** Settings bleiben nach Add-on Neustart persistent erhalten
+- **DUAL-UMGEBUNG SUPPORT:** Funktioniert sowohl in Entwicklungsumgebung als auch in Production Container
+
+**03.09.2025 - Settings-Persistierung Problem behoben (Version 1.0.4.6.7) - ✅ ERFOLGREICH:**
 - **KRITISCHES SETTINGS-PROBLEM BEHOBEN:** GET /api/settings liest jetzt korrekt aus settings.json statt Standard-Konfiguration
 - **PERSISTENTE EINSTELLUNGEN:** Settings werden nach Neustart korrekt aus gespeicherter Datei geladen
 - **KORREKTE PRIORISIERUNG:** Gespeicherte Settings haben Vorrang vor Standard-Konfiguration

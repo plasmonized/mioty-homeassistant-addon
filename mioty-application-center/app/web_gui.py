@@ -19,7 +19,13 @@ class WebGUI:
         """Initialisiere Web GUI."""
         self.port = port
         self.addon = addon_instance
-        self.settings = SettingsManager()
+        
+        # REPARIERT: Absoluter Pfad für Add-on Umgebung
+        settings_path = os.path.join(os.path.dirname(__file__), '..', 'settings.json')
+        if not os.path.exists(settings_path):
+            settings_path = 'settings.json'  # Fallback für Entwicklung
+        self.settings = SettingsManager(settings_path)
+        logging.info(f"🔧 WEB GUI SETTINGS PFAD: {settings_path}")
         
         # KRITISCH: Korrekter Template-Pfad für app/templates/
         import os
