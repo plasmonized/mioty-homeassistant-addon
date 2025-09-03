@@ -17,6 +17,7 @@ from mqtt_manager import MQTTManager
 from bssci_client import BSSCIClient
 from web_gui import WebGUI
 from decoder_manager import DecoderManager
+from settings_manager import SettingsManager
 
 class BSSCIAddon:
     """Hauptklasse für das BSSCI mioty Add-on."""
@@ -53,34 +54,68 @@ class BSSCIAddon:
         logging.getLogger('paho').setLevel(logging.WARNING)
     
     def load_config(self) -> Dict[str, Any]:
-        """Lade Konfiguration aus Environment Variables."""
-        return {
-            'mqtt_broker': os.getenv('MQTT_BROKER', 'core-mosquitto'),
-            'mqtt_port': int(os.getenv('MQTT_PORT', '1883')),
-            'mqtt_username': os.getenv('MQTT_USERNAME', ''),
-            'mqtt_password': os.getenv('MQTT_PASSWORD', ''),
-            'bssci_service_url': os.getenv('BSSCI_SERVICE_URL', 'localhost:16018'),
-            'base_topic': os.getenv('BASE_TOPIC', 'bssci'),
-            'auto_discovery': os.getenv('AUTO_DISCOVERY', 'true').lower() == 'true',
-            'web_port': int(os.getenv('WEB_PORT', '5000'))
-        }
+        """Lade Konfiguration aus gespeicherten Einstellungen oder Environment Variables."""
+        # Versuche zuerst gespeicherte Einstellungen zu laden
+        try:
+            settings = SettingsManager()
+            saved_settings = settings.get_all_settings()
+            
+            # Kombiniere gespeicherte Einstellungen mit Environment Variables als Fallback
+            config = {
+                'mqtt_broker': saved_settings.get('mqtt_broker') or os.getenv('MQTT_BROKER', 'your-mqtt-broker.com'),
+                'mqtt_port': saved_settings.get('mqtt_port') or int(os.getenv('MQTT_PORT', '1883')),
+                'mqtt_username': saved_settings.get('mqtt_username') or os.getenv('MQTT_USERNAME', 'your-username'),
+                'mqtt_password': saved_settings.get('mqtt_password') or os.getenv('MQTT_PASSWORD', 'your-password'),
+                'ha_mqtt_broker': saved_settings.get('ha_mqtt_broker') or os.getenv('HA_MQTT_BROKER', 'core-mosquitto'),
+                'ha_mqtt_port': saved_settings.get('ha_mqtt_port') or int(os.getenv('HA_MQTT_PORT', '1883')),
+                'ha_mqtt_username': saved_settings.get('ha_mqtt_username') or os.getenv('HA_MQTT_USERNAME', ''),
+                'ha_mqtt_password': saved_settings.get('ha_mqtt_password') or os.getenv('HA_MQTT_PASSWORD', ''),
+
+                'base_topic': saved_settings.get('base_topic') or os.getenv('BASE_TOPIC', 'bssci'),
+                'auto_discovery': saved_settings.get('auto_discovery', True) if saved_settings.get('auto_discovery') is not None else (os.getenv('AUTO_DISCOVERY', 'true').lower() == 'true'),
+                'web_port': int(os.getenv('WEB_PORT', '5000'))
+            }
+            return config
+        except Exception as e:
+            logging.warning(f"Konnte gespeicherte Einstellungen nicht laden: {e}, verwende Environment Variables")
+            # Fallback zu Environment Variables
+            return {
+                'mqtt_broker': os.getenv('MQTT_BROKER', 'your-mqtt-broker.com'),
+                'mqtt_port': int(os.getenv('MQTT_PORT', '1883')),
+                'mqtt_username': os.getenv('MQTT_USERNAME', 'your-username'),
+                'mqtt_password': os.getenv('MQTT_PASSWORD', 'your-password'),
+                'ha_mqtt_broker': os.getenv('HA_MQTT_BROKER', 'core-mosquitto'),
+                'ha_mqtt_port': int(os.getenv('HA_MQTT_PORT', '1883')),
+                'ha_mqtt_username': os.getenv('HA_MQTT_USERNAME', ''),
+                'ha_mqtt_password': os.getenv('HA_MQTT_PASSWORD', ''),
+
+                'base_topic': os.getenv('BASE_TOPIC', 'bssci'),
+                'auto_discovery': os.getenv('AUTO_DISCOVERY', 'true').lower() == 'true',
+                'web_port': int(os.getenv('WEB_PORT', '5000'))
+            }
     
     def start(self):
         """Starte das Add-on."""
         logging.info("Starte BSSCI mioty Add-on...")
         
         try:
-            # MQTT Manager starten
+            # Dual MQTT Manager starten (extern für mioty + HA für Discovery)
             self.mqtt_manager = MQTTManager(
+                # Externe mioty MQTT Verbindung
                 broker=self.config['mqtt_broker'],
                 port=self.config['mqtt_port'],
                 username=self.config['mqtt_username'],
                 password=self.config['mqtt_password'],
-                base_topic=self.config['base_topic']
+                base_topic=self.config['base_topic'],
+                # Home Assistant MQTT Verbindung
+                ha_broker=self.config['ha_mqtt_broker'],
+                ha_port=self.config['ha_mqtt_port'],
+                ha_username=self.config['ha_mqtt_username'],
+                ha_password=self.config['ha_mqtt_password']
             )
             self.mqtt_manager.set_data_callback(self.handle_sensor_data)
             self.mqtt_manager.set_config_callback(self.handle_sensor_config)
-            self.mqtt_manager.set_base_station_callback(self.handle_base_station_status)
+            self.mqtt_manager.set_base_station_callback(self.handle_base_station_data)
             
             # BSSCI Client starten (optional, falls direkter Zugriff gewünscht)
             # self.bssci_client = BSSCIClient(self.config['bssci_service_url'])
@@ -128,7 +163,9 @@ class BSSCIAddon:
     
     def handle_sensor_data(self, sensor_eui: str, data: Dict[str, Any]):
         """Verarbeite eingehende Sensor-Daten."""
+        raw_payload = data.get('data', 'N/A')
         logging.info(f"Sensor-Daten empfangen von {sensor_eui}")
+        logging.info(f"Raw Payload: {raw_payload}")
         
         # Payload dekodieren falls Decoder zugewiesen ist
         decoded_payload = None
@@ -141,16 +178,33 @@ class BSSCIAddon:
                     'timestamp': data.get('rxTime'),
                     'base_station': data.get('bs_eui')
                 }
+                logging.info(f"Metadata: SNR={metadata.get('snr')}, RSSI={metadata.get('rssi')}, Base Station={metadata.get('base_station')}")
+                
                 decoded_result = self.decoder_manager.decode_sensor_payload(
                     sensor_eui, payload_bytes, metadata
                 )
                 if decoded_result.get('decoded'):
                     decoded_payload = decoded_result
-                    logging.info(f"Payload für {sensor_eui} erfolgreich dekodiert")
+                    logging.info(f"✅ Payload für {sensor_eui} erfolgreich dekodiert")
+                    logging.info(f"🔧 Decoder: {decoded_result.get('decoder_name', 'Unknown')}")
+                    
+                    # Saubere Darstellung der decodierten Daten
+                    decoded_data = decoded_result.get('data', {})
+                    if decoded_data:
+                        logging.info("📊 Dekodierte Daten:")
+                        for key, value in decoded_data.items():
+                            if isinstance(value, dict):
+                                logging.info(f"   {key}: {json.dumps(value, separators=(',', ':'))}")
+                            else:
+                                logging.info(f"   {key}: {value}")
+                    else:
+                        logging.info("📊 Dekodierte Daten: (leer)")
                 else:
-                    logging.debug(f"Payload für {sensor_eui} nicht dekodiert: {decoded_result.get('reason', 'Unknown')}")
+                    logging.warning(f"❌ Payload für {sensor_eui} nicht dekodiert: {decoded_result.get('reason', 'Unknown')}")
+                    logging.info(f"🔍 Raw Payload Hex: {payload_bytes}")
             except Exception as e:
                 logging.error(f"Fehler beim Dekodieren von Sensor {sensor_eui}: {e}")
+                logging.info(f"Problematischer Raw Payload: {raw_payload}")
         
         # Sensor-Daten speichern
         self.sensors[sensor_eui] = {
@@ -164,7 +218,7 @@ class BSSCIAddon:
         }
         
         # Home Assistant Discovery
-        if self.config['auto_discovery']:
+        if self.config['auto_discovery'] and self.mqtt_manager:
             self.create_sensor_discovery(sensor_eui, data, decoded_payload)
     
     def handle_sensor_config(self, sensor_eui: str, config: Dict[str, Any]):
@@ -173,17 +227,27 @@ class BSSCIAddon:
         
         # Hier würde die Konfiguration an das BSSCI Service Center weitergeleitet
         # Da wir über MQTT kommunizieren, nehmen wir an, dass das bereits geschehen ist
+    
+    def handle_base_station_data(self, bs_eui: str, data: Dict[str, Any]):
+        """Verarbeite Base Station Status-Daten."""
+        logging.info(f"🏢 HANDLE_BASE_STATION_DATA AUFGERUFEN für {bs_eui}")
+        logging.info(f"Base Station Status empfangen von {bs_eui}")
         
-        # Sensor registrieren
-        if sensor_eui not in self.sensors:
-            self.sensors[sensor_eui] = {}
+        # Base Station Daten speichern
+        self.base_stations[bs_eui] = {
+            'last_seen': time.time(),
+            'data': data,
+            'status': 'online' if data else 'offline'
+        }
         
-        self.sensors[sensor_eui].update({
-            'network_key': config.get('nwKey', ''),
-            'short_addr': config.get('shortAddr', ''),
-            'bidirectional': config.get('bidi', False),
-            'registered_at': time.time()
-        })
+        logging.info(f"🗄️ Base Station {bs_eui} in Dictionary gespeichert. Anzahl Base Stations: {len(self.base_stations)}")
+        
+        # Home Assistant Discovery für Base Station
+        if self.config['auto_discovery']:
+            try:
+                self.create_basestation_discovery(bs_eui, data)
+            except AttributeError:
+                logging.debug(f"Base Station Discovery für {bs_eui} übersprungen")
     
     def handle_base_station_status(self, bs_eui: str, status: Dict[str, Any]):
         """Verarbeite Base Station Status."""
@@ -222,7 +286,15 @@ class BSSCIAddon:
         
         # Discovery Nachricht senden
         discovery_topic = f"homeassistant/sensor/{unique_id}/config"
-        self.mqtt_manager.publish_discovery(discovery_topic, discovery_config)
+        if self.mqtt_manager:
+            logging.info(f"🔍 Sensor Discovery: {sensor_eui}")
+            logging.info(f"   📤 Topic: {discovery_topic}")
+            logging.info(f"   🏷️ Device: {device_name}")
+            success = self.mqtt_manager.publish_discovery(discovery_topic, discovery_config)
+            if success:
+                logging.info(f"✅ Sensor Discovery erfolgreich gesendet")
+            else:
+                logging.warning(f"❌ Sensor Discovery fehlgeschlagen (HA MQTT nicht verbunden)")
         
         # Status und Attribute senden
         state_value = len(data.get('data', []))
@@ -239,7 +311,11 @@ class BSSCIAddon:
             "decoder_used": decoded_payload.get('decoder_name') if decoded_payload else None
         }
         
-        self.mqtt_manager.publish_sensor_state(unique_id, state_value, attributes)
+        if self.mqtt_manager:
+            logging.debug(f"📊 Sensor Status Update: {sensor_eui} → {state_value} bytes")
+            success = self.mqtt_manager.publish_sensor_state(unique_id, state_value, attributes)
+            if not success:
+                logging.debug(f"⚠️ Sensor Status nicht gesendet (HA MQTT nicht verbunden)")
     
     def create_basestation_discovery(self, bs_eui: str, status: Dict[str, Any]):
         """Erstelle Home Assistant MQTT Discovery für Base Station."""
@@ -262,7 +338,15 @@ class BSSCIAddon:
         }
         
         discovery_topic = f"homeassistant/sensor/{unique_id}/config"
-        self.mqtt_manager.publish_discovery(discovery_topic, discovery_config)
+        if self.mqtt_manager:
+            logging.info(f"🏢 BaseStation Discovery: {bs_eui}")
+            logging.info(f"   📤 Topic: {discovery_topic}")
+            logging.info(f"   🏷️ Device: {device_name}")
+            success = self.mqtt_manager.publish_discovery(discovery_topic, discovery_config)
+            if success:
+                logging.info(f"✅ BaseStation Discovery erfolgreich gesendet")
+            else:
+                logging.warning(f"❌ BaseStation Discovery fehlgeschlagen (HA MQTT nicht verbunden)")
         
         # Status
         state_value = "online" if status.get('code', 1) == 0 else "offline"
@@ -276,9 +360,13 @@ class BSSCIAddon:
             "last_seen": self.format_timestamp(status.get('time'))
         }
         
-        self.mqtt_manager.publish_sensor_state(unique_id, state_value, attributes)
+        if self.mqtt_manager:
+            logging.debug(f"📊 BaseStation Status Update: {bs_eui} → {state_value}")
+            success = self.mqtt_manager.publish_sensor_state(unique_id, state_value, attributes)
+            if not success:
+                logging.debug(f"⚠️ BaseStation Status nicht gesendet (HA MQTT nicht verbunden)")
     
-    def assess_signal_quality(self, snr: float, rssi: float) -> str:
+    def assess_signal_quality(self, snr, rssi) -> str:
         """Bewerte Signalqualität."""
         if snr is None or rssi is None:
             return "unknown"
@@ -336,7 +424,9 @@ class BSSCIAddon:
         
         # Konfiguration über MQTT senden
         topic = f"{self.config['base_topic']}/ep/{sensor_eui}/config"
-        return self.mqtt_manager.publish_config(topic, config)
+        if self.mqtt_manager:
+            return self.mqtt_manager.publish_config(topic, config)
+        return False
     
     def remove_sensor(self, sensor_eui: str) -> bool:
         """Entferne einen Sensor."""
@@ -347,7 +437,8 @@ class BSSCIAddon:
             # Discovery-Konfiguration löschen
             unique_id = f"bssci_sensor_{sensor_eui}"
             discovery_topic = f"homeassistant/sensor/{unique_id}/config"
-            self.mqtt_manager.publish_discovery(discovery_topic, "")
+            if self.mqtt_manager:
+                self.mqtt_manager.publish_discovery(discovery_topic, "")
             
             return True
         return False

@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>mioty Application Center für Homeassistant v1.0.4.5</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>mioty Application Center für Homeassistant v1.0.4.6</title>
     <style>
         * {
             margin: 0;
@@ -142,14 +145,14 @@
         </div>
         
         <div class="nav">
-            <a href="/" class="nav-item active">🏠 Dashboard</a>
-            <a href="/settings" class="nav-item">⚙️ Einstellungen</a>
-            <a href="/decoders" class="nav-item">🔧 Decoder</a>
+            <a href="javascript:void(0)" onclick="navigateTo('/')" class="nav-item active">🏠 Dashboard</a>
+            <a href="javascript:void(0)" onclick="navigateTo('/settings')" class="nav-item">⚙️ Einstellungen</a>
+            <a href="javascript:void(0)" onclick="navigateTo('/decoders')" class="nav-item">🔧 Decoder</a>
         </div>
         
         <div class="content">
             <div class="version-info">
-                ✅ VERSION 1.0.4.5 - CACHE-PROBLEM BEHOBEN!
+                ✅ VERSION 1.0.4.6 - CACHE-PROBLEM BEHOBEN & HA MQTT INTEGRATION!
             </div>
             
             <div class="stats">
@@ -233,7 +236,49 @@
             }
         }
         
-        // Auto-refresh
+        // HOME ASSISTANT INGRESS CACHE-BUSTING LÖSUNG
+        function addCacheBuster(url) {
+            const separator = url.includes('?') ? '&' : '?';
+            return url + separator + 'cb=' + Date.now() + '&t=' + Math.random();
+        }
+        
+        // Erkenne Home Assistant Ingress Environment
+        const isHomeAssistantIngress = window.location.pathname.includes('/api/hassio_ingress/') || 
+                                      document.referrer.includes('homeassistant') || 
+                                      window.parent !== window;
+        
+        // Global Navigation Function für alle Umgebungen
+        window.navigateTo = function(path) {
+            console.log('🔗 Navigation zu:', path);
+            const url = `${BASE_URL}${path}?t=${Date.now()}&cb=${Math.random()}`;
+            console.log('🚀 Navigation URL:', url);
+            window.location.href = url;
+        };
+        
+        if (isHomeAssistantIngress) {
+            console.log('🏠 HOME ASSISTANT INGRESS ERKANNT - Aggressive Cache-Busting aktiviert!');
+            
+            // Überschreibe fetch mit automatischem Cache-Busting
+            const originalFetch = window.fetch;
+            window.fetch = function(url, options = {}) {
+                if (typeof url === 'string' && (url.startsWith('/api/') || url.startsWith('${BASE_URL}/api/'))) {
+                    url = addCacheBuster(url);
+                    console.log('🚀 HA Cache-Buster URL:', url);
+                }
+                // Aggressive no-cache headers für Home Assistant
+                options.cache = 'no-store';
+                options.headers = {
+                    ...options.headers,
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache',
+                    'Expires': '0',
+                    'X-Requested-With': 'XMLHttpRequest'
+                };
+                return originalFetch(url, options);
+            };
+        }
+        
+        // Auto-refresh mit verbessertem Error-Handling
         function startAutoRefresh() {
             loadSensors();
             loadBaseStations();

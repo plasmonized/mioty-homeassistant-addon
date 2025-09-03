@@ -25,8 +25,14 @@ COPY app/ /opt/
 COPY run.sh /
 RUN chmod a+x /run.sh
 
-# Force cache bust for templates (version 1.0.4.6)
-RUN echo "Template update: 1.0.4.6" > /opt/version.txt
+# KRITISCH: Force cache bust für Docker-Image (version 1.0.4.6)
+RUN echo "Template update: 1.0.4.6 - $(date)" > /opt/version.txt
+
+# DEBUGGING: Template-Dateien auflisten
+RUN echo "=== TEMPLATE FILES IN CONTAINER ===" && \
+    find /opt -name "*.html" -type f -exec ls -la {} \; && \
+    echo "=== TEMPLATE CONTENT PREVIEW ===" && \
+    head -10 /opt/templates/index.html 2>/dev/null || echo "NO INDEX.HTML FOUND"
 
 # Set work directory
 WORKDIR /opt
@@ -37,7 +43,7 @@ LABEL \
     io.hass.description="mioty Application Center für die Verwaltung von mioty IoT Sensoren" \
     io.hass.arch="armhf|aarch64|amd64|armv7|i386" \
     io.hass.type="addon" \
-    io.hass.version="1.0.4.6"
+    io.hass.version="1.0.4.6-$(date +%s)"
 
 # Run
 CMD ["/run.sh"]

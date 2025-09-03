@@ -5,8 +5,9 @@ Flask-basierte Benutzeroberfläche für Sensor-Management
 
 import logging
 import json
+import time
 from typing import Any, Dict
-from flask import Flask, render_template_string, request, jsonify, redirect, url_for
+from flask import Flask, render_template, render_template_string, request, jsonify, redirect, url_for
 from flask_cors import CORS
 from settings_manager import SettingsManager
 
@@ -20,13 +21,148 @@ class WebGUI:
         self.addon = addon_instance
         self.settings = SettingsManager()
         
-        self.app = Flask(__name__)
+        # KRITISCH: Korrekter Template-Pfad für app/templates/
+        import os
+        template_path = os.path.join(os.path.dirname(__file__), 'templates')
+        self.app = Flask(__name__, template_folder=template_path)
+        
+        # KRITISCH: Flask Template-Caching deaktivieren
+        self.app.config['TEMPLATES_AUTO_RELOAD'] = True
+        self.app.jinja_env.auto_reload = True
+        self.app.jinja_env.cache = {}
+        
         CORS(self.app)
+        
+        # Erweiterte HTTP-Protokollierung aktivieren
+        self.setup_logging()
         
         # Routen definieren
         self.setup_routes()
         
         logging.info(f"Web GUI initialisiert auf Port {port}")
+    
+    def setup_logging(self):
+        """Konfiguriere erweiterte HTTP-Protokollierung für Debugging."""
+        
+        @self.app.before_request
+        def log_request_details():
+            """Protokolliere detaillierte Request-Informationen."""
+            logging.info("=" * 80)
+            logging.info("🔍 HTTP REQUEST DEBUGGING")
+            logging.info("-" * 40)
+            logging.info(f"📍 Method: {request.method}")
+            logging.info(f"📍 URL: {request.url}")
+            logging.info(f"📍 Path: {request.path}")
+            logging.info(f"📍 Remote IP: {request.remote_addr}")
+            logging.info(f"📍 User Agent: {request.headers.get('User-Agent', 'N/A')}")
+            
+            # Home Assistant Ingress Header Analysis
+            logging.info("-" * 40)
+            logging.info("🏠 HOME ASSISTANT INGRESS ANALYSIS")
+            ha_headers = [
+                'X-Ingress-Path',
+                'X-Real-IP', 
+                'X-Forwarded-For',
+                'X-Forwarded-Host',
+                'X-Forwarded-Proto',
+                'Host',
+                'Origin',
+                'Referer'
+            ]
+            
+            for header in ha_headers:
+                value = request.headers.get(header, 'NICHT GESETZT')
+                if value != 'NICHT GESETZT':
+                    logging.info(f"📧 {header}: {value}")
+                else:
+                    logging.warning(f"⚠️  {header}: NICHT GESETZT")
+            
+            # Alle Header für vollständige Analyse
+            logging.info("-" * 40)
+            logging.info("📧 ALLE REQUEST HEADERS:")
+            for key, value in request.headers:
+                logging.info(f"   {key}: {value}")
+            
+            # Query Parameters
+            if request.args:
+                logging.info("-" * 40)
+                logging.info("🔗 QUERY PARAMETERS:")
+                for key, value in request.args.items():
+                    logging.info(f"   {key}: {value}")
+            
+            logging.info("=" * 80)
+        
+        @self.app.after_request
+        def log_response_details(response):
+            """Protokolliere Response-Details und setze Cache-Control Headers."""
+            
+            # HOME ASSISTANT INGRESS AGGRESSIVE CACHE-BUSTING
+            is_ingress = (request.headers.get('X-Ingress-Path') or 
+                         'hassio_ingress' in request.headers.get('Referer', '') or
+                         'homeassistant' in request.headers.get('User-Agent', '').lower())
+            
+            if hasattr(request, 'path') and request.path and (request.path.endswith(('.html', '.css', '.js')) or request.path in ['/', '/settings', '/decoders']):
+                response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0, private'
+                response.headers['Pragma'] = 'no-cache'
+                response.headers['Expires'] = '0'
+                response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+                response.headers['Vary'] = '*'
+                # Eindeutige ETag für jeden Request
+                import time
+                response.headers['ETag'] = f'"{int(time.time() * 1000)}"'
+                
+                # Extra Headers für Home Assistant Ingress
+                if is_ingress:
+                    response.headers['X-Accel-Expires'] = '0'
+                    response.headers['X-Proxy-Cache'] = 'BYPASS'
+                    response.headers['Surrogate-Control'] = 'no-store'
+                    logging.info("🏠 HA Ingress Cache-Control Headers gesetzt")
+                else:
+                    logging.info("🚫 Standard Cache-Control Headers gesetzt")
+            
+            logging.info("📤 RESPONSE DETAILS:")
+            logging.info(f"   Status: {response.status}")
+            logging.info(f"   Content-Type: {response.content_type}")
+            logging.info(f"   Content-Length: {response.content_length}")
+            
+            # Response Headers für Ingress-Debugging
+            logging.info("📧 RESPONSE HEADERS:")
+            for key, value in response.headers:
+                logging.info(f"   {key}: {value}")
+            
+            return response
+        
+        # HTTP Error Handler
+        @self.app.errorhandler(404)
+        def handle_404(error):
+            """Handle 404 Fehler mit detailliertem Logging."""
+            logging.error("❌ 404 ERROR - PAGE NOT FOUND")
+            logging.error(f"   Requested URL: {request.url}")
+            logging.error(f"   Requested Path: {request.path}")
+            logging.error(f"   Method: {request.method}")
+            logging.error(f"   Remote IP: {request.remote_addr}")
+            return jsonify({"error": "Page not found", "path": request.path}), 404
+        
+        @self.app.errorhandler(500)
+        def handle_500(error):
+            """Handle 500 Fehler mit detailliertem Logging."""
+            logging.error("❌ 500 ERROR - INTERNAL SERVER ERROR")
+            logging.error(f"   Error: {str(error)}")
+            logging.error(f"   URL: {request.url}")
+            logging.error(f"   Method: {request.method}")
+            return jsonify({"error": "Internal server error"}), 500
+        
+        @self.app.errorhandler(Exception)
+        def handle_exception(error):
+            """Handle alle unbehandelten Ausnahmen."""
+            logging.error("💥 UNHANDLED EXCEPTION")
+            logging.error(f"   Exception Type: {type(error).__name__}")
+            logging.error(f"   Exception Message: {str(error)}")
+            logging.error(f"   URL: {request.url}")
+            logging.error(f"   Method: {request.method}")
+            import traceback
+            logging.error(f"   Traceback: {traceback.format_exc()}")
+            return jsonify({"error": "Application error", "details": str(error)}), 500
     
     def setup_routes(self):
         """Definiere Web-Routen."""
@@ -34,17 +170,74 @@ class WebGUI:
         @self.app.route('/')
         def index():
             """Hauptseite."""
-            return render_template_string(self.get_main_template())
+            # Get the ingress path from Home Assistant header
+            ingress_path = request.headers.get('X-Ingress-Path', '')
+            
+            # Spezielle Ingress-Debugging für Hauptseite
+            logging.info("🏠 INDEX PAGE INGRESS DEBUGGING")
+            logging.info(f"   X-Ingress-Path: {ingress_path}")
+            logging.info(f"   Host Header: {request.headers.get('Host', 'N/A')}")
+            logging.info(f"   Request URL: {request.url}")
+            logging.info(f"   Base URL: {request.base_url}")
+            logging.info(f"   URL Root: {request.url_root}")
+            
+            # Home Assistant Ingress Detection
+            is_ha_ingress = bool(ingress_path) or 'hassio' in request.headers.get('Host', '').lower()
+            environment = "Home Assistant Ingress" if is_ha_ingress else "Development/External"
+            
+            logging.info(f"🔍 ENVIRONMENT DETECTION: {environment}")
+            if not is_ha_ingress:
+                logging.warning("⚠️  Nicht in Home Assistant Ingress! Add-on läuft in externer Umgebung.")
+                logging.info("💡 Für volle Home Assistant Integration: Add-on in HA installieren")
+            
+            # DEBUGGING: Template-Auswahl protokollieren
+            template_path = self.app.template_folder
+            index_exists = False
+            try:
+                import os
+                index_file = os.path.join(template_path, 'index.html')
+                index_exists = os.path.exists(index_file)
+                logging.info(f"🔍 TEMPLATE DEBUGGING:")
+                logging.info(f"   Template Folder: {template_path}")
+                logging.info(f"   Index.html exists: {index_exists}")
+                logging.info(f"   Index.html path: {index_file}")
+            except Exception as e:
+                logging.error(f"Template debugging error: {e}")
+            
+            # KRITISCH: Verwende IMMER die aktuelle externe Template-Datei
+            if index_exists:
+                logging.info("✅ Verwende AKTUELLE index.html Template-Datei (Version 1.0.4.6)")
+                return render_template('index.html', ingress_path=ingress_path)
+            else:
+                logging.error("❌ CRITICAL ERROR: index.html Template-Datei nicht gefunden!")
+                logging.error("   Template Fallback wurde entfernt um veraltete Versionen zu verhindern")
+                return "❌ Template Error: index.html nicht gefunden", 500
         
         @self.app.route('/settings')
         def settings():
             """Einstellungsseite."""
-            return render_template_string(self.get_settings_template())
+            # Get the ingress path from Home Assistant header
+            ingress_path = request.headers.get('X-Ingress-Path', '')
+            
+            # Spezielle Ingress-Debugging für Einstellungsseite
+            logging.info("⚙️ SETTINGS PAGE INGRESS DEBUGGING")
+            logging.info(f"   X-Ingress-Path: {ingress_path}")
+            logging.info(f"   Request URL: {request.url}")
+            
+            return render_template_string(self.get_settings_template(), ingress_path=ingress_path)
         
         @self.app.route('/decoders')
         def decoders():
             """Decoder-Verwaltungsseite."""
-            return render_template_string(self.get_decoders_template())
+            # Get the ingress path from Home Assistant header
+            ingress_path = request.headers.get('X-Ingress-Path', '')
+            
+            # Spezielle Ingress-Debugging für Decoder-Seite
+            logging.info("🔧 DECODERS PAGE INGRESS DEBUGGING")
+            logging.info(f"   X-Ingress-Path: {ingress_path}")
+            logging.info(f"   Request URL: {request.url}")
+            
+            return render_template_string(self.get_decoders_template(), ingress_path=ingress_path)
         
         @self.app.route('/api/sensors')
         def get_sensors():
@@ -52,8 +245,22 @@ class WebGUI:
             if not self.addon:
                 return jsonify({"error": "Add-on nicht verfügbar"}), 500
             
-            sensors = self.addon.get_sensor_list()
-            return jsonify(sensors)
+            sensors_dict = self.addon.get_sensor_list()
+            
+            # Konvertiere Dictionary zu Liste für Frontend
+            sensor_list = []
+            for eui, data in sensors_dict.items():
+                sensor_info = {
+                    'eui': eui,
+                    'sensor_type': 'mioty IoT Sensor',
+                    'last_update': self._format_timestamp(data.get('last_seen', 0)),
+                    'snr': data.get('data', {}).get('snr', 'N/A'),
+                    'rssi': data.get('data', {}).get('rssi', 'N/A'),
+                    'signal_quality': data.get('signal_quality', 'Unknown')
+                }
+                sensor_list.append(sensor_info)
+            
+            return jsonify(sensor_list)
         
         @self.app.route('/api/basestations')
         def get_basestations():
@@ -61,8 +268,58 @@ class WebGUI:
             if not self.addon:
                 return jsonify({"error": "Add-on nicht verfügbar"}), 500
             
-            basestations = self.addon.get_basestation_list()
-            return jsonify(basestations)
+            basestations_dict = self.addon.get_basestation_list()
+            
+            # Konvertiere Dictionary zu Liste für Frontend
+            bs_list = []
+            for eui, data in basestations_dict.items():
+                # Sichere Zugriffe auf Base Station-Daten
+                status_data = data.get('data', {}) if isinstance(data.get('data'), dict) else {}
+                
+                bs_info = {
+                    'eui': eui,
+                    'status': data.get('status', 'Online'),
+                    'last_update': self._format_timestamp(data.get('last_seen', 0)),
+                    'cpu_usage': status_data.get('cpu_usage', 'N/A'),
+                    'memory_usage': status_data.get('memory_usage', 'N/A')
+                }
+                bs_list.append(bs_info)
+            
+            return jsonify(bs_list)
+        
+        @self.app.route('/api/status')
+        def get_status():
+            """API: System- und Verbindungsstatus."""
+            if not self.addon:
+                return jsonify({"error": "Add-on nicht verfügbar"}), 500
+            
+            # mioty MQTT Status
+            mqtt_connected = False
+            mqtt_broker = 'Unbekannt'
+            
+            # Home Assistant MQTT Status
+            ha_mqtt_connected = False
+            ha_mqtt_broker = 'Unbekannt'
+            
+            if hasattr(self.addon, 'mqtt_manager') and self.addon.mqtt_manager:
+                # mioty MQTT Client Status
+                mqtt_connected = self.addon.mqtt_manager.connected
+                mqtt_broker = f"{self.addon.mqtt_manager.broker}:{self.addon.mqtt_manager.port}"
+                
+                # Home Assistant MQTT Client Status
+                ha_mqtt_connected = self.addon.mqtt_manager.ha_connected
+                ha_mqtt_broker = f"{self.addon.mqtt_manager.ha_broker}:{self.addon.mqtt_manager.ha_port}"
+            
+            status = {
+                'mqtt_connected': mqtt_connected,
+                'mqtt_broker': mqtt_broker,
+                'ha_mqtt_connected': ha_mqtt_connected,
+                'ha_mqtt_broker': ha_mqtt_broker,
+                'sensor_count': len(self.addon.sensors) if hasattr(self.addon, 'sensors') else 0,
+                'basestation_count': len(self.addon.base_stations) if hasattr(self.addon, 'base_stations') else 0
+            }
+            
+            return jsonify(status)
         
         @self.app.route('/api/sensor/add', methods=['POST'])
         def add_sensor():
@@ -112,9 +369,25 @@ class WebGUI:
         @self.app.route('/api/settings')
         def get_settings():
             """API: Aktuelle Einstellungen abrufen."""
-            settings = self.settings.get_all_settings()
-            # Passwort aus Sicherheitsgründen nicht zurückgeben
-            settings['mqtt_password'] = '***' if settings.get('mqtt_password') else ''
+            # Aktuelle Laufzeit-Konfiguration vom Add-on abrufen
+            if self.addon and hasattr(self.addon, 'config'):
+                settings = {
+                    'mqtt_broker': self.addon.config.get('mqtt_broker', 'localhost'),
+                    'mqtt_port': self.addon.config.get('mqtt_port', 1883),
+                    'mqtt_username': self.addon.config.get('mqtt_username', ''),
+                    'mqtt_password': '***' if self.addon.config.get('mqtt_password') else '',
+                    'base_topic': self.addon.config.get('base_topic', 'bssci'),
+                    'auto_discovery': self.addon.config.get('auto_discovery', True),
+                    'ha_mqtt_broker': self.addon.config.get('ha_mqtt_broker', 'core-mosquitto'),
+                    'ha_mqtt_port': self.addon.config.get('ha_mqtt_port', 1883),
+                    'ha_mqtt_username': self.addon.config.get('ha_mqtt_username', ''),
+                    'ha_mqtt_password': '***' if self.addon.config.get('ha_mqtt_password') else ''
+                }
+            else:
+                # Fallback zu gespeicherten Einstellungen
+                settings = self.settings.get_all_settings()
+                settings['mqtt_password'] = '***' if settings.get('mqtt_password') else ''
+                settings['ha_mqtt_password'] = '***' if settings.get('ha_mqtt_password') else ''
             return jsonify(settings)
         
         @self.app.route('/api/settings', methods=['POST'])
@@ -148,6 +421,37 @@ class WebGUI:
             else:
                 return jsonify({"error": "Fehler beim Speichern der Einstellungen"}), 500
         
+        @self.app.route('/api/ha-settings', methods=['POST'])
+        def update_ha_settings():
+            """API: Home Assistant MQTT Einstellungen aktualisieren."""
+            data = request.get_json()
+            
+            # Validierung
+            required_fields = ['ha_mqtt_broker', 'ha_mqtt_port']
+            for field in required_fields:
+                if field not in data or not data[field]:
+                    return jsonify({"error": f"Feld '{field}' ist erforderlich"}), 400
+            
+            # Passwort nur aktualisieren wenn es nicht *** ist
+            if data.get('ha_mqtt_password') == '***':
+                data.pop('ha_mqtt_password', None)
+            
+            # Port zu Integer konvertieren
+            try:
+                data['ha_mqtt_port'] = int(data['ha_mqtt_port'])
+            except ValueError:
+                return jsonify({"error": "HA MQTT Port muss eine Zahl sein"}), 400
+            
+            # Einstellungen speichern
+            if self.settings.update_settings(data):
+                # Add-on über Änderungen benachrichtigen
+                if self.addon and hasattr(self.addon, 'reload_settings'):
+                    self.addon.reload_settings()
+                    
+                return jsonify({"success": True, "message": "HA MQTT Einstellungen gespeichert. Starten Sie das Add-on neu um Änderungen zu übernehmen."})
+            else:
+                return jsonify({"error": "Fehler beim Speichern der HA MQTT Einstellungen"}), 500
+        
         @self.app.route('/api/decoders')
         def get_decoders():
             """API: Liste aller Decoder."""
@@ -175,7 +479,7 @@ class WebGUI:
             if file.filename == '':
                 return jsonify({"error": "Kein Dateiname"}), 400
             
-            if file and file.filename.endswith(('.js', '.json')):
+            if file and file.filename and file.filename.endswith(('.js', '.json', '.xml')):
                 try:
                     content = file.read()
                     result = self.addon.decoder_manager.upload_decoder_file(file.filename, content)
@@ -188,7 +492,7 @@ class WebGUI:
                 except Exception as e:
                     return jsonify({"error": f"Upload-Fehler: {str(e)}"}), 500
             else:
-                return jsonify({"error": "Nur .js und .json Dateien werden unterstützt"}), 400
+                return jsonify({"error": "Nur .js, .json und .xml (IODD) Dateien werden unterstützt"}), 400
         
         @self.app.route('/api/decoder/assign', methods=['POST'])
         def assign_decoder():
@@ -275,16 +579,49 @@ class WebGUI:
                 return jsonify({"success": True, "message": "Decoder erfolgreich gelöscht"})
             else:
                 return jsonify({"error": "Fehler beim Löschen des Decoders"}), 500
+        
+        @self.app.route('/api/iolink/assign', methods=['POST'])
+        def assign_iodd_to_iolink():
+            """API: IODD einem IO-Link Adapter zuweisen basierend auf Vendor/Device ID."""
+            if not self.addon or not hasattr(self.addon, 'decoder_manager'):
+                return jsonify({"error": "Decoder Manager nicht verfügbar"}), 500
+            
+            data = request.get_json()
+            
+            required_fields = ['sensor_eui', 'vendor_id', 'device_id', 'iodd_name']
+            if not all(data.get(field) for field in required_fields):
+                return jsonify({"error": "sensor_eui, vendor_id, device_id und iodd_name sind erforderlich"}), 400
+            
+            success = self.addon.decoder_manager.assign_iodd_to_iolink_adapter(
+                data['sensor_eui'], data['vendor_id'], data['device_id'], data['iodd_name']
+            )
+            
+            if success:
+                return jsonify({"success": True, "message": "IODD erfolgreich dem IO-Link Adapter zugewiesen"})
+            else:
+                return jsonify({"error": "Fehler beim Zuweisen der IODD"}), 500
+        
+        @self.app.route('/api/iolink/adapters')
+        def get_iolink_adapters():
+            """API: Liste aller erkannten IO-Link Adapter mit Vendor/Device IDs."""
+            if not self.addon or not hasattr(self.addon, 'decoder_manager'):
+                return jsonify({"error": "Decoder Manager nicht verfügbar"}), 500
+            
+            adapters = self.addon.decoder_manager.get_iolink_adapters()
+            return jsonify({"adapters": adapters})
     
     def get_main_template(self) -> str:
-        """Hauptseiten-Template."""
+        """Hauptseiten-Template - SYNCHRONISIERT mit app/templates/index.html."""
         return '''
 <!DOCTYPE html>
 <html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>mioty Application Center für Homeassistant</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>mioty Application Center für Homeassistant v1.0.4.6</title>
     <style>
         * {
             margin: 0;
@@ -313,6 +650,23 @@ class WebGUI:
             color: white;
             padding: 30px;
             text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            right: 30px;
+            transform: translateY(-50%);
+            width: 60px;
+            height: 60px;
+            background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cGF0aCBkPSJNMTUgMTVMMzAgMEw0NSAxNUwzMCAzMFoiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4xKSIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMikiIHN0cm9rZS13aWR0aD0iMiIvPgogIDxwYXRoIGQ9Ik0wIDMwTDE1IDE1TDMwIDMwTDE1IDQ1WiIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjEpIiBzdHJva2U9InJnYmEoMjU1LDI1NSwyNTUsMC4yKSIgc3Ryb2tlLXdpZHRoPSIyIi8+CiAgPHBhdGggZD0iTTMwIDMwTDQ1IDE1TDYwIDMwTDQ1IDQ1WiIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjA1KSIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMykiIHN0cm9rZS13aWR0aD0iMiIvPgo8L3N2Zz4K');
+            background-size: contain;
+            background-repeat: no-repeat;
+            opacity: 0.15;
+            z-index: 1;
         }
         
         .nav {
@@ -339,6 +693,38 @@ class WebGUI:
         .header h1 {
             font-size: 2.5em;
             margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .logo-icon {
+            font-size: 0.8em;
+            background: rgba(255,255,255,0.2);
+            padding: 10px 12px;
+            border-radius: 50%;
+            backdrop-filter: blur(10px);
+        }
+        
+        .nav-icon {
+            font-size: 1.2em;
+            margin-right: 8px;
+            opacity: 0.8;
+        }
+        
+        .section-icon {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+            color: white;
+            text-align: center;
+            line-height: 24px;
+            border-radius: 50%;
+            margin-right: 12px;
+            font-size: 14px;
+            font-weight: bold;
         }
         
         .header p {
@@ -522,14 +908,14 @@ class WebGUI:
 <body>
     <div class="container">
         <div class="header">
-            <h1>🚀 mioty Application Center</h1>
-            <p>für Home Assistant</p>
+            <h1><span class="logo-icon">⚡</span> mioty Application Center</h1>
+            <p>für Home Assistant <span style="opacity: 0.6; font-size: 0.8em;">• powered by Sentinum</span></p>
         </div>
         
         <div class="nav">
-            <a href="#" onclick="window.location.href='/'" class="nav-item active">📊 Sensoren</a>
-            <a href="#" onclick="window.location.href='/decoders'" class="nav-item">📝 Decoder</a>
-            <a href="#" onclick="window.location.href='/settings'" class="nav-item">⚙️ Einstellungen</a>
+            <a id="nav-sensors" href="#" class="nav-item active" onclick="navigateTo('/')"><span class="nav-icon">●</span> Sensoren</a>
+            <a id="nav-decoders" href="#" class="nav-item" onclick="navigateTo('/decoders')"><span class="nav-icon">◆</span> Decoder</a>
+            <a id="nav-settings" href="#" class="nav-item" onclick="navigateTo('/settings')"><span class="nav-icon">▲</span> Einstellungen</a>
         </div>
         
         <div class="content">
@@ -537,7 +923,7 @@ class WebGUI:
             
             <!-- Sensor hinzufügen -->
             <div class="section">
-                <h2>📡 Neuen Sensor hinzufügen</h2>
+                <h2><span class="section-icon">+</span> Neuen Sensor hinzufügen</h2>
                 <form id="addSensorForm">
                     <div class="form-group">
                         <label for="sensor_eui">Sensor EUI (16 Hex-Zeichen):</label>
@@ -567,19 +953,38 @@ class WebGUI:
             
             <!-- Sensor-Liste -->
             <div class="section">
-                <h2>📊 Registrierte Sensoren</h2>
+                <h2><span class="section-icon">●</span> Registrierte Sensoren</h2>
                 <div id="sensorList" class="loading">Lade Sensoren...</div>
             </div>
             
             <!-- Base Station Status -->
             <div class="section">
-                <h2>🏗️ Base Stations</h2>
+                <h2><span class="section-icon">■</span> Base Stations</h2>
                 <div id="baseStationList" class="loading">Lade Base Stations...</div>
             </div>
         </div>
     </div>
     
     <script>
+        // Use server-provided ingress path from X-Ingress-Path header
+        const INGRESS_PATH = '{{ ingress_path }}' || '';
+        const BASE_URL = INGRESS_PATH || window.location.origin;
+        console.log('Ingress path from server:', INGRESS_PATH);
+        console.log('BASE_URL resolved:', BASE_URL);
+        console.log('Current pathname:', window.location.pathname);
+        console.log('Is embedded (iframe):', window.self !== window.top);
+        
+        // Simplified navigation for embedded mode
+        const navigateTo = (path) => {
+            const fullUrl = BASE_URL + path;
+            console.log('Navigating to:', fullUrl);
+            console.log('Path requested:', path);
+            
+            // Simple approach - just use window.location.href
+            // This should work in both embedded and direct access
+            window.location.href = fullUrl;
+        };
+        
         // DOM Elemente
         const addSensorForm = document.getElementById('addSensorForm');
         const sensorList = document.getElementById('sensorList');
@@ -589,7 +994,7 @@ class WebGUI:
         // Sensor-Daten laden
         async function loadSensors() {
             try {
-                const response = await fetch('/api/sensors');
+                const response = await fetch(BASE_URL + '/api/sensors');
                 const sensors = await response.json();
                 
                 if (Object.keys(sensors).length === 0) {
@@ -614,7 +1019,7 @@ class WebGUI:
         // Base Station Daten laden
         async function loadBaseStations() {
             try {
-                const response = await fetch('/api/basestations');
+                const response = await fetch(BASE_URL + '/api/basestations');
                 const stations = await response.json();
                 
                 if (Object.keys(stations).length === 0) {
@@ -743,7 +1148,7 @@ class WebGUI:
             };
             
             try {
-                const response = await fetch('/api/sensor/add', {
+                const response = await fetch(BASE_URL + '/api/sensor/add', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify(data)
@@ -772,7 +1177,7 @@ class WebGUI:
             }
             
             try {
-                const response = await fetch('/api/sensor/remove', {
+                const response = await fetch(BASE_URL + '/api/sensor/remove', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({sensor_eui: eui})
@@ -813,6 +1218,15 @@ class WebGUI:
 </html>
         '''
     
+    def _format_timestamp(self, timestamp):
+        """Formatiere Unix Timestamp zu lesbarem String."""
+        if timestamp and timestamp > 0:
+            try:
+                return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(timestamp))
+            except:
+                return "Unbekannt"
+        return "Nie"
+
     def run(self):
         """Starte Flask Server."""
         try:
@@ -869,6 +1283,23 @@ class WebGUI:
             color: white;
             padding: 30px;
             text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            right: 30px;
+            transform: translateY(-50%);
+            width: 60px;
+            height: 60px;
+            background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cGF0aCBkPSJNMTUgMTVMMzAgMEw0NSAxNUwzMCAzMFoiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4xKSIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMikiIHN0cm9rZS13aWR0aD0iMiIvPgogIDxwYXRoIGQ9Ik0wIDMwTDE1IDE1TDMwIDMwTDE1IDQ1WiIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjEpIiBzdHJva2U9InJnYmEoMjU1LDI1NSwyNTUsMC4yKSIgc3Ryb2tlLXdpZHRoPSIyIi8+CiAgPHBhdGggZD0iTTMwIDMwTDQ1IDE1TDYwIDMwTDQ1IDQ1WiIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjA1KSIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMykiIHN0cm9rZS13aWR0aD0iMiIvPgo8L3N2Zz4K');
+            background-size: contain;
+            background-repeat: no-repeat;
+            opacity: 0.15;
+            z-index: 1;
         }
         
         .nav {
@@ -895,6 +1326,38 @@ class WebGUI:
         .header h1 {
             font-size: 2.5em;
             margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .logo-icon {
+            font-size: 0.8em;
+            background: rgba(255,255,255,0.2);
+            padding: 10px 12px;
+            border-radius: 50%;
+            backdrop-filter: blur(10px);
+        }
+        
+        .nav-icon {
+            font-size: 1.2em;
+            margin-right: 8px;
+            opacity: 0.8;
+        }
+        
+        .section-icon {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+            color: white;
+            text-align: center;
+            line-height: 24px;
+            border-radius: 50%;
+            margin-right: 12px;
+            font-size: 14px;
+            font-weight: bold;
         }
         
         .header p {
@@ -1002,14 +1465,14 @@ class WebGUI:
 <body>
     <div class="container">
         <div class="header">
-            <h1>⚙️ mioty Application Center</h1>
-            <p>Einstellungen</p>
+            <h1><span class="logo-icon">⚡</span> mioty Application Center</h1>
+            <p>Einstellungen <span style="opacity: 0.6; font-size: 0.8em;">• powered by Sentinum</span></p>
         </div>
         
         <div class="nav">
-            <a href="#" onclick="window.location.href='/'" class="nav-item">📊 Sensoren</a>
-            <a href="#" onclick="window.location.href='/decoders'" class="nav-item">📝 Decoder</a>
-            <a href="#" onclick="window.location.href='/settings'" class="nav-item active">⚙️ Einstellungen</a>
+            <a id="nav-sensors" href="#" class="nav-item" onclick="navigateTo('/')">📊 Sensoren</a>
+            <a id="nav-decoders" href="#" class="nav-item" onclick="navigateTo('/decoders')">📝 Decoder</a>
+            <a id="nav-settings" href="#" class="nav-item active" onclick="navigateTo('/settings')">⚙️ Einstellungen</a>
         </div>
         
         <div class="content">
@@ -1062,6 +1525,39 @@ class WebGUI:
                 </form>
             </div>
             
+            <!-- Home Assistant MQTT Konfiguration -->
+            <div class="section">
+                <h2>🏠 Home Assistant MQTT Broker</h2>
+                <form id="haSettingsForm">
+                    <div class="form-group">
+                        <label for="ha_mqtt_broker">HA MQTT Broker:</label>
+                        <input type="text" id="ha_mqtt_broker" name="ha_mqtt_broker" placeholder="core-mosquitto" required>
+                        <div class="help-text">Home Assistant MQTT Broker (Standard: core-mosquitto)</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="ha_mqtt_port">HA MQTT Port:</label>
+                        <input type="number" id="ha_mqtt_port" name="ha_mqtt_port" placeholder="1883" min="1" max="65535" required>
+                        <div class="help-text">Home Assistant MQTT Port (Standard: 1883)</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="ha_mqtt_username">HA MQTT Benutzername:</label>
+                        <input type="text" id="ha_mqtt_username" name="ha_mqtt_username" placeholder="Optional">
+                        <div class="help-text">Home Assistant MQTT Benutzername (Optional)</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="ha_mqtt_password">HA MQTT Passwort:</label>
+                        <input type="password" id="ha_mqtt_password" name="ha_mqtt_password" placeholder="Passwort">
+                        <div class="help-text">Home Assistant MQTT Passwort (Leer lassen um nicht zu ändern)</div>
+                    </div>
+                    
+                    <button type="submit" class="btn">💾 HA MQTT speichern</button>
+                    <button type="button" class="btn btn-secondary" onclick="loadSettings()">🔄 Neu laden</button>
+                </form>
+            </div>
+            
             <!-- Verbindungsstatus -->
             <div class="section">
                 <h2>📡 Verbindungsstatus</h2>
@@ -1071,15 +1567,35 @@ class WebGUI:
     </div>
     
     <script>
+        // Use server-provided ingress path from X-Ingress-Path header
+        const INGRESS_PATH = '{{ ingress_path }}' || '';
+        const BASE_URL = INGRESS_PATH || window.location.origin;
+        console.log('Ingress path from server:', INGRESS_PATH);
+        console.log('BASE_URL resolved:', BASE_URL);
+        console.log('Current pathname:', window.location.pathname);
+        console.log('Is embedded (iframe):', window.self !== window.top);
+        
+        // Simplified navigation for embedded mode
+        const navigateTo = (path) => {
+            const fullUrl = BASE_URL + path;
+            console.log('Navigating to:', fullUrl);
+            console.log('Path requested:', path);
+            
+            // Simple approach - just use window.location.href
+            // This should work in both embedded and direct access
+            window.location.href = fullUrl;
+        };
+        
         // DOM Elemente
         const settingsForm = document.getElementById('settingsForm');
+        const haSettingsForm = document.getElementById('haSettingsForm');
         const alerts = document.getElementById('alerts');
         const connectionStatus = document.getElementById('connectionStatus');
         
         // Einstellungen laden
         async function loadSettings() {
             try {
-                const response = await fetch('/api/settings');
+                const response = await fetch(BASE_URL + '/api/settings');
                 const settings = await response.json();
                 
                 // Formular mit aktuellen Werten füllen
@@ -1089,6 +1605,12 @@ class WebGUI:
                 document.getElementById('mqtt_password').value = settings.mqtt_password || '';
                 document.getElementById('base_topic').value = settings.base_topic || 'bssci';
                 document.getElementById('auto_discovery').checked = settings.auto_discovery || false;
+                
+                // Home Assistant MQTT Felder füllen
+                document.getElementById('ha_mqtt_broker').value = settings.ha_mqtt_broker || 'core-mosquitto';
+                document.getElementById('ha_mqtt_port').value = settings.ha_mqtt_port || 1883;
+                document.getElementById('ha_mqtt_username').value = settings.ha_mqtt_username || '';
+                document.getElementById('ha_mqtt_password').value = settings.ha_mqtt_password || '';
                 
             } catch (error) {
                 showAlert('Fehler beim Laden der Einstellungen', 'error');
@@ -1124,7 +1646,7 @@ class WebGUI:
             };
             
             try {
-                const response = await fetch('/api/settings', {
+                const response = await fetch(BASE_URL + '/api/settings', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify(data)
@@ -1144,9 +1666,55 @@ class WebGUI:
             }
         });
         
+        // Home Assistant MQTT Einstellungen speichern
+        haSettingsForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(haSettingsForm);
+            const data = {
+                ha_mqtt_broker: formData.get('ha_mqtt_broker'),
+                ha_mqtt_port: formData.get('ha_mqtt_port'),
+                ha_mqtt_username: formData.get('ha_mqtt_username'),
+                ha_mqtt_password: formData.get('ha_mqtt_password')
+            };
+            
+            try {
+                const response = await fetch(BASE_URL + '/api/ha-settings', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showAlert(result.message, 'success');
+                } else {
+                    showAlert(result.error, 'error');
+                }
+                
+            } catch (error) {
+                showAlert('Fehler beim Speichern der HA MQTT Einstellungen', 'error');
+                console.error('Fehler:', error);
+            }
+        });
+        
         // Verbindungsstatus laden
         async function loadConnectionStatus() {
             try {
+                const response = await fetch(BASE_URL + '/api/status');
+                const status = await response.json();
+                
+                const mqttColor = status.mqtt_connected ? '#28a745' : '#dc3545';
+                const mqttText = status.mqtt_connected ? 
+                    `mioty MQTT: Verbunden (${status.mqtt_broker})` : 
+                    'mioty MQTT: Getrennt';
+                
+                const haMqttColor = status.ha_mqtt_connected ? '#28a745' : '#dc3545';
+                const haMqttText = status.ha_mqtt_connected ? 
+                    `HA MQTT: Verbunden (${status.ha_mqtt_broker})` : 
+                    `HA MQTT: Getrennt (${status.ha_mqtt_broker})`;
+                
                 connectionStatus.innerHTML = `
                     <div style="padding: 20px; background: #f8f9fa; border-radius: 8px;">
                         <div style="display: flex; align-items: center; margin-bottom: 10px;">
@@ -1154,12 +1722,20 @@ class WebGUI:
                             <strong>Web-GUI: Online</strong>
                         </div>
                         <div style="display: flex; align-items: center; margin-bottom: 10px;">
-                            <div style="width: 12px; height: 12px; background: #dc3545; border-radius: 50%; margin-right: 10px;"></div>
-                            <strong>MQTT: Getrennt (Demo-Modus)</strong>
+                            <div style="width: 12px; height: 12px; background: ${mqttColor}; border-radius: 50%; margin-right: 10px;"></div>
+                            <strong>${mqttText}</strong>
+                        </div>
+                        <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                            <div style="width: 12px; height: 12px; background: ${haMqttColor}; border-radius: 50%; margin-right: 10px;"></div>
+                            <strong>${haMqttText}</strong>
                         </div>
                         <div style="display: flex; align-items: center;">
                             <div style="width: 12px; height: 12px; background: #ffc107; border-radius: 50%; margin-right: 10px;"></div>
-                            <strong>BSSCI Service: Nicht verfügbar (Demo)</strong>
+                            <strong>Sensoren aktiv: ${status.sensor_count || 0}</strong>
+                        </div>
+                        <div style="display: flex; align-items: center; margin-top: 10px;">
+                            <div style="width: 12px; height: 12px; background: #17a2b8; border-radius: 50%; margin-right: 10px;"></div>
+                            <strong>Base Stations: ${status.basestation_count || 0}</strong>
                         </div>
                     </div>
                 `;
@@ -1169,6 +1745,9 @@ class WebGUI:
                 console.error('Fehler:', error);
             }
         }
+        
+        // Auto-refresh für Verbindungsstatus
+        setInterval(loadConnectionStatus, 5000); // Alle 5 Sekunden
         
         // Initialisierung
         document.addEventListener('DOMContentLoaded', () => {
@@ -1239,12 +1818,12 @@ class WebGUI:
     <div class="container">
         <div class="header">
             <h1>📝 mioty Application Center</h1>
-            <p>Payload Decoder Verwaltung</p>
+            <p>Payload Decoder Verwaltung <span style="opacity: 0.6; font-size: 0.8em;">• powered by Sentinum</span></p>
         </div>
         <div class="nav">
-            <a href="#" onclick="window.location.href='/'" class="nav-item">📊 Sensoren</a>
-            <a href="#" onclick="window.location.href='/decoders'" class="nav-item active">📝 Decoder</a>
-            <a href="#" onclick="window.location.href='/settings'" class="nav-item">⚙️ Einstellungen</a>
+            <a id="nav-sensors" href="#" class="nav-item" onclick="navigateTo('/')">📊 Sensoren</a>
+            <a id="nav-decoders" href="#" class="nav-item active" onclick="navigateTo('/decoders')">📝 Decoder</a>
+            <a id="nav-settings" href="#" class="nav-item" onclick="navigateTo('/settings')">⚙️ Einstellungen</a>
         </div>
         <div class="content">
             <div id="alerts"></div>
@@ -1304,6 +1883,25 @@ class WebGUI:
         </div>
     </div>
     <script>
+        // Use server-provided ingress path from X-Ingress-Path header
+        const INGRESS_PATH = '{{ ingress_path }}' || '';
+        const BASE_URL = INGRESS_PATH || window.location.origin;
+        console.log('Ingress path from server:', INGRESS_PATH);
+        console.log('BASE_URL resolved:', BASE_URL);
+        console.log('Current pathname:', window.location.pathname);
+        console.log('Is embedded (iframe):', window.self !== window.top);
+        
+        // Simplified navigation for embedded mode
+        const navigateTo = (path) => {
+            const fullUrl = BASE_URL + path;
+            console.log('Navigating to:', fullUrl);
+            console.log('Path requested:', path);
+            
+            // Simple approach - just use window.location.href
+            // This should work in both embedded and direct access
+            window.location.href = fullUrl;
+        };
+        
         const uploadForm = document.getElementById('uploadForm');
         const testForm = document.getElementById('testForm');
         const assignForm = document.getElementById('assignForm');
@@ -1316,7 +1914,7 @@ class WebGUI:
         
         async function loadDecoders() {
             try {
-                const response = await fetch('/api/decoders');
+                const response = await fetch(BASE_URL + '/api/decoders');
                 const data = await response.json();
                 currentDecoders = data.decoders || [];
                 currentAssignments = data.assignments || {};
@@ -1387,7 +1985,7 @@ class WebGUI:
             e.preventDefault();
             const formData = new FormData(uploadForm);
             try {
-                const response = await fetch('/api/decoder/upload', { method: 'POST', body: formData });
+                const response = await fetch(BASE_URL + '/api/decoder/upload', { method: 'POST', body: formData });
                 const result = await response.json();
                 if (response.ok) {
                     showAlert(result.message, 'success');
@@ -1406,7 +2004,7 @@ class WebGUI:
             const formData = new FormData(testForm);
             const data = { decoder_name: formData.get('decoder'), test_payload: formData.get('payload') };
             try {
-                const response = await fetch('/api/decoder/test', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
+                const response = await fetch(BASE_URL + '/api/decoder/test', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
                 const result = await response.json();
                 displayTestResult(result);
             } catch (error) {
@@ -1432,7 +2030,7 @@ class WebGUI:
             const formData = new FormData(assignForm);
             const data = { sensor_eui: formData.get('sensor_eui'), decoder_name: formData.get('decoder') };
             try {
-                const response = await fetch('/api/decoder/assign', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
+                const response = await fetch(BASE_URL + '/api/decoder/assign', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
                 const result = await response.json();
                 if (response.ok) {
                     showAlert(result.message, 'success');
@@ -1449,7 +2047,7 @@ class WebGUI:
         async function unassignDecoder(sensorEui) {
             if (!confirm(`Decoder-Zuweisung für Sensor ${sensorEui} wirklich entfernen?`)) { return; }
             try {
-                const response = await fetch('/api/decoder/unassign', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({sensor_eui: sensorEui}) });
+                const response = await fetch(BASE_URL + '/api/decoder/unassign', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({sensor_eui: sensorEui}) });
                 const result = await response.json();
                 if (response.ok) {
                     showAlert(result.message, 'success');
@@ -1465,7 +2063,7 @@ class WebGUI:
         async function deleteDecoder(decoderName) {
             if (!confirm(`Decoder "${decoderName}" wirklich löschen? Alle Zuweisungen werden entfernt.`)) { return; }
             try {
-                const response = await fetch('/api/decoder/delete', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({decoder_name: decoderName}) });
+                const response = await fetch(BASE_URL + '/api/decoder/delete', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({decoder_name: decoderName}) });
                 const result = await response.json();
                 if (response.ok) {
                     showAlert(result.message, 'success');
@@ -1489,5 +2087,6 @@ class WebGUI:
             setInterval(loadDecoders, 30000);
         });
     </script>
+    
 </body>
 </html>'''
