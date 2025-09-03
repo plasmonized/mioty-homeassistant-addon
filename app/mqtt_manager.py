@@ -206,12 +206,9 @@ class MQTTManager:
     def _subscribe_topics(self):
         """Abonniere relevante MQTT Topics."""
         topics = [
-            f"{self.base_topic}/ep/+/ul",      # Sensor Daten (mit bssci prefix)
-            f"{self.base_topic}/bs/+",         # Base Station Status (mit bssci prefix)
-            f"{self.base_topic}/ep/+/config",  # Sensor Konfiguration (mit bssci prefix)
-            "ep/+/ul",                         # Sensor Daten (ohne prefix) - zusätzlich!
-            "bs/+",                            # Base Station Status (ohne prefix) - zusätzlich!
-            "ep/+/config"                      # Sensor Konfiguration (ohne prefix) - zusätzlich!
+            f"{self.base_topic}/ep/+/ul",      # Sensor Daten
+            f"{self.base_topic}/bs/+",         # Base Station Status
+            f"{self.base_topic}/ep/+/config"   # Sensor Konfiguration
         ]
         
         for topic in topics:
@@ -226,20 +223,12 @@ class MQTTManager:
         try:
             data = json.loads(payload)
             
-            # Handle beide Topic-Formate:
-            # 1. bssci/ep/EUI/ul (mit Prefix)
-            # 2. ep/EUI/ul (ohne Prefix)
-            
-            is_prefixed = topic_parts[0] == self.base_topic
-            ep_index = 1 if is_prefixed else 0
-            
-            if len(topic_parts) >= (3 if not is_prefixed else 4) and topic_parts[ep_index] == "ep":
-                sensor_eui = topic_parts[ep_index + 1]
-                message_type = topic_parts[ep_index + 2]
+            if len(topic_parts) >= 4 and topic_parts[1] == "ep":
+                sensor_eui = topic_parts[2]
+                message_type = topic_parts[3]
                 
                 if message_type == "ul" and self.data_callback:
                     # Sensor-Daten
-                    logging.debug(f"📡 Sensor-Daten empfangen von {sensor_eui} (Topic: {'/'.join(topic_parts)})")
                     self.data_callback(sensor_eui, data)
                     
                 elif message_type == "config" and self.config_callback:
