@@ -5,6 +5,7 @@ Flask-basierte Benutzeroberfläche für Sensor-Management
 
 import logging
 import json
+import os
 import time
 from typing import Any, Dict
 from flask import Flask, render_template, render_template_string, request, jsonify, redirect, url_for
@@ -28,7 +29,6 @@ class WebGUI:
         logging.info(f"🔧 WEB GUI SETTINGS PFAD: {settings_path}")
         
         # KRITISCH: Korrekter Template-Pfad für app/templates/
-        import os
         template_path = os.path.join(os.path.dirname(__file__), 'templates')
         self.app = Flask(__name__, template_folder=template_path)
         

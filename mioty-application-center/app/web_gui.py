@@ -5,6 +5,7 @@ Flask-basierte Benutzeroberfläche für Sensor-Management
 
 import logging
 import json
+import os
 import time
 from typing import Any, Dict
 from flask import Flask, render_template, render_template_string, request, jsonify, redirect, url_for
@@ -28,7 +29,6 @@ class WebGUI:
         logging.info(f"🔧 WEB GUI SETTINGS PFAD: {settings_path}")
         
         # KRITISCH: Korrekter Template-Pfad für app/templates/
-        import os
         template_path = os.path.join(os.path.dirname(__file__), 'templates')
         self.app = Flask(__name__, template_folder=template_path)
         
@@ -1318,7 +1318,7 @@ class WebGUI:
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>mioty Application Center Einstellungen v1.0.4.6.7</title>
+    <title>mioty Application Center Einstellungen v1.0.4.6.8</title>
     <style>
         * {
             margin: 0;
