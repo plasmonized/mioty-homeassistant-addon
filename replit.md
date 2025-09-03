@@ -10,7 +10,13 @@ Preferred communication style: Simple, everyday language.
 
 # Recent Changes
 
-**03.09.2025 - Universal JavaScript Cache-Busting Fix (Version 1.0.4.6.6) - ✅ AKTUELL:**
+**03.09.2025 - Settings-Persistierung Problem behoben (Version 1.0.4.6.7) - ✅ AKTUELL:**
+- **KRITISCHES SETTINGS-PROBLEM BEHOBEN:** GET /api/settings liest jetzt korrekt aus settings.json statt Standard-Konfiguration
+- **PERSISTENTE EINSTELLUNGEN:** Settings werden nach Neustart korrekt aus gespeicherter Datei geladen
+- **KORREKTE PRIORISIERUNG:** Gespeicherte Settings haben Vorrang vor Standard-Konfiguration
+- **DEBUG-LOGGING:** Erweiterte Logs zeigen woher Settings geladen werden
+
+**03.09.2025 - Universal JavaScript Cache-Busting Fix (Version 1.0.4.6.6) - ✅ ERFOLGREICH:**
 - **DIREKTER PORT-5000-ZUGRIFF REPARIERT:** JavaScript funktioniert jetzt sowohl für Ingress als auch direkten Zugriff
 - **UNIVERSAL CACHE-BUSTING:** Cache-Busting für alle Zugriffsmethoden aktiviert (nicht nur Ingress)
 - **SETTINGS-SPEICHERN FUNKTIONIERT:** Sowohl über Home Assistant als auch über direkten Port-5000-Zugriff

@@ -369,8 +369,14 @@ class WebGUI:
         @self.app.route('/api/settings')
         def get_settings():
             """API: Aktuelle Einstellungen abrufen."""
-            # Aktuelle Laufzeit-Konfiguration vom Add-on abrufen
-            if self.addon and hasattr(self.addon, 'config'):
+            # REPARIERT: Immer zuerst gespeicherte Einstellungen aus settings.json verwenden
+            if self.settings and hasattr(self.settings, 'get_all_settings'):
+                settings = self.settings.get_all_settings()
+                settings['mqtt_password'] = '***' if settings.get('mqtt_password') else ''
+                settings['ha_mqtt_password'] = '***' if settings.get('ha_mqtt_password') else ''
+                logging.info(f"🔧 SETTINGS GELADEN aus settings.json: broker={settings.get('mqtt_broker')}, port={settings.get('mqtt_port')}")
+            elif self.addon and hasattr(self.addon, 'config'):
+                # Fallback zu Add-on Standard-Konfiguration nur wenn Settings-Datei nicht verfügbar
                 settings = {
                     'mqtt_broker': self.addon.config.get('mqtt_broker', 'localhost'),
                     'mqtt_port': self.addon.config.get('mqtt_port', 1883),
@@ -383,11 +389,22 @@ class WebGUI:
                     'ha_mqtt_username': self.addon.config.get('ha_mqtt_username', ''),
                     'ha_mqtt_password': '***' if self.addon.config.get('ha_mqtt_password') else ''
                 }
+                logging.warning("⚠️ SETTINGS: Fallback zu Add-on Konfiguration")
             else:
-                # Fallback zu gespeicherten Einstellungen
-                settings = self.settings.get_all_settings()
-                settings['mqtt_password'] = '***' if settings.get('mqtt_password') else ''
-                settings['ha_mqtt_password'] = '***' if settings.get('ha_mqtt_password') else ''
+                # Letzter Fallback zu harten Standard-Werten
+                settings = {
+                    'mqtt_broker': 'localhost',
+                    'mqtt_port': 1883,
+                    'mqtt_username': '',
+                    'mqtt_password': '',
+                    'base_topic': 'bssci',
+                    'auto_discovery': True,
+                    'ha_mqtt_broker': 'core-mosquitto',
+                    'ha_mqtt_port': 1883,
+                    'ha_mqtt_username': '',
+                    'ha_mqtt_password': ''
+                }
+                logging.warning("⚠️ SETTINGS: Fallback zu Standard-Einstellungen")
             return jsonify(settings)
         
         @self.app.route('/api/settings', methods=['POST'])
@@ -1295,7 +1312,7 @@ class WebGUI:
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>mioty Application Center Einstellungen v1.0.4.6.5</title>
+    <title>mioty Application Center Einstellungen v1.0.4.6.6</title>
     <style>
         * {
             margin: 0;
