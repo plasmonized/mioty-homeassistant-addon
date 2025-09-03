@@ -165,6 +165,7 @@ Das **mioty Application Center für Home Assistant** ist eine umfassende Add-on 
 - Home Assistant 2023.1.0 oder höher
 - MQTT Broker (z.B. Mosquitto Add-on)
 - Aktives mioty Netzwerk mit BSSCI Service Center
+- **Externe Abhängigkeit: [containerized mioty Service Center](https://github.com/plasmonized/containerized-mioty-Service-Center)** - erforderlich für vollständige Funktionalität
 - GitHub Repository Zugang
 
 ### Add-on Installation
