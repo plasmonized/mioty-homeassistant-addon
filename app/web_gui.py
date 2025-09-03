@@ -21,7 +21,16 @@ class WebGUI:
         self.addon = addon_instance
         self.settings = SettingsManager()
         
-        self.app = Flask(__name__, template_folder='templates')
+        # KRITISCH: Korrekter Template-Pfad für app/templates/
+        import os
+        template_path = os.path.join(os.path.dirname(__file__), 'templates')
+        self.app = Flask(__name__, template_folder=template_path)
+        
+        # KRITISCH: Flask Template-Caching deaktivieren
+        self.app.config['TEMPLATES_AUTO_RELOAD'] = True
+        self.app.jinja_env.auto_reload = True
+        self.app.jinja_env.cache = {}
+        
         CORS(self.app)
         
         # Erweiterte HTTP-Protokollierung aktivieren
@@ -87,7 +96,11 @@ class WebGUI:
         def log_response_details(response):
             """Protokolliere Response-Details und setze Cache-Control Headers."""
             
-            # AGGRESSIVE IFRAME CACHE-BUSTING für Replit
+            # HOME ASSISTANT INGRESS AGGRESSIVE CACHE-BUSTING
+            is_ingress = (request.headers.get('X-Ingress-Path') or 
+                         'hassio_ingress' in request.headers.get('Referer', '') or
+                         'homeassistant' in request.headers.get('User-Agent', '').lower())
+            
             if hasattr(request, 'path') and request.path and (request.path.endswith(('.html', '.css', '.js')) or request.path in ['/', '/settings', '/decoders']):
                 response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0, private'
                 response.headers['Pragma'] = 'no-cache'
@@ -97,7 +110,15 @@ class WebGUI:
                 # Eindeutige ETag für jeden Request
                 import time
                 response.headers['ETag'] = f'"{int(time.time() * 1000)}"'
-                logging.info("🚫 Cache-Control Headers gesetzt (Anti-Cache)")
+                
+                # Extra Headers für Home Assistant Ingress
+                if is_ingress:
+                    response.headers['X-Accel-Expires'] = '0'
+                    response.headers['X-Proxy-Cache'] = 'BYPASS'
+                    response.headers['Surrogate-Control'] = 'no-store'
+                    logging.info("🏠 HA Ingress Cache-Control Headers gesetzt")
+                else:
+                    logging.info("🚫 Standard Cache-Control Headers gesetzt")
             
             logging.info("📤 RESPONSE DETAILS:")
             logging.info(f"   Status: {response.status}")
@@ -169,12 +190,28 @@ class WebGUI:
                 logging.warning("⚠️  Nicht in Home Assistant Ingress! Add-on läuft in externer Umgebung.")
                 logging.info("💡 Für volle Home Assistant Integration: Add-on in HA installieren")
             
-            # Versuche zuerst separate Template-Datei, dann Fallback zum eingebetteten Template
+            # DEBUGGING: Template-Auswahl protokollieren
+            template_path = self.app.template_folder
+            index_exists = False
             try:
+                import os
+                index_file = os.path.join(template_path, 'index.html')
+                index_exists = os.path.exists(index_file)
+                logging.info(f"🔍 TEMPLATE DEBUGGING:")
+                logging.info(f"   Template Folder: {template_path}")
+                logging.info(f"   Index.html exists: {index_exists}")
+                logging.info(f"   Index.html path: {index_file}")
+            except Exception as e:
+                logging.error(f"Template debugging error: {e}")
+            
+            # KRITISCH: Verwende IMMER die aktuelle externe Template-Datei
+            if index_exists:
+                logging.info("✅ Verwende AKTUELLE index.html Template-Datei (Version 1.0.4.6)")
                 return render_template('index.html', ingress_path=ingress_path)
-            except:
-                logging.info("Verwende eingebettetes Template als Fallback")
-                return render_template_string(self.get_main_template(), ingress_path=ingress_path)
+            else:
+                logging.error("❌ CRITICAL ERROR: index.html Template-Datei nicht gefunden!")
+                logging.error("   Template Fallback wurde entfernt um veraltete Versionen zu verhindern")
+                return "❌ Template Error: index.html nicht gefunden", 500
         
         @self.app.route('/settings')
         def settings():
@@ -574,14 +611,17 @@ class WebGUI:
             return jsonify({"adapters": adapters})
     
     def get_main_template(self) -> str:
-        """Hauptseiten-Template."""
+        """Hauptseiten-Template - SYNCHRONISIERT mit app/templates/index.html."""
         return '''
 <!DOCTYPE html>
 <html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>mioty Application Center für Homeassistant</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>mioty Application Center für Homeassistant v1.0.4.6</title>
     <style>
         * {
             margin: 0;
