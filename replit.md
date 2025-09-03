@@ -10,6 +10,12 @@ Preferred communication style: Simple, everyday language.
 
 # Recent Changes
 
+**03.09.2025 - Settings Cache-Busting & Embedded UI Fix (Version 1.0.4.6.2) - ✅ ERFOLGREICH:**
+- **SETTINGS CACHE-BUSTING IMPLEMENTIERT:** Aggressive Cache-Busting für Settings/Decoder Templates aktiviert
+- **EMBEDDED UI VOLLSTÄNDIG FUNKTIONAL:** MQTT-Konfiguration über embedded Settings-Seite möglich
+- **API-CALL CACHE-OVERRIDE:** fetch() API für iframe-Umgebung in allen Templates überschrieben  
+- **EINHEITLICHES CACHE-BUSTING:** Konsistente Cache-Verhinderung zwischen Dashboard, Settings und Decoder
+
 **03.09.2025 - Template-Synchronisation & Cache-Busting Fix (Version 1.0.4.6.1) - ✅ ERFOLGREICH:**
 - **KRITISCHES TEMPLATE-PROBLEM BEHOBEN:** Synchronisation zwischen app/ und mioty-application-center/app/ korrigiert
 - **ROOT CAUSE IDENTIFIZIERT:** Home Assistant nutzte veraltete Template-Version (1.0.4.5) statt aktuelle (1.0.4.6)
