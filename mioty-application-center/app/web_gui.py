@@ -48,59 +48,40 @@ class WebGUI:
         logging.info(f"Web GUI initialisiert auf Port {port}")
     
     def setup_logging(self):
-        """Konfiguriere erweiterte HTTP-Protokollierung für Debugging."""
+        """Konfiguriere reduzierte HTTP-Protokollierung."""
         
         @self.app.before_request
         def log_request_details():
-            """Protokolliere detaillierte Request-Informationen."""
-            logging.info("=" * 80)
-            logging.info("🔍 HTTP REQUEST DEBUGGING")
-            logging.info("-" * 40)
-            logging.info(f"📍 Method: {request.method}")
-            logging.info(f"📍 URL: {request.url}")
-            logging.info(f"📍 Path: {request.path}")
-            logging.info(f"📍 Remote IP: {request.remote_addr}")
-            logging.info(f"📍 User Agent: {request.headers.get('User-Agent', 'N/A')}")
+            """Protokolliere nur wichtige Request-Informationen."""
             
-            # Home Assistant Ingress Header Analysis
-            logging.info("-" * 40)
-            logging.info("🏠 HOME ASSISTANT INGRESS ANALYSIS")
-            ha_headers = [
-                'X-Ingress-Path',
-                'X-Real-IP', 
-                'X-Forwarded-For',
-                'X-Forwarded-Host',
-                'X-Forwarded-Proto',
-                'Host',
-                'Origin',
-                'Referer'
-            ]
+            # Detailliertes Logging nur für wichtige Requests
+            detailed_logging_paths = ['/api/settings', '/api/decoder/test', '/settings', '/decoders']
+            important_methods = ['POST', 'PUT', 'DELETE']
             
-            for header in ha_headers:
-                value = request.headers.get(header, 'NICHT GESETZT')
-                if value != 'NICHT GESETZT':
-                    logging.info(f"📧 {header}: {value}")
-                else:
-                    logging.warning(f"⚠️  {header}: NICHT GESETZT")
+            needs_detailed_logging = (
+                any(path in request.path for path in detailed_logging_paths) or
+                request.method in important_methods
+            )
             
-            # Alle Header für vollständige Analyse
-            logging.info("-" * 40)
-            logging.info("📧 ALLE REQUEST HEADERS:")
-            for key, value in request.headers:
-                logging.info(f"   {key}: {value}")
-            
-            # Query Parameters
-            if request.args:
-                logging.info("-" * 40)
-                logging.info("🔗 QUERY PARAMETERS:")
-                for key, value in request.args.items():
-                    logging.info(f"   {key}: {value}")
-            
-            logging.info("=" * 80)
+            if needs_detailed_logging:
+                logging.info("=" * 50)
+                logging.info(f"🔍 {request.method} {request.path}")
+                
+                # Home Assistant User Info (nur bei wichtigen Requests)
+                user_name = request.headers.get('X-Remote-User-Name', 'N/A')
+                if user_name != 'N/A':
+                    logging.info(f"👤 User: {user_name}")
+                
+                # Ingress Detection
+                is_ingress = request.headers.get('X-Ingress-Path') is not None
+                if is_ingress:
+                    logging.info("🏠 Home Assistant Ingress")
+                
+                logging.info("=" * 50)
         
         @self.app.after_request
         def log_response_details(response):
-            """Protokolliere Response-Details und setze Cache-Control Headers."""
+            """Setze Cache-Control Headers und minimales Response-Logging."""
             
             # HOME ASSISTANT INGRESS AGGRESSIVE CACHE-BUSTING
             is_ingress = (request.headers.get('X-Ingress-Path') or 
@@ -122,19 +103,20 @@ class WebGUI:
                     response.headers['X-Accel-Expires'] = '0'
                     response.headers['X-Proxy-Cache'] = 'BYPASS'
                     response.headers['Surrogate-Control'] = 'no-store'
-                    logging.info("🏠 HA Ingress Cache-Control Headers gesetzt")
-                else:
-                    logging.info("🚫 Standard Cache-Control Headers gesetzt")
             
-            logging.info("📤 RESPONSE DETAILS:")
-            logging.info(f"   Status: {response.status}")
-            logging.info(f"   Content-Type: {response.content_type}")
-            logging.info(f"   Content-Length: {response.content_length}")
+            # Response Logging nur für wichtige Requests
+            detailed_logging_paths = ['/api/settings', '/api/decoder/test', '/settings', '/decoders']
+            important_methods = ['POST', 'PUT', 'DELETE']
             
-            # Response Headers für Ingress-Debugging
-            logging.info("📧 RESPONSE HEADERS:")
-            for key, value in response.headers:
-                logging.info(f"   {key}: {value}")
+            needs_response_logging = (
+                any(path in request.path for path in detailed_logging_paths) or
+                request.method in important_methods or
+                response.status_code >= 400  # Log Fehler immer
+            )
+            
+            if needs_response_logging:
+                status_emoji = "✅" if response.status_code < 400 else "❌"
+                logging.info(f"{status_emoji} Response: {response.status} | {request.method} {request.path}")
             
             return response
         
