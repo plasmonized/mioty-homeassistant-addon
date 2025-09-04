@@ -244,6 +244,17 @@ class WebGUI:
                     device_info = self.addon._get_device_info_from_decoder(eui, f"mioty_{eui}")
                     needs_metadata = device_info.get('manufacturer') == 'Unknown'
                 
+                # Hole aktuelle Metadaten für UI
+                metadata = {}
+                if hasattr(self.addon, '_get_device_info_from_decoder'):
+                    device_info = self.addon._get_device_info_from_decoder(eui, f"mioty_{eui}")
+                    metadata = {
+                        'manufacturer': device_info.get('manufacturer', 'Unknown'),
+                        'model': device_info.get('model', 'Unknown'),
+                        'name': device_info.get('name', f'Sensor {eui}'),
+                        'sw_version': device_info.get('sw_version', '1.0')
+                    }
+
                 sensor_info = {
                     'eui': eui,
                     'sensor_type': 'mioty IoT Sensor',
@@ -251,7 +262,8 @@ class WebGUI:
                     'snr': data.get('data', {}).get('snr', 'N/A'),
                     'rssi': data.get('data', {}).get('rssi', 'N/A'),
                     'signal_quality': data.get('signal_quality', 'Unknown'),
-                    'needs_metadata': needs_metadata
+                    'needs_metadata': needs_metadata,
+                    'metadata': metadata
                 }
                 sensor_list.append(sensor_info)
             
@@ -277,13 +289,25 @@ class WebGUI:
                     device_info = self.addon._get_basestation_info(eui, f"bssci_basestation_{eui}")
                     needs_metadata = device_info.get('manufacturer') == 'Unknown'
                 
+                # Hole aktuelle Metadaten für UI
+                metadata = {}
+                if hasattr(self.addon, '_get_basestation_info'):
+                    device_info = self.addon._get_basestation_info(eui, f"bssci_basestation_{eui}")
+                    metadata = {
+                        'manufacturer': device_info.get('manufacturer', 'Unknown'),
+                        'model': device_info.get('model', 'Unknown'),
+                        'name': device_info.get('name', f'Base Station {eui}'),
+                        'sw_version': device_info.get('sw_version', '1.0')
+                    }
+
                 bs_info = {
                     'eui': eui,
                     'status': data.get('status', 'Online'),
                     'last_update': self._format_timestamp(data.get('last_seen', 0)),
                     'cpu_usage': status_data.get('cpu_usage', 'N/A'),
                     'memory_usage': status_data.get('memory_usage', 'N/A'),
-                    'needs_metadata': needs_metadata
+                    'needs_metadata': needs_metadata,
+                    'metadata': metadata
                 }
                 bs_list.append(bs_info)
             

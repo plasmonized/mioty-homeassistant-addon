@@ -216,10 +216,17 @@
         console.log('Current pathname:', window.location.pathname);
         console.log('Is embedded (iframe):', window.parent !== window);
         
+        // Cache-Busting für alle API Calls
+        function getCacheBusterURL(path) {
+            const timestamp = Date.now();
+            const random = Math.random();
+            return `${BASE_URL}${path}?cb=${timestamp}&t=${random}`;
+        }
+
         // Daten laden
         async function loadSensors() {
             try {
-                const response = await fetch(`${BASE_URL}/api/sensors`);
+                const response = await fetch(getCacheBusterURL('/api/sensors'));
                 const sensors = await response.json();
                 
                 document.getElementById('sensor-count').textContent = sensors.length;
@@ -227,14 +234,51 @@
                 const sensorsList = document.getElementById('sensors-list');
                 sensorsList.innerHTML = sensors.map(sensor => `
                     <div style="background: #f8f9fa; padding: 15px; margin: 10px 0; border-radius: 8px; border-left: 4px solid #ff6b35;">
-                        <strong>EUI:</strong> ${sensor.eui}<br>
-                        <strong>Typ:</strong> ${sensor.sensor_type}<br>
-                        <strong>Letztes Update:</strong> ${sensor.last_update}<br>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <strong>EUI:</strong> ${sensor.eui}<br>
+                                <strong>Typ:</strong> ${sensor.sensor_type}
+                            </div>
+                            <button onclick="toggleMetadata('sensor-${sensor.eui}')" style="border: none; background: #28a745; color: white; padding: 5px 10px; border-radius: 3px; cursor: pointer;">📋 Metadaten</button>
+                        </div>
+                        
+                        <div style="margin-top: 10px;">
+                            <strong>Letztes Update:</strong> ${sensor.last_update}<br>
+                            <strong>SNR:</strong> ${sensor.snr || 'N/A'}<br>
+                            <strong>RSSI:</strong> ${sensor.rssi || 'N/A'}<br>
+                            <strong>Signalqualität:</strong> ${sensor.signal_quality || 'Unknown'}
+                        </div>
+                        
+                        <!-- Ausklappbare Metadaten -->
+                        <div id="sensor-${sensor.eui}" style="display: none; margin-top: 15px; padding: 15px; background: #e9ecef; border-radius: 5px; border-left: 3px solid #6c757d;">
+                            <h5 style="margin: 0 0 10px 0; color: #495057;">🔧 Sensor-Metadaten</h5>
+                            <div style="display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center;">
+                                <label><strong>Hersteller:</strong></label>
+                                <input type="text" id="manufacturer-${sensor.eui}" value="${sensor.metadata?.manufacturer || 'Unknown'}" style="padding: 4px; border: 1px solid #ddd; border-radius: 3px;">
+                                <button onclick="saveMetadata('sensor', '${sensor.eui}')" style="border: none; background: #007bff; color: white; padding: 4px 8px; border-radius: 3px; font-size: 11px;">💾</button>
+                                
+                                <label><strong>Modell:</strong></label>
+                                <input type="text" id="model-${sensor.eui}" value="${sensor.metadata?.model || 'Unknown'}" style="padding: 4px; border: 1px solid #ddd; border-radius: 3px;">
+                                <span></span>
+                                
+                                <label><strong>Gerätename:</strong></label>
+                                <input type="text" id="name-${sensor.eui}" value="${sensor.metadata?.name || 'Sensor ' + sensor.eui}" style="padding: 4px; border: 1px solid #ddd; border-radius: 3px;">
+                                <span></span>
+                                
+                                <label><strong>SW-Version:</strong></label>
+                                <input type="text" id="sw_version-${sensor.eui}" value="${sensor.metadata?.sw_version || '1.0'}" style="padding: 4px; border: 1px solid #ddd; border-radius: 3px;">
+                                <span></span>
+                            </div>
+                            <div style="margin-top: 10px; text-align: right;">
+                                <button onclick="resetMetadata('sensor', '${sensor.eui}')" style="border: none; background: #6c757d; color: white; padding: 5px 10px; border-radius: 3px; font-size: 12px;">🔄 Zurücksetzen</button>
+                            </div>
+                        </div>
+                        
                         ${sensor.needs_metadata ? `
                             <div style="margin-top: 10px; padding: 10px; background: #fff3cd; border-radius: 4px; border-left: 3px solid #ffc107;">
                                 <small><strong>⚠️ Auto-Discovery unvollständig:</strong><br>
                                 Manufacturer/Model fehlen. <a href="/decoders" style="color: #0066cc;">Decoder hinzufügen</a> oder 
-                                <button onclick="addManualSensorData('${sensor.eui}')" style="border: none; background: #007bff; color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px; cursor: pointer;">Manuell ergänzen</button>
+                                <button onclick="addManualSensorData('${sensor.eui}')" style="border: none; background: #007bff; color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px; cursor: pointer;">Schnell ergänzen</button>
                                 </small>
                             </div>
                         ` : ''}
@@ -341,9 +385,74 @@
             }
         }
         
+        // Metadaten-UI Funktionen
+        function toggleMetadata(elementId) {
+            const element = document.getElementById(elementId);
+            if (element.style.display === 'none') {
+                element.style.display = 'block';
+            } else {
+                element.style.display = 'none';
+            }
+        }
+        
+        function saveMetadata(deviceType, eui) {
+            const manufacturer = document.getElementById(`manufacturer-${eui}`).value.trim();
+            const model = document.getElementById(`model-${eui}`).value.trim();
+            const name = document.getElementById(`name-${eui}`).value.trim();
+            const sw_version = document.getElementById(`sw_version-${eui}`).value.trim();
+            
+            if (!manufacturer || !model) {
+                alert('❌ Hersteller und Modell sind erforderlich!');
+                return;
+            }
+            
+            const endpoint = deviceType === 'sensor' ? 
+                `/api/sensors/${eui}/metadata` : 
+                `/api/basestations/${eui}/metadata`;
+            
+            const data = {
+                manufacturer: manufacturer,
+                model: model,
+                name: name,
+                sw_version: sw_version
+            };
+            
+            fetch(`${BASE_URL}${endpoint}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            }).then(response => {
+                if (response.ok) {
+                    alert('✅ Metadaten erfolgreich gespeichert!');
+                    // Lade Daten neu
+                    if (deviceType === 'sensor') {
+                        loadSensors();
+                    } else {
+                        loadBaseStations();
+                    }
+                } else {
+                    alert('❌ Fehler beim Speichern der Metadaten');
+                }
+            }).catch(error => {
+                console.error('Fehler beim Speichern:', error);
+                alert('❌ Fehler beim Speichern der Metadaten');
+            });
+        }
+        
+        function resetMetadata(deviceType, eui) {
+            if (confirm('Möchten Sie die Metadaten wirklich zurücksetzen?')) {
+                document.getElementById(`manufacturer-${eui}`).value = 'Unknown';
+                document.getElementById(`model-${eui}`).value = 'Unknown';
+                document.getElementById(`name-${eui}`).value = deviceType === 'sensor' ? `Sensor ${eui}` : `Base Station ${eui}`;
+                document.getElementById(`sw_version-${eui}`).value = '1.0';
+                
+                alert('🔄 Metadaten zurückgesetzt. Klicken Sie auf "💾" zum Speichern.');
+            }
+        }
+        
         async function loadBaseStations() {
             try {
-                const response = await fetch(`${BASE_URL}/api/basestations`);
+                const response = await fetch(getCacheBusterURL('/api/basestations'));
                 const basestations = await response.json();
                 
                 document.getElementById('basestation-count').textContent = basestations.length;
@@ -351,14 +460,50 @@
                 const basestationsList = document.getElementById('basestations-list');
                 basestationsList.innerHTML = basestations.map(bs => `
                     <div style="background: #f8f9fa; padding: 15px; margin: 10px 0; border-radius: 8px; border-left: 4px solid #28a745;">
-                        <strong>EUI:</strong> ${bs.eui}<br>
-                        <strong>Status:</strong> ${bs.status}<br>
-                        <strong>Letztes Update:</strong> ${bs.last_update}<br>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <strong>EUI:</strong> ${bs.eui}<br>
+                                <strong>Status:</strong> ${bs.status}
+                            </div>
+                            <button onclick="toggleMetadata('basestation-${bs.eui}')" style="border: none; background: #17a2b8; color: white; padding: 5px 10px; border-radius: 3px; cursor: pointer;">📋 Metadaten</button>
+                        </div>
+                        
+                        <div style="margin-top: 10px;">
+                            <strong>Letztes Update:</strong> ${bs.last_update}<br>
+                            <strong>CPU Usage:</strong> ${bs.cpu_usage || 'N/A'}<br>
+                            <strong>Memory Usage:</strong> ${bs.memory_usage || 'N/A'}
+                        </div>
+                        
+                        <!-- Ausklappbare Metadaten -->
+                        <div id="basestation-${bs.eui}" style="display: none; margin-top: 15px; padding: 15px; background: #e9ecef; border-radius: 5px; border-left: 3px solid #6c757d;">
+                            <h5 style="margin: 0 0 10px 0; color: #495057;">🏢 Base Station-Metadaten</h5>
+                            <div style="display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center;">
+                                <label><strong>Hersteller:</strong></label>
+                                <input type="text" id="manufacturer-${bs.eui}" value="${bs.metadata?.manufacturer || 'Unknown'}" style="padding: 4px; border: 1px solid #ddd; border-radius: 3px;">
+                                <button onclick="saveMetadata('basestation', '${bs.eui}')" style="border: none; background: #007bff; color: white; padding: 4px 8px; border-radius: 3px; font-size: 11px;">💾</button>
+                                
+                                <label><strong>Modell:</strong></label>
+                                <input type="text" id="model-${bs.eui}" value="${bs.metadata?.model || 'Unknown'}" style="padding: 4px; border: 1px solid #ddd; border-radius: 3px;">
+                                <span></span>
+                                
+                                <label><strong>Gerätename:</strong></label>
+                                <input type="text" id="name-${bs.eui}" value="${bs.metadata?.name || 'Base Station ' + bs.eui}" style="padding: 4px; border: 1px solid #ddd; border-radius: 3px;">
+                                <span></span>
+                                
+                                <label><strong>SW-Version:</strong></label>
+                                <input type="text" id="sw_version-${bs.eui}" value="${bs.metadata?.sw_version || '1.0'}" style="padding: 4px; border: 1px solid #ddd; border-radius: 3px;">
+                                <span></span>
+                            </div>
+                            <div style="margin-top: 10px; text-align: right;">
+                                <button onclick="resetMetadata('basestation', '${bs.eui}')" style="border: none; background: #6c757d; color: white; padding: 5px 10px; border-radius: 3px; font-size: 12px;">🔄 Zurücksetzen</button>
+                            </div>
+                        </div>
+                        
                         ${bs.needs_metadata ? `
                             <div style="margin-top: 10px; padding: 10px; background: #fff3cd; border-radius: 4px; border-left: 3px solid #ffc107;">
                                 <small><strong>⚠️ Auto-Discovery unvollständig:</strong><br>
                                 Manufacturer/Model fehlen für Base Station. 
-                                <button onclick="addManualBasestationData('${bs.eui}')" style="border: none; background: #007bff; color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px; cursor: pointer;">Manuell ergänzen</button>
+                                <button onclick="addManualBasestationData('${bs.eui}')" style="border: none; background: #007bff; color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px; cursor: pointer;">Schnell ergänzen</button>
                                 </small>
                             </div>
                         ` : ''}
