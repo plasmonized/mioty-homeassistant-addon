@@ -10,7 +10,15 @@ Preferred communication style: Simple, everyday language.
 
 # Recent Changes
 
-**04.09.2025 - AUTO-DISCOVERY KOMPLETT REPARIERT mit UI für Sensor-Metadaten (Version 1.0.4.7) - ✅ AKTUELL:**
+**04.09.2025 - MQTT Client-ID Konflikte behoben & Sensor Registration System (Version 1.0.5.0) - ✅ AKTUELL:**
+- **KRITISCHES MQTT-PROBLEM BEHOBEN:** Client-ID Konflikte durch eindeutige UUIDs gelöst
+- **STABILE MQTT-VERBINDUNG:** Keine ständigen Disconnect/Reconnect-Zyklen mehr 
+- **KOMPLETTES SENSOR REGISTRATION SYSTEM:** Modal-Formular mit Service Center Integration
+- **HEX-VALIDIERUNG:** Real-time Validierung für EUI (16), Network Key (32), Short Address (4)
+- **DUAL-INTEGRATION:** Service Center API + Home Assistant Metadaten-Speicherung
+- **PRODUCTION-READY:** Vollständig funktionsfähiges Sensor-Registrierungssystem
+
+**04.09.2025 - AUTO-DISCOVERY KOMPLETT REPARIERT mit UI für Sensor-Metadaten (Version 1.0.4.7) - ✅ ERFOLGREICH:**
 - **KRITISCHES AUTO-DISCOVERY PROBLEM BEHOBEN:** Device-Metadaten-Validierung erlaubt jetzt Fallback-Werte für Auto-Discovery
 - **FALLBACK-MECHANISMUS IMPLEMENTIERT:** Auto-Discovery funktioniert auch wenn Manufacturer/Model "Unknown" sind
 - **AKTIVES UI-WARNSYSTEM:** Dashboard zeigt Warnungen für Sensoren mit unvollständigen Device-Metadaten
