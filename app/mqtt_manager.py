@@ -429,7 +429,7 @@ class MQTTManager:
         }
         
         # State Topic für alle Sensoren (gemeinsam)
-        state_topic = f"bssci/sensor/{sensor_eui}/state"
+        state_topic = f"homeassistant/sensor/{sensor_eui}/state"
         
         success_count = 0
         total_count = 0
@@ -444,7 +444,7 @@ class MQTTManager:
                 
                 # Discovery Payload - Home Assistant Standard Format
                 discovery_payload = {
-                    "~": f"bssci/sensor/{sensor_eui}",
+                    "~": f"homeassistant/sensor/{sensor_eui}",
                     "unique_id": f"{sensor_eui}_{measurement_key}",
                     "object_id": f"{sensor_eui}_{measurement_key}",
                     "name": f"{config['name']}",
@@ -488,7 +488,7 @@ class MQTTManager:
         
         try:
             # State Topic
-            state_topic = f"bssci/sensor/{sensor_eui}/state"
+            state_topic = f"homeassistant/sensor/{sensor_eui}/state"
             
             # JSON Payload mit nur den Werten (ohne Metadaten)
             state_payload = {}
@@ -497,7 +497,7 @@ class MQTTManager:
                     state_payload[key] = data['value']
                     
             # Availability setzen
-            availability_topic = f"bssci/sensor/{sensor_eui}/availability"
+            availability_topic = f"homeassistant/sensor/{sensor_eui}/availability"
             self.ha_client.publish(availability_topic, "online", retain=True)
             
             # State senden
