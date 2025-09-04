@@ -359,8 +359,9 @@ class WebGUI:
                 if not manufacturer or not model:
                     return jsonify({'error': 'Manufacturer und Model erforderlich'}), 400
                 
-                # Speichere Metadaten in einer Datei (einfache Lösung)
-                metadata_file = 'manual_sensor_metadata.json'
+                # REPARIERT: Korrekter Pfad für Add-on Umgebung
+                metadata_file = os.path.join(os.path.dirname(__file__), '..', 'manual_sensor_metadata.json')
+                logging.info(f"🔧 METADATEN SPEICHERN: {metadata_file}")
                 metadata = {}
                 
                 try:
@@ -379,6 +380,7 @@ class WebGUI:
                 with open(metadata_file, 'w') as f:
                     json.dump(metadata, f, indent=2)
                 
+                logging.info(f"✅ METADATEN GESPEICHERT für {eui}: {manufacturer} {model}")
                 logging.info(f"📝 Manuelle Metadaten für {eui} gespeichert: {manufacturer} - {model}")
                 return jsonify({'success': True, 'message': 'Metadaten gespeichert'})
                 
@@ -397,8 +399,9 @@ class WebGUI:
                 if not manufacturer or not model:
                     return jsonify({'error': 'Manufacturer und Model erforderlich'}), 400
                 
-                # Speichere Metadaten in einer Datei (einfache Lösung)
-                metadata_file = 'manual_basestation_metadata.json'
+                # REPARIERT: Korrekter Pfad für Add-on Umgebung
+                metadata_file = os.path.join(os.path.dirname(__file__), '..', 'manual_basestation_metadata.json')
+                logging.info(f"🔧 BASESTATION METADATEN SPEICHERN: {metadata_file}")
                 metadata = {}
                 
                 try:
