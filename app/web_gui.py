@@ -11,6 +11,7 @@ from typing import Any, Dict
 from flask import Flask, render_template, render_template_string, request, jsonify, redirect, url_for
 from flask_cors import CORS
 from settings_manager import SettingsManager
+from service_center_api import create_service_center_client, ServiceCenterClient
 
 
 class WebGUI:
@@ -467,6 +468,128 @@ class WebGUI:
                 return jsonify({"success": True, "message": "Sensor erfolgreich entfernt"})
             else:
                 return jsonify({"error": "Sensor konnte nicht entfernt werden"}), 500
+        
+        # Service Center API-Endpunkte
+        @self.app.route('/api/service-center/test-connection')
+        def test_service_center_connection():
+            """API: Service Center Verbindung testen."""
+            client = self._get_service_center_client()
+            if not client:
+                return jsonify({
+                    'connected': False, 
+                    'message': 'Service Center nicht konfiguriert oder deaktiviert'
+                })
+            
+            result = client.test_connection()
+            return jsonify(result)
+        
+        @self.app.route('/api/service-center/sensors')
+        def get_service_center_sensors():
+            """API: Sensoren vom Service Center abrufen."""
+            client = self._get_service_center_client()
+            if not client:
+                return jsonify({'error': 'Service Center nicht verfügbar'}), 503
+            
+            sensors = client.get_sensors()
+            return jsonify({'sensors': sensors})
+        
+        @self.app.route('/api/service-center/sensors', methods=['POST'])
+        def add_service_center_sensor():
+            """API: Sensor am Service Center anmelden."""
+            client = self._get_service_center_client()
+            if not client:
+                return jsonify({'error': 'Service Center nicht verfügbar'}), 503
+            
+            data = request.get_json()
+            
+            # Validierung
+            required_fields = ['eui', 'nw_key']
+            for field in required_fields:
+                if field not in data or not data[field]:
+                    return jsonify({'error': f'Feld "{field}" ist erforderlich'}), 400
+            
+            # Service Center API aufrufen
+            result = client.add_sensor(
+                eui=data['eui'],
+                nw_key=data['nw_key'],
+                short_addr=data.get('short_addr', '0000'),
+                bidi=data.get('bidi', False)
+            )
+            
+            # Optional: Auch lokale Sensor-Metadaten speichern wenn Service Center erfolgreich
+            if result.get('success') and self.settings.get_settings().get('service_center_auto_register', True):
+                try:
+                    # Manuelle Metadaten für lokales System speichern
+                    if self.addon and hasattr(self.addon, 'add_sensor'):
+                        self.addon.add_sensor(
+                            sensor_eui=data['eui'],
+                            manufacturer=data.get('manufacturer', 'Unknown'),
+                            model=data.get('model', 'Unknown'),
+                            description=data.get('description', f"Service Center Sensor {data['eui']}")
+                        )
+                except Exception as e:
+                    logging.warning(f"Lokales Sensor-Management fehlgeschlagen: {e}")
+            
+            return jsonify(result)
+        
+        @self.app.route('/api/service-center/sensors/<eui>', methods=['DELETE'])
+        def delete_service_center_sensor(eui):
+            """API: Sensor vom Service Center löschen."""
+            client = self._get_service_center_client()
+            if not client:
+                return jsonify({'error': 'Service Center nicht verfügbar'}), 503
+            
+            result = client.delete_sensor(eui)
+            
+            # Optional: Auch lokal entfernen
+            if result.get('success'):
+                try:
+                    if self.addon and hasattr(self.addon, 'remove_sensor'):
+                        self.addon.remove_sensor(eui)
+                except Exception as e:
+                    logging.warning(f"Lokales Sensor-Entfernen fehlgeschlagen: {e}")
+            
+            return jsonify(result)
+        
+        @self.app.route('/api/service-center/sensors/<eui>/detach', methods=['POST'])
+        def detach_service_center_sensor(eui):
+            """API: Sensor am Service Center detachieren."""
+            client = self._get_service_center_client()
+            if not client:
+                return jsonify({'error': 'Service Center nicht verfügbar'}), 503
+            
+            result = client.detach_sensor(eui)
+            return jsonify(result)
+        
+        @self.app.route('/api/service-center/sensors/attach-all', methods=['POST'])
+        def attach_all_service_center_sensors():
+            """API: Alle Sensoren am Service Center attachieren."""
+            client = self._get_service_center_client()
+            if not client:
+                return jsonify({'error': 'Service Center nicht verfügbar'}), 503
+            
+            result = client.attach_all_sensors()
+            return jsonify(result)
+        
+        @self.app.route('/api/service-center/sensors/detach-all', methods=['POST'])
+        def detach_all_service_center_sensors():
+            """API: Alle Sensoren am Service Center detachieren."""
+            client = self._get_service_center_client()
+            if not client:
+                return jsonify({'error': 'Service Center nicht verfügbar'}), 503
+            
+            result = client.detach_all_sensors()
+            return jsonify(result)
+        
+        @self.app.route('/api/service-center/sensors/clear-all', methods=['POST'])
+        def clear_all_service_center_sensors():
+            """API: Alle Sensoren am Service Center löschen."""
+            client = self._get_service_center_client()
+            if not client:
+                return jsonify({'error': 'Service Center nicht verfügbar'}), 503
+            
+            result = client.clear_all_sensors()
+            return jsonify(result)
         
         @self.app.route('/api/settings')
         def get_settings():
@@ -1374,6 +1497,17 @@ class WebGUI:
 </body>
 </html>
         '''
+    
+    # Service Center API Integration
+    def _get_service_center_client(self):
+        """Erstelle Service Center Client basierend auf Settings."""
+        settings = self.settings.get_settings()
+        service_center_url = settings.get('service_center_url', '').strip()
+        
+        if not service_center_url or not settings.get('service_center_enabled', False):
+            return None
+            
+        return create_service_center_client(service_center_url)
     
     def _format_timestamp(self, timestamp):
         """Formatiere Unix Timestamp zu lesbarem String."""

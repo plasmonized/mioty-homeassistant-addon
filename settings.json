@@ -8,5 +8,8 @@
   "ha_mqtt_broker": "akahlig.selfhost.co",
   "ha_mqtt_port": 1887,
   "ha_mqtt_username": "bssci",
-  "ha_mqtt_password": "test=1234"
+  "ha_mqtt_password": "test=1234",
+  "service_center_enabled": false,
+  "service_center_url": "",
+  "service_center_auto_register": true
 }
