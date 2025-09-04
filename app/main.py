@@ -233,8 +233,10 @@ class BSSCIAddon:
                     device_name = f"Sentinum Febris TH"  # TODO: Aus Metadaten extrahieren
                     self.mqtt_manager.send_individual_sensor_discoveries(sensor_eui, decoded_data, device_name)
                     
-                    # JSON State für alle individuellen Sensoren senden
-                    self.mqtt_manager.publish_sensor_state_json(sensor_eui, decoded_data)
+                    # Individual State Updates für alle Sensoren senden
+                    snr = data.get('snr')
+                    rssi = data.get('rssi')
+                    self.mqtt_manager.publish_individual_sensor_states(sensor_eui, decoded_data, snr, rssi)
                 else:
                     logging.debug(f"Keine dekodierte Daten für Discovery: {sensor_eui}")
             except Exception as e:

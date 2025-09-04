@@ -367,7 +367,58 @@ class MQTTManager:
                 "device_class": "carbon_dioxide",
                 "unit_of_measurement": "ppm",
                 "icon": "mdi:molecule-co2"
-            }
+            },
+        # Generische Sensor Felder
+        "sensor_id": {
+            "name": "Sensor ID",
+            "device_class": None,
+            "unit_of_measurement": "",
+            "icon": "mdi:identifier"
+        },
+        "packet_type": {
+            "name": "Packet Type",
+            "device_class": None,
+            "unit_of_measurement": "",
+            "icon": "mdi:package-variant"
+        },
+        "value1": {
+            "name": "Value 1",
+            "device_class": None,
+            "unit_of_measurement": "",
+            "icon": "mdi:numeric-1-circle"
+        },
+        "value2": {
+            "name": "Value 2",
+            "device_class": None,
+            "unit_of_measurement": "",
+            "icon": "mdi:numeric-2-circle"
+        },
+        "raw_hex": {
+            "name": "Raw Data",
+            "device_class": None,
+            "unit_of_measurement": "",
+            "icon": "mdi:code-braces"
+        },
+        # Signal Qualität Messwerte
+        "signal_strength": {
+            "name": "Signal Strength",
+            "device_class": "signal_strength",
+            "unit_of_measurement": "dBm",
+            "icon": "mdi:wifi-strength-3"
+        },
+        "signal_to_noise_ratio": {
+            "name": "Signal to Noise Ratio",
+            "device_class": None,
+            "unit_of_measurement": "dB",
+            "icon": "mdi:wifi-strength-4"
+        },
+        "message_counter": {
+            "name": "Message Counter",
+            "device_class": None,
+            "unit_of_measurement": "",
+            "icon": "mdi:counter",
+            "state_class": "total_increasing"
+        }
         }
         
         # State Topic für alle Sensoren (gemeinsam)
@@ -382,20 +433,20 @@ class MQTTManager:
                 config = sensor_configs[measurement_key]
                 
                 # Discovery Topic für diesen spezifischen Sensor
-                discovery_topic = f"homeassistant/sensor/{sensor_eui}/{measurement_key}/config"
+                discovery_topic = f"homeassistant/sensor/mioty_sensor_{sensor_eui}_{measurement_key}/config"
                 
                 # Discovery Payload
                 discovery_payload = {
                     "name": f"{device_name} {config['name']}",
-                    "unique_id": f"{sensor_eui}_{measurement_key}",
-                    "state_topic": state_topic,
-                    "value_template": f"{{{{ value_json.{measurement_key} }}}}",
+                    "unique_id": f"mioty_sensor_{sensor_eui}_{measurement_key}",
+                    "state_topic": f"homeassistant/sensor/mioty_sensor_{sensor_eui}_{measurement_key}/state",
+                    "value_template": "{{ value }}",
                     "device_class": config["device_class"],
                     "unit_of_measurement": config["unit_of_measurement"],
                     "icon": config["icon"],
                     "device": device_info,
                     "platform": "mioty",
-                    "availability_topic": f"homeassistant/sensor/{sensor_eui}/availability",
+                    "availability_topic": f"homeassistant/sensor/mioty_sensor_{sensor_eui}_{measurement_key}/availability",
                     "payload_available": "online",
                     "payload_not_available": "offline"
                 }

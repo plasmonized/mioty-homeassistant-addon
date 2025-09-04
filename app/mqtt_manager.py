@@ -425,6 +425,57 @@ class MQTTManager:
                 "unit_of_measurement": "",
                 "icon": "mdi:information",
                 "state_class": None
+            },
+            # Generische Sensor Felder
+            "sensor_id": {
+                "name": "Sensor ID",
+                "device_class": None,
+                "unit_of_measurement": "",
+                "icon": "mdi:identifier"
+            },
+            "packet_type": {
+                "name": "Packet Type",
+                "device_class": None,
+                "unit_of_measurement": "",
+                "icon": "mdi:package-variant"
+            },
+            "value1": {
+                "name": "Value 1",
+                "device_class": None,
+                "unit_of_measurement": "",
+                "icon": "mdi:numeric-1-circle"
+            },
+            "value2": {
+                "name": "Value 2",
+                "device_class": None,
+                "unit_of_measurement": "",
+                "icon": "mdi:numeric-2-circle"
+            },
+            "raw_hex": {
+                "name": "Raw Data",
+                "device_class": None,
+                "unit_of_measurement": "",
+                "icon": "mdi:code-braces"
+            },
+            # Signal Qualität Messwerte
+            "signal_strength": {
+                "name": "Signal Strength",
+                "device_class": "signal_strength",
+                "unit_of_measurement": "dBm",
+                "icon": "mdi:wifi-strength-3"
+            },
+            "signal_to_noise_ratio": {
+                "name": "Signal to Noise Ratio",
+                "device_class": None,
+                "unit_of_measurement": "dB",
+                "icon": "mdi:wifi-strength-4"
+            },
+            "message_counter": {
+                "name": "Message Counter",
+                "device_class": None,
+                "unit_of_measurement": "",
+                "icon": "mdi:counter",
+                "state_class": "total_increasing"
             }
         }
         
@@ -440,21 +491,20 @@ class MQTTManager:
                 config = sensor_configs[measurement_key]
                 
                 # Discovery Topic für diesen spezifischen Sensor
-                discovery_topic = f"homeassistant/sensor/{sensor_eui}/{measurement_key}/config"
+                discovery_topic = f"homeassistant/sensor/mioty_sensor_{sensor_eui}_{measurement_key}/config"
                 
-                # Discovery Payload - Home Assistant Standard Format
+                # Discovery Payload - mioty spezifisches Format
                 discovery_payload = {
-                    "~": f"homeassistant/sensor/{sensor_eui}",
-                    "unique_id": f"{sensor_eui}_{measurement_key}",
-                    "object_id": f"{sensor_eui}_{measurement_key}",
-                    "name": f"{config['name']}",
-                    "state_topic": f"~/state",
-                    "value_template": f"{{{{ value_json.{measurement_key} }}}}",
+                    "unique_id": f"mioty_sensor_{sensor_eui}_{measurement_key}",
+                    "object_id": f"mioty_sensor_{sensor_eui}_{measurement_key}",
+                    "name": f"Sentinum {config['name']}",
+                    "state_topic": f"homeassistant/sensor/mioty_sensor_{sensor_eui}_{measurement_key}/state",
+                    "value_template": "{{ value }}",
                     "unit_of_meas": config["unit_of_measurement"],
                     "icon": config["icon"],
                     "device": device_info,
                     "platform": "mioty",
-                    "availability_topic": f"~/availability",
+                    "availability_topic": f"homeassistant/sensor/mioty_sensor_{sensor_eui}_{measurement_key}/availability",
                     "payload_available": "online",
                     "payload_not_available": "offline"
                 }
@@ -481,38 +531,70 @@ class MQTTManager:
         logging.info(f"✅ Individual Discovery abgeschlossen: {success_count}/{total_count} Sensoren für {sensor_eui}")
         return success_count > 0
     
-    def publish_sensor_state_json(self, sensor_eui: str, decoded_data: Dict[str, Any]) -> bool:
-        """Sende Sensor-Status als JSON für alle individuellen Sensoren."""
+    def publish_individual_sensor_states(self, sensor_eui: str, decoded_data: Dict[str, Any], snr: float = None, rssi: float = None) -> bool:
+        """Sende individuelle State Topics für jeden Messwert."""
         if not self.ha_connected or not self.ha_client:
-            logging.debug("HA MQTT nicht verfügbar - JSON State übersprungen")
+            logging.debug("HA MQTT nicht verfügbar - Individual States übersprungen")
             return False
         
+        success_count = 0
+        total_count = 0
+        
         try:
-            # State Topic
-            state_topic = f"homeassistant/sensor/{sensor_eui}/state"
-            
-            # JSON Payload mit nur den Werten (ohne Metadaten)
-            state_payload = {}
-            for key, data in decoded_data.items():
-                if isinstance(data, dict) and 'value' in data:
-                    state_payload[key] = data['value']
+            # Dekodierte Daten senden
+            for measurement_key, measurement_data in decoded_data.items():
+                if isinstance(measurement_data, dict) and 'value' in measurement_data:
+                    state_topic = f"homeassistant/sensor/mioty_sensor_{sensor_eui}_{measurement_key}/state"
+                    availability_topic = f"homeassistant/sensor/mioty_sensor_{sensor_eui}_{measurement_key}/availability"
                     
-            # Availability setzen
-            availability_topic = f"homeassistant/sensor/{sensor_eui}/availability"
-            self.ha_client.publish(availability_topic, "online", retain=True)
+                    # Availability setzen
+                    self.ha_client.publish(availability_topic, "online", retain=True)
+                    
+                    # State Wert senden
+                    value = measurement_data['value']
+                    result = self.ha_client.publish(state_topic, str(value), retain=True)
+                    
+                    if result.rc == mqtt.MQTT_ERR_SUCCESS:
+                        success_count += 1
+                        logging.debug(f"📊 State: mioty_sensor_{sensor_eui}_{measurement_key} → {value}")
+                    else:
+                        logging.warning(f"⚠️ State fehlgeschlagen: mioty_sensor_{sensor_eui}_{measurement_key}")
+                    
+                    total_count += 1
             
-            # State senden
-            result = self.ha_client.publish(state_topic, json.dumps(state_payload), retain=True)
+            # SNR als separaten Sensor senden
+            if snr is not None:
+                state_topic = f"homeassistant/sensor/mioty_sensor_{sensor_eui}_signal_to_noise_ratio/state"
+                availability_topic = f"homeassistant/sensor/mioty_sensor_{sensor_eui}_signal_to_noise_ratio/availability"
+                
+                self.ha_client.publish(availability_topic, "online", retain=True)
+                result = self.ha_client.publish(state_topic, str(round(snr, 2)), retain=True)
+                
+                if result.rc == mqtt.MQTT_ERR_SUCCESS:
+                    success_count += 1
+                    logging.debug(f"📊 SNR: mioty_sensor_{sensor_eui}_signal_to_noise_ratio → {round(snr, 2)}")
+                
+                total_count += 1
             
-            if result.rc == mqtt.MQTT_ERR_SUCCESS:
-                logging.info(f"📊 JSON State Update: {sensor_eui} → {len(state_payload)} Werte")
-                return True
-            else:
-                logging.warning(f"⚠️ JSON State Update fehlgeschlagen: {sensor_eui}")
-                return False
+            # RSSI als separaten Sensor senden 
+            if rssi is not None:
+                state_topic = f"homeassistant/sensor/mioty_sensor_{sensor_eui}_signal_strength/state"
+                availability_topic = f"homeassistant/sensor/mioty_sensor_{sensor_eui}_signal_strength/availability"
+                
+                self.ha_client.publish(availability_topic, "online", retain=True)
+                result = self.ha_client.publish(state_topic, str(round(rssi, 2)), retain=True)
+                
+                if result.rc == mqtt.MQTT_ERR_SUCCESS:
+                    success_count += 1
+                    logging.debug(f"📊 RSSI: mioty_sensor_{sensor_eui}_signal_strength → {round(rssi, 2)}")
+                
+                total_count += 1
+            
+            logging.info(f"📊 Individual States: {sensor_eui} → {success_count}/{total_count} erfolgreich")
+            return success_count > 0
                 
         except Exception as e:
-            logging.error(f"Fehler beim Senden des JSON Sensor-Status: {e}")
+            logging.error(f"Fehler beim Senden der Individual Sensor States: {e}")
             return False
 
     def is_connected(self) -> bool:
