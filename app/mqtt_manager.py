@@ -324,7 +324,7 @@ class MQTTManager:
             "identifiers": [sensor_eui],
             "name": device_name,
             "manufacturer": "Sentinum",
-            "model": "mioty Sensor",
+            "model": "Febris TH",
             "via_device": "bssci_mioty_application_center"
         }
         
@@ -440,7 +440,7 @@ class MQTTManager:
                 config = sensor_configs[measurement_key]
                 
                 # Discovery Topic für diesen spezifischen Sensor
-                discovery_topic = f"homeassistant/sensor/{sensor_eui}_{measurement_key}/config"
+                discovery_topic = f"homeassistant/sensor/{sensor_eui}/{measurement_key}/config"
                 
                 # Discovery Payload - Home Assistant Standard Format
                 discovery_payload = {
@@ -453,6 +453,7 @@ class MQTTManager:
                     "unit_of_meas": config["unit_of_measurement"],
                     "icon": config["icon"],
                     "device": device_info,
+                    "platform": "mioty",
                     "availability_topic": f"~/availability",
                     "payload_available": "online",
                     "payload_not_available": "offline"
