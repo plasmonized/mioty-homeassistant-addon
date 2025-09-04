@@ -366,7 +366,8 @@ class BSSCIAddon:
         # Prüfe manuelle Metadaten zuerst
         try:
             import json
-            with open('manual_basestation_metadata.json', 'r') as f:
+            metadata_file = '/data/manual_basestation_metadata.json' if os.path.exists('/data') else 'manual_basestation_metadata.json'
+            with open(metadata_file, 'r') as f:
                 manual_metadata = json.load(f)
                 if bs_eui in manual_metadata:
                     manual_info = manual_metadata[bs_eui]

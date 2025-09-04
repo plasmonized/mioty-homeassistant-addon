@@ -405,8 +405,11 @@ class WebGUI:
                 if not manufacturer or not model:
                     return jsonify({'error': 'Manufacturer und Model erforderlich'}), 400
                 
-                # REPARIERT: Korrekter Pfad für Add-on Umgebung
-                metadata_file = os.path.join(os.path.dirname(__file__), '..', 'manual_basestation_metadata.json')
+                # REPARIERT: Persistente Speicherung in /data für Home Assistant Add-on
+                if os.path.exists('/data'):
+                    metadata_file = '/data/manual_basestation_metadata.json'
+                else:
+                    metadata_file = 'manual_basestation_metadata.json'  # Fallback für Entwicklung
                 logging.info(f"🔧 BASESTATION METADATEN SPEICHERN: {metadata_file}")
                 metadata = {}
                 
