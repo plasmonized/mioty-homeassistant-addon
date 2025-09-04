@@ -481,8 +481,8 @@ class PayloadDecoder:
 const decoder = require('./decoder.js');
 
 // Input-Daten
-const payload = {json.dumps(payload_bytes)};
-const metadata = {json.dumps(metadata or {})};
+const payload = {str(payload_bytes).replace('"', "'")};
+const metadata = {str(metadata or {}).replace('"', "'")};  
 
 try {{
     // Führe Dekodierung aus

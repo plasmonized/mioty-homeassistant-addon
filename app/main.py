@@ -201,7 +201,8 @@ class BSSCIAddon:
                         logging.info("📊 Dekodierte Daten:")
                         for key, value in decoded_data.items():
                             if isinstance(value, dict):
-                                logging.info(f"   {key}: {json.dumps(value, separators=(',', ':'))}")
+                                value_str = str(value).replace('"', "'")
+                                logging.info(f"   {key}: {value_str}")
                             else:
                                 logging.info(f"   {key}: {value}")
                     else:
