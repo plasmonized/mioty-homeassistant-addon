@@ -427,6 +427,129 @@ class WebGUI:
                 logging.error(f"Fehler beim Speichern der BaseStation-Metadaten: {e}")
                 return jsonify({'error': str(e)}), 500
 
+        @self.app.route('/api/sensor/register', methods=['POST'])
+        def register_sensor():
+            """API: Sensor am Service Center registrieren und Metadaten speichern."""
+            try:
+                data = request.get_json()
+                
+                # Validierung der Pflichtfelder
+                required_fields = ['sensor_eui', 'network_key', 'short_addr']
+                for field in required_fields:
+                    if field not in data or not data[field]:
+                        return jsonify({'error': f'Feld "{field}" ist erforderlich'}), 400
+                
+                eui = data['sensor_eui'].strip()
+                network_key = data['network_key'].strip()
+                short_addr = data['short_addr'].strip()
+                bidirectional = data.get('bidirectional', False)
+                
+                # Hex-Validierung
+                if not _is_valid_hex(eui, 16):
+                    return jsonify({'error': 'EUI muss 16 Hexadezimal-Zeichen enthalten'}), 400
+                if not _is_valid_hex(network_key, 32):
+                    return jsonify({'error': 'Network Key muss 32 Hexadezimal-Zeichen enthalten'}), 400
+                if not _is_valid_hex(short_addr, 4):
+                    return jsonify({'error': 'Short Address muss 4 Hexadezimal-Zeichen enthalten'}), 400
+                
+                logging.info(f"🚀 SENSOR REGISTRATION: {eui} (Short: {short_addr}, Bidi: {bidirectional})")
+                
+                # 1. Service Center Registration (falls aktiviert)
+                service_center_success = False
+                if self.addon and hasattr(self.addon, 'service_center_client'):
+                    try:
+                        result = self.addon.service_center_client.add_sensor(
+                            eui=eui,
+                            network_key=network_key,
+                            short_addr=short_addr,
+                            bidirectional=bidirectional
+                        )
+                        service_center_success = result.get('success', False)
+                        logging.info(f"📡 Service Center Registrierung: {'✅ Erfolgreich' if service_center_success else '❌ Fehlgeschlagen'}")
+                    except Exception as e:
+                        logging.warning(f"⚠️ Service Center Registrierung fehlgeschlagen: {e}")
+                
+                # 2. Metadaten speichern (immer, auch wenn Service Center fehlschlägt)
+                metadata = {
+                    'eui': eui,
+                    'network_key': network_key,
+                    'short_addr': short_addr,
+                    'bidirectional': bidirectional,
+                    'service_center_registered': service_center_success
+                }
+                
+                # Home Assistant Metadaten hinzufügen
+                manufacturer = data.get('manufacturer', '').strip()
+                model = data.get('model', '').strip()
+                device_name = data.get('device_name', '').strip()
+                
+                if manufacturer or model:
+                    metadata['manufacturer'] = manufacturer or 'Unknown'
+                    metadata['model'] = model or 'Unknown'
+                    metadata['name'] = f"{metadata['manufacturer']} {metadata['model']}"
+                    metadata['manual'] = True
+                    
+                    # Speichere HA-Metadaten separat
+                    ha_metadata_file = os.path.join(os.path.dirname(__file__), '..', 'manual_sensor_metadata.json')
+                    ha_metadata = {}
+                    
+                    try:
+                        with open(ha_metadata_file, 'r') as f:
+                            ha_metadata = json.load(f)
+                    except FileNotFoundError:
+                        pass
+                    
+                    ha_metadata[eui] = {
+                        'manufacturer': metadata['manufacturer'],
+                        'model': metadata['model'],
+                        'name': metadata['name'],
+                        'manual': True
+                    }
+                    
+                    with open(ha_metadata_file, 'w') as f:
+                        json.dump(ha_metadata, f, indent=2)
+                    
+                    logging.info(f"✅ HA-Metadaten gespeichert für {eui}: {metadata['name']}")
+                
+                if device_name:
+                    metadata['device_name'] = device_name
+                
+                # 3. Sensor zu lokaler Liste hinzufügen (für Demo/Display)
+                if self.addon:
+                    sensor_data = {
+                        'eui': eui,
+                        'sensor_type': metadata.get('name', 'Registered Sensor'),
+                        'last_update': 'Gerade registriert',
+                        'snr': 'N/A',
+                        'rssi': 'N/A',
+                        'signal_quality': 'Unknown',
+                        'registered': True,
+                        'service_center': service_center_success
+                    }
+                    
+                    # Füge zur lokalen Sensor-Liste hinzu wenn noch nicht vorhanden
+                    if eui not in self.addon.sensors:
+                        self.addon.sensors[eui] = sensor_data
+                        logging.info(f"📋 Sensor {eui} zur lokalen Liste hinzugefügt")
+                
+                return jsonify({
+                    'success': True,
+                    'message': 'Sensor erfolgreich registriert',
+                    'eui': eui,
+                    'service_center_registered': service_center_success,
+                    'metadata_saved': bool(manufacturer or model)
+                })
+                
+            except Exception as e:
+                logging.error(f"Fehler bei Sensor-Registrierung: {e}")
+                return jsonify({'error': str(e)}), 500
+
+        def _is_valid_hex(value, length):
+            """Validiert Hexadezimal-String mit spezifischer Länge."""
+            import re
+            pattern = f'^[0-9A-Fa-f]{{{length}}}$'
+            return bool(re.match(pattern, value))
+
         @self.app.route('/api/sensor/add', methods=['POST'])
         def add_sensor():
             """API: Neuen Sensor hinzufügen."""

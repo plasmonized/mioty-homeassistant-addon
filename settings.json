@@ -1,7 +1,7 @@
 {
   "mqtt_broker": "akahlig.selfhost.co",
   "mqtt_port": 1887,
-  "mqtt_username": "bssci",
+  "mqtt_username": "bssci_ac",
   "mqtt_password": "test=1234",
   "base_topic": "bssci",
   "auto_discovery": true,

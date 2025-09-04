@@ -1,0 +1,31 @@
+root - INFO - 🔧 SETTINGS GELADEN aus settings.json: broker=akahlig.selfhost.co, port=1887
+2025-09-04 07:11:26,981 - root - INFO - ✅ Response: 200 OK | GET /api/settings
+2025-09-04 07:11:26,981 - werkzeug - INFO - 172.31.96.130 - - [04/Sep/2025 07:11:26] "GET /api/settings?cb=1756969886955&t=0.7423568337738464 HTTP/1.1" 200 -
+2025-09-04 07:11:26,983 - werkzeug - INFO - 172.31.96.130 - - [04/Sep/2025 07:11:26] "GET /api/status?cb=1756969886958&t=0.5104446966622449 HTTP/1.1" 200 -
+2025-09-04 07:11:27,785 - root - WARNING - ⚠️ mioty MQTT Client getrennt: akahlig.selfhost.co:1887
+2025-09-04 07:11:29,021 - root - INFO - ✅ mioty MQTT Client verbunden: akahlig.selfhost.co:1887
+2025-09-04 07:11:29,021 - root - INFO - 📋 Topic abonniert: bssci/ep/+/ul
+2025-09-04 07:11:29,021 - root - INFO - 📋 Topic abonniert: bssci/bs/+
+2025-09-04 07:11:29,021 - root - INFO - 📋 Topic abonniert: bssci/ep/+/config
+2025-09-04 07:11:30,029 - root - WARNING - ⚠️ mioty MQTT Client getrennt: akahlig.selfhost.co:1887
+2025-09-04 07:11:31,264 - root - INFO - ✅ mioty MQTT Client verbunden: akahlig.selfhost.co:1887
+2025-09-04 07:11:31,264 - root - INFO - 📋 Topic abonniert: bssci/ep/+/ul
+2025-09-04 07:11:31,264 - root - INFO - 📋 Topic abonniert: bssci/bs/+
+2025-09-04 07:11:31,265 - root - INFO - 📋 Topic abonniert: bssci/ep/+/config
+2025-09-04 07:11:31,938 - werkzeug - INFO - 172.31.96.130 - - [04/Sep/2025 07:11:31] "GET /api/status?cb=1756969891911&t=0.48407700997630965 HTTP/1.1" 200 -
+2025-09-04 07:11:32,273 - root - WARNING - ⚠️ mioty MQTT Client getrennt: akahlig.selfhost.co:1887
+2025-09-04 07:11:33,526 - root - INFO - ✅ mioty MQTT Client verbunden: akahlig.selfhost.co:1887
+2025-09-04 07:11:33,526 - root - INFO - 📋 Topic abonniert: bssci/ep/+/ul
+2025-09-04 07:11:33,526 - root - INFO - 📋 Topic abonniert: bssci/bs/+
+2025-09-04 07:11:33,526 - root - INFO - 📋 Topic abonniert: bssci/ep/+/config
+2025-09-04 07:11:34,535 - root - WARNING - ⚠️ mioty MQTT Client getrennt: akahlig.selfhost.co:1887
+2025-09-04 07:11:35,871 - root - INFO - ✅ mioty MQTT Client verbunden: akahlig.selfhost.co:1887
+2025-09-04 07:11:35,871 - root - INFO - 📋 Topic abonniert: bssci/ep/+/ul
+2025-09-04 07:11:35,871 - root - INFO - 📋 Topic abonniert: bssci/bs/+
+2025-09-04 07:11:35,871 - root - INFO - 📋 Topic abonniert: bssci/ep/+/config
+2025-09-04 07:11:36,880 - root - WARNING - ⚠️ mioty MQTT Client getrennt: akahlig.selfhost.co:1887
+2025-09-04 07:11:36,944 - werkzeug - INFO - 172.31.96.130 - - [04/Sep/2025 07:11:36] "GET /api/status?cb=1756969896911&t=0.4064425906619532 HTTP/1.1" 200 -
+2025-09-04 07:11:38,116 - root - INFO - ✅ mioty MQTT Client verbunden: akahlig.selfhost.co:1887
+2025-09-04 07:11:38,116 - root - INFO - 📋 Topic abonniert: bssci/ep/+/ul
+2025-09-04 07:11:38,117 - root - INFO - 📋 Topic abonniert: bssci/bs/+
+2025-09-04 07:11:38,117 - root - INFO - 📋 Topic abonniert: bssci/ep/+/config

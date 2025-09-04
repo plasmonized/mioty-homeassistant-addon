@@ -144,6 +144,121 @@
             margin-right: 8px;
             opacity: 0.8;
         }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            position: relative;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .close {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .close:hover {
+            color: #ff6b35;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #ff6b35;
+        }
+
+        .form-group small {
+            color: #666;
+            font-size: 12px;
+            margin-top: 5px;
+            display: block;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.3s;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .submit-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .error {
+            border-color: #dc3545 !important;
+        }
+
+        .error-message {
+            color: #dc3545;
+            font-size: 12px;
+            margin-top: 5px;
+        }
     </style>
 </head>
 <body>
@@ -183,11 +298,22 @@
             <div id="sensors-section">
                 <h2>📡 Sensor-Daten</h2>
                 
-                <!-- Sensor manuell hinzufügen UI -->
-                <div style="margin-bottom: 15px; padding: 10px; background: #e7f3ff; border-radius: 4px; border-left: 3px solid #007bff;">
-                    <small><strong>💡 Sensor manuell hinzufügen:</strong><br>
-                    Für Demo oder wenn Auto-Discovery nicht funktioniert<br>
-                    <button onclick="addManualSensorData()" style="border: none; background: #007bff; color: white; padding: 5px 10px; border-radius: 3px; font-size: 12px; cursor: pointer; margin-top: 5px;">Neuen Sensor hinzufügen</button>
+                <!-- Sensor Registration UI -->
+                <div style="margin-bottom: 15px; padding: 15px; background: #e7f3ff; border-radius: 8px; border-left: 4px solid #007bff;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong>📡 Sensor Registration:</strong><br>
+                            <small>Neuen Sensor am Service Center anmelden und in Home Assistant registrieren</small>
+                        </div>
+                        <button onclick="showSensorRegistrationModal()" style="border: none; background: #007bff; color: white; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold;">+ Sensor hinzufügen</button>
+                    </div>
+                </div>
+
+                <!-- Demo Sensor UI -->
+                <div style="margin-bottom: 15px; padding: 10px; background: #fff3cd; border-radius: 4px; border-left: 3px solid #ffc107;">
+                    <small><strong>🧪 Demo-Sensor:</strong> 
+                    Nur für Tests ohne Service Center<br>
+                    <button onclick="addManualSensorData()" style="border: none; background: #ffc107; color: #212529; padding: 5px 10px; border-radius: 3px; font-size: 12px; cursor: pointer; margin-top: 5px;">Demo-Sensor hinzufügen</button>
                     </small>
                 </div>
                 
@@ -204,6 +330,69 @@
                 <!-- Logo entfernt -->
                 <small style="opacity: 0.6; font-size: 0.8em;">powered by Sentinum</small>
             </div>
+        </div>
+    </div>
+
+    <!-- Sensor Registration Modal -->
+    <div id="sensorRegistrationModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📡 Sensor Registration</h2>
+                <span class="close" onclick="closeSensorRegistrationModal()">&times;</span>
+            </div>
+            
+            <form id="sensorRegistrationForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="sensor_eui">EUI (16 Hex-Zeichen) *</label>
+                        <input type="text" id="sensor_eui" name="sensor_eui" maxlength="16" placeholder="z.B. fca84a090000000a" required>
+                        <small>16 Hexadezimale Zeichen (0-9, A-F)</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="short_addr">Short Address (4 Hex-Zeichen) *</label>
+                        <input type="text" id="short_addr" name="short_addr" maxlength="4" placeholder="z.B. 0001" required>
+                        <small>4 Hexadezimale Zeichen</small>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="network_key">Network Key (32 Hex-Zeichen) *</label>
+                    <input type="text" id="network_key" name="network_key" maxlength="32" placeholder="z.B. 000102030405060708090a0b0c0d0e0f" required>
+                    <small>32 Hexadezimale Zeichen für die Netzwerkverschlüsselung</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="bidirectional">Bidirektionale Kommunikation</label>
+                    <select id="bidirectional" name="bidirectional">
+                        <option value="false">Nein - Nur Uplink</option>
+                        <option value="true">Ja - Uplink & Downlink</option>
+                    </select>
+                    <small>Ermöglicht das Senden von Befehlen an den Sensor</small>
+                </div>
+
+                <h3 style="margin: 25px 0 15px 0; color: #ff6b35;">Home Assistant Metadaten</h3>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="manufacturer">Hersteller</label>
+                        <input type="text" id="manufacturer" name="manufacturer" placeholder="z.B. Sentinum">
+                        <small>Gerätehersteller für Home Assistant</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="model">Gerätetyp</label>
+                        <input type="text" id="model" name="model" placeholder="z.B. Juno-TH">
+                        <small>Modellbezeichnung des Sensors</small>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="device_name">Gerätename (optional)</label>
+                    <input type="text" id="device_name" name="device_name" placeholder="z.B. Temperatur Büro 1">
+                    <small>Anzeigename in Home Assistant</small>
+                </div>
+
+                <button type="submit" class="submit-btn">🚀 Sensor registrieren</button>
+            </form>
         </div>
     </div>
 
@@ -567,6 +756,158 @@
             }, 30000);
         }
         
+        // SENSOR REGISTRATION MODAL FUNCTIONS
+        function showSensorRegistrationModal() {
+            document.getElementById('sensorRegistrationModal').style.display = 'block';
+        }
+
+        function closeSensorRegistrationModal() {
+            document.getElementById('sensorRegistrationModal').style.display = 'none';
+            document.getElementById('sensorRegistrationForm').reset();
+            clearValidationErrors();
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('sensorRegistrationModal');
+            if (event.target === modal) {
+                closeSensorRegistrationModal();
+            }
+        }
+
+        // HEX VALIDATION FUNCTIONS
+        function isValidHex(value, length) {
+            const hexPattern = new RegExp(`^[0-9A-Fa-f]{${length}}$`);
+            return hexPattern.test(value);
+        }
+
+        function validateForm() {
+            clearValidationErrors();
+            let isValid = true;
+
+            const eui = document.getElementById('sensor_eui').value.trim();
+            const networkKey = document.getElementById('network_key').value.trim();
+            const shortAddr = document.getElementById('short_addr').value.trim();
+
+            // EUI Validation (16 hex characters)
+            if (!eui) {
+                showFieldError('sensor_eui', 'EUI ist erforderlich');
+                isValid = false;
+            } else if (!isValidHex(eui, 16)) {
+                showFieldError('sensor_eui', 'EUI muss genau 16 Hexadezimal-Zeichen enthalten');
+                isValid = false;
+            }
+
+            // Network Key Validation (32 hex characters)
+            if (!networkKey) {
+                showFieldError('network_key', 'Network Key ist erforderlich');
+                isValid = false;
+            } else if (!isValidHex(networkKey, 32)) {
+                showFieldError('network_key', 'Network Key muss genau 32 Hexadezimal-Zeichen enthalten');
+                isValid = false;
+            }
+
+            // Short Address Validation (4 hex characters)
+            if (!shortAddr) {
+                showFieldError('short_addr', 'Short Address ist erforderlich');
+                isValid = false;
+            } else if (!isValidHex(shortAddr, 4)) {
+                showFieldError('short_addr', 'Short Address muss genau 4 Hexadezimal-Zeichen enthalten');
+                isValid = false;
+            }
+
+            return isValid;
+        }
+
+        function showFieldError(fieldId, message) {
+            const field = document.getElementById(fieldId);
+            field.classList.add('error');
+            
+            // Remove existing error message
+            const existingError = field.parentNode.querySelector('.error-message');
+            if (existingError) {
+                existingError.remove();
+            }
+            
+            // Add new error message
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.textContent = message;
+            field.parentNode.appendChild(errorDiv);
+        }
+
+        function clearValidationErrors() {
+            document.querySelectorAll('.error').forEach(field => {
+                field.classList.remove('error');
+            });
+            document.querySelectorAll('.error-message').forEach(msg => {
+                msg.remove();
+            });
+        }
+
+        // FORM SUBMISSION
+        document.getElementById('sensorRegistrationForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            if (!validateForm()) {
+                return;
+            }
+
+            const submitBtn = document.querySelector('.submit-btn');
+            const originalText = submitBtn.textContent;
+            
+            try {
+                submitBtn.disabled = true;
+                submitBtn.textContent = '⏳ Wird registriert...';
+
+                const formData = new FormData(this);
+                const data = Object.fromEntries(formData.entries());
+                
+                // Convert bidirectional to boolean
+                data.bidirectional = data.bidirectional === 'true';
+
+                console.log('🚀 Registriere Sensor:', data);
+
+                const response = await fetch(getCacheBusterURL('/api/sensor/register'), {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert('✅ Sensor erfolgreich registriert!');
+                    closeSensorRegistrationModal();
+                    // Refresh sensor list
+                    loadSensors();
+                } else {
+                    alert('❌ Fehler bei der Registrierung: ' + (result.error || 'Unbekannter Fehler'));
+                }
+            } catch (error) {
+                console.error('Registration error:', error);
+                alert('❌ Netzwerkfehler bei der Registrierung');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+            }
+        });
+
+        // AUTO-FORMATTING FOR HEX FIELDS
+        document.getElementById('sensor_eui').addEventListener('input', function(e) {
+            e.target.value = e.target.value.toUpperCase().replace(/[^0-9A-F]/g, '');
+        });
+
+        document.getElementById('network_key').addEventListener('input', function(e) {
+            e.target.value = e.target.value.toLowerCase().replace(/[^0-9a-f]/g, '');
+        });
+
+        document.getElementById('short_addr').addEventListener('input', function(e) {
+            e.target.value = e.target.value.toUpperCase().replace(/[^0-9A-F]/g, '');
+        });
+
         document.addEventListener('DOMContentLoaded', startAutoRefresh);
     </script>
 </body>
