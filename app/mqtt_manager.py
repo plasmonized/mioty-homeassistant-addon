@@ -65,6 +65,10 @@ class MQTTManager:
         """Verbinde mit beiden MQTT Brokern."""
         success = True
         
+        logging.info(f"🔍 DEBUG: Dual MQTT Verbindung wird gestartet:")
+        logging.info(f"   📡 BSSCI Broker: {self.broker}:{self.port}")
+        logging.info(f"   🏠 HA Broker: {self.ha_broker}:{self.ha_port}")
+        
         # 1. Verbinde mit externem mioty Broker (für Datenempfang)
         try:
             # Eindeutige Client-ID generieren um Konflikte zu vermeiden
@@ -261,7 +265,7 @@ class MQTTManager:
     def publish_discovery(self, topic: str, config: Dict[str, Any] | str) -> bool:
         """Sende Home Assistant Discovery Konfiguration über HA MQTT."""
         if not self.ha_connected or not self.ha_client:
-            logging.debug("HA MQTT nicht verfügbar - Discovery übersprungen")
+            logging.warning(f"❌ HA MQTT nicht verfügbar - Discovery übersprungen (ha_connected={self.ha_connected}, ha_broker={self.ha_broker}:{self.ha_port})")
             return False
         
         try:
