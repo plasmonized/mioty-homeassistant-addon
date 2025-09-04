@@ -305,7 +305,21 @@ class BSSCIAddon:
                 # Hole Decoder-Zuweisungen - sicherstellen, dass es ein Dictionary ist
                 assignments = getattr(self.decoder_manager.payload_decoder, 'decoders', {})
                 if isinstance(assignments, dict) and sensor_eui in assignments:
-                    decoder_name = assignments[sensor_eui]
+                    decoder_assignment = assignments[sensor_eui]
+                    
+                    # Extrahiere decoder_name aus Assignment (kann String oder Dict sein)
+                    if isinstance(decoder_assignment, str):
+                        # Legacy Format: direkter String
+                        decoder_name = decoder_assignment
+                    elif isinstance(decoder_assignment, dict):
+                        # Neues Format: Dictionary mit decoder_name
+                        decoder_name = decoder_assignment.get('decoder_name')
+                        if not decoder_name:
+                            logging.warning(f"Decoder-Assignment für {sensor_eui} hat keinen decoder_name: {decoder_assignment}")
+                            return device_info
+                    else:
+                        logging.warning(f"Decoder-Assignment für {sensor_eui} hat unbekanntes Format: {type(decoder_assignment)}")
+                        return device_info
                     
                     # Validiere, dass decoder_name ein String ist
                     if not isinstance(decoder_name, str):
