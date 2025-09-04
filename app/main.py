@@ -230,13 +230,15 @@ class BSSCIAddon:
             try:
                 decoded_data = decoded_payload.get('data', {})
                 if decoded_data:
-                    # Separate Discovery Messages für jeden Messwert senden
-                    device_name = f"Sentinum Febris TH"  # TODO: Aus Metadaten extrahieren
-                    self.mqtt_manager.send_individual_sensor_discoveries(sensor_eui, decoded_data, device_name)
-                    
-                    # Individual State Updates für alle Sensoren senden
+                    # SNR und RSSI aus Metadaten extrahieren
                     snr = data.get('snr')
                     rssi = data.get('rssi')
+                    
+                    # Separate Discovery Messages für jeden Messwert senden (inklusive SNR/RSSI)
+                    device_name = f"Sentinum Febris TH"  # TODO: Aus Metadaten extrahieren
+                    self.mqtt_manager.send_individual_sensor_discoveries(sensor_eui, decoded_data, device_name, snr, rssi)
+                    
+                    # Individual State Updates für alle Sensoren senden
                     self.mqtt_manager.publish_individual_sensor_states(sensor_eui, decoded_data, snr, rssi)
                 else:
                     logging.debug(f"Keine dekodierte Daten für Discovery: {sensor_eui}")

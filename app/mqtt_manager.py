@@ -313,7 +313,7 @@ class MQTTManager:
             logging.error(f"Fehler beim Senden der Konfiguration: {e}")
             return False
     
-    def send_individual_sensor_discoveries(self, sensor_eui: str, decoded_data: Dict[str, Any], device_name: str = "mioty Sensor") -> bool:
+    def send_individual_sensor_discoveries(self, sensor_eui: str, decoded_data: Dict[str, Any], device_name: str = "mioty Sensor", snr: float = None, rssi: float = None) -> bool:
         """Sende separate Home Assistant Discovery Messages für jeden Messwert."""
         if not self.ha_connected or not self.ha_client:
             logging.debug("HA MQTT nicht verfügbar - Individual Discovery übersprungen")
@@ -485,26 +485,114 @@ class MQTTManager:
         success_count = 0
         total_count = 0
         
+        # Zugriff auf sensor_configs aus dem Dictionary oben
+        sensor_configs = {
+            "internal_temperature": {
+                "name": "Temperature",
+                "device_class": "temperature",
+                "unit_of_measurement": "°C",
+                "icon": "mdi:thermometer"
+            },
+            "temperature": {
+                "name": "Temperature", 
+                "device_class": "temperature",
+                "unit_of_measurement": "°C",
+                "icon": "mdi:thermometer"
+            },
+            "humidity": {
+                "name": "Humidity",
+                "device_class": "humidity", 
+                "unit_of_measurement": "%",
+                "icon": "mdi:water-percent"
+            },
+            "battery_voltage": {
+                "name": "Battery Voltage",
+                "device_class": "voltage",
+                "unit_of_measurement": "V",
+                "icon": "mdi:battery"
+            },
+            "dew_point": {
+                "name": "Dew Point",
+                "device_class": "temperature",
+                "unit_of_measurement": "°C", 
+                "icon": "mdi:water-thermometer"
+            },
+            "pressure": {
+                "name": "Pressure",
+                "device_class": "atmospheric_pressure",
+                "unit_of_measurement": "hPa",
+                "icon": "mdi:gauge"
+            },
+            "co2": {
+                "name": "CO2",
+                "device_class": "carbon_dioxide",
+                "unit_of_measurement": "ppm",
+                "icon": "mdi:molecule-co2"
+            },
+            "signal_strength": {
+                "name": "Signal Strength",
+                "device_class": "signal_strength",
+                "unit_of_measurement": "dBm",
+                "icon": "mdi:wifi-strength-3"
+            },
+            "signal_to_noise_ratio": {
+                "name": "Signal to Noise Ratio",
+                "device_class": None,
+                "unit_of_measurement": "dB",
+                "icon": "mdi:wifi-strength-4"
+            },
+            "sensor_id": {
+                "name": "Sensor ID",
+                "device_class": None,
+                "unit_of_measurement": "",
+                "icon": "mdi:identifier"
+            },
+            "packet_type": {
+                "name": "Packet Type",
+                "device_class": None,
+                "unit_of_measurement": "",
+                "icon": "mdi:package-variant"
+            },
+            "value1": {
+                "name": "Value 1",
+                "device_class": None,
+                "unit_of_measurement": "",
+                "icon": "mdi:numeric-1-circle"
+            },
+            "value2": {
+                "name": "Value 2",
+                "device_class": None,
+                "unit_of_measurement": "",
+                "icon": "mdi:numeric-2-circle"
+            },
+            "raw_hex": {
+                "name": "Raw Data",
+                "device_class": None,
+                "unit_of_measurement": "",
+                "icon": "mdi:code-braces"
+            }
+        }
+        
         # Für jeden dekodierte Wert eine separate Discovery Message senden
         for measurement_key, measurement_data in decoded_data.items():
             if measurement_key in sensor_configs and isinstance(measurement_data, dict) and 'value' in measurement_data:
                 config = sensor_configs[measurement_key]
                 
                 # Discovery Topic für diesen spezifischen Sensor
-                discovery_topic = f"homeassistant/sensor/mioty_sensor_{sensor_eui}_{measurement_key}/config"
+                discovery_topic = f"homeassistant/mioty_{sensor_eui}/{measurement_key}/config"
                 
                 # Discovery Payload - mioty spezifisches Format
                 discovery_payload = {
-                    "unique_id": f"mioty_sensor_{sensor_eui}_{measurement_key}",
-                    "object_id": f"mioty_sensor_{sensor_eui}_{measurement_key}",
+                    "unique_id": f"mioty_{sensor_eui}_{measurement_key}",
+                    "object_id": f"mioty_{sensor_eui}_{measurement_key}",
                     "name": f"Sentinum {config['name']}",
-                    "state_topic": f"homeassistant/sensor/mioty_sensor_{sensor_eui}_{measurement_key}/state",
+                    "state_topic": f"homeassistant/mioty_{sensor_eui}/{measurement_key}/state",
                     "value_template": "{{ value }}",
                     "unit_of_meas": config["unit_of_measurement"],
                     "icon": config["icon"],
                     "device": device_info,
                     "platform": "mioty",
-                    "availability_topic": f"homeassistant/sensor/mioty_sensor_{sensor_eui}_{measurement_key}/availability",
+                    "availability_topic": f"homeassistant/mioty_{sensor_eui}/{measurement_key}/availability",
                     "payload_available": "online",
                     "payload_not_available": "offline"
                 }
@@ -528,6 +616,68 @@ class MQTTManager:
                 
                 total_count += 1
         
+        # Discovery für SNR Sensor
+        if snr is not None:
+            config = sensor_configs.get('signal_to_noise_ratio', {})
+            if config:
+                discovery_topic = f"homeassistant/mioty_{sensor_eui}/signal_to_noise_ratio/config"
+                discovery_payload = {
+                    "unique_id": f"mioty_{sensor_eui}_signal_to_noise_ratio",
+                    "object_id": f"mioty_{sensor_eui}_signal_to_noise_ratio",
+                    "name": f"Sentinum {config['name']}",
+                    "state_topic": f"homeassistant/mioty_{sensor_eui}/signal_to_noise_ratio/state",
+                    "value_template": "{{ value }}",
+                    "unit_of_meas": config["unit_of_measurement"],
+                    "icon": config["icon"],
+                    "device": device_info,
+                    "platform": "mioty",
+                    "availability_topic": f"homeassistant/mioty_{sensor_eui}/signal_to_noise_ratio/availability",
+                    "payload_available": "online",
+                    "payload_not_available": "offline"
+                }
+                
+                if config.get("device_class"):
+                    discovery_payload["device_class"] = config["device_class"]
+                if config.get("state_class"):
+                    discovery_payload["state_class"] = config["state_class"]
+                
+                if self.publish_discovery(discovery_topic, discovery_payload):
+                    success_count += 1
+                    logging.info(f"🔍 Individual Discovery: {sensor_eui} - SNR (signal_to_noise_ratio)")
+                total_count += 1
+        
+        # Discovery für RSSI Sensor
+        if rssi is not None:
+            config = sensor_configs.get('signal_strength', {})
+            if config:
+                discovery_topic = f"homeassistant/mioty_{sensor_eui}/signal_strength/config"
+                discovery_payload = {
+                    "unique_id": f"mioty_{sensor_eui}_signal_strength",
+                    "object_id": f"mioty_{sensor_eui}_signal_strength",
+                    "name": f"Sentinum {config['name']}",
+                    "state_topic": f"homeassistant/mioty_{sensor_eui}/signal_strength/state",
+                    "value_template": "{{ value }}",
+                    "unit_of_meas": config["unit_of_measurement"],
+                    "icon": config["icon"],
+                    "device": device_info,
+                    "platform": "mioty",
+                    "availability_topic": f"homeassistant/mioty_{sensor_eui}/signal_strength/availability",
+                    "payload_available": "online",
+                    "payload_not_available": "offline"
+                }
+                
+                if config.get("device_class"):
+                    discovery_payload["device_class"] = config["device_class"]
+                if config.get("state_class"):
+                    discovery_payload["state_class"] = config["state_class"]
+                elif config["device_class"] == "signal_strength":
+                    discovery_payload["state_class"] = "measurement"
+                
+                if self.publish_discovery(discovery_topic, discovery_payload):
+                    success_count += 1
+                    logging.info(f"🔍 Individual Discovery: {sensor_eui} - RSSI (signal_strength)")
+                total_count += 1
+                
         logging.info(f"✅ Individual Discovery abgeschlossen: {success_count}/{total_count} Sensoren für {sensor_eui}")
         return success_count > 0
     
@@ -544,8 +694,8 @@ class MQTTManager:
             # Dekodierte Daten senden
             for measurement_key, measurement_data in decoded_data.items():
                 if isinstance(measurement_data, dict) and 'value' in measurement_data:
-                    state_topic = f"homeassistant/sensor/mioty_sensor_{sensor_eui}_{measurement_key}/state"
-                    availability_topic = f"homeassistant/sensor/mioty_sensor_{sensor_eui}_{measurement_key}/availability"
+                    state_topic = f"homeassistant/mioty_{sensor_eui}/{measurement_key}/state"
+                    availability_topic = f"homeassistant/mioty_{sensor_eui}/{measurement_key}/availability"
                     
                     # Availability setzen
                     self.ha_client.publish(availability_topic, "online", retain=True)
@@ -556,37 +706,37 @@ class MQTTManager:
                     
                     if result.rc == mqtt.MQTT_ERR_SUCCESS:
                         success_count += 1
-                        logging.debug(f"📊 State: mioty_sensor_{sensor_eui}_{measurement_key} → {value}")
+                        logging.debug(f"📊 State: mioty_{sensor_eui}/{measurement_key} → {value}")
                     else:
-                        logging.warning(f"⚠️ State fehlgeschlagen: mioty_sensor_{sensor_eui}_{measurement_key}")
+                        logging.warning(f"⚠️ State fehlgeschlagen: mioty_{sensor_eui}/{measurement_key}")
                     
                     total_count += 1
             
             # SNR als separaten Sensor senden
             if snr is not None:
-                state_topic = f"homeassistant/sensor/mioty_sensor_{sensor_eui}_signal_to_noise_ratio/state"
-                availability_topic = f"homeassistant/sensor/mioty_sensor_{sensor_eui}_signal_to_noise_ratio/availability"
+                state_topic = f"homeassistant/mioty_{sensor_eui}/signal_to_noise_ratio/state"
+                availability_topic = f"homeassistant/mioty_{sensor_eui}/signal_to_noise_ratio/availability"
                 
                 self.ha_client.publish(availability_topic, "online", retain=True)
                 result = self.ha_client.publish(state_topic, str(round(snr, 2)), retain=True)
                 
                 if result.rc == mqtt.MQTT_ERR_SUCCESS:
                     success_count += 1
-                    logging.debug(f"📊 SNR: mioty_sensor_{sensor_eui}_signal_to_noise_ratio → {round(snr, 2)}")
+                    logging.debug(f"📊 SNR: mioty_{sensor_eui}/signal_to_noise_ratio → {round(snr, 2)}")
                 
                 total_count += 1
             
             # RSSI als separaten Sensor senden 
             if rssi is not None:
-                state_topic = f"homeassistant/sensor/mioty_sensor_{sensor_eui}_signal_strength/state"
-                availability_topic = f"homeassistant/sensor/mioty_sensor_{sensor_eui}_signal_strength/availability"
+                state_topic = f"homeassistant/mioty_{sensor_eui}/signal_strength/state"
+                availability_topic = f"homeassistant/mioty_{sensor_eui}/signal_strength/availability"
                 
                 self.ha_client.publish(availability_topic, "online", retain=True)
                 result = self.ha_client.publish(state_topic, str(round(rssi, 2)), retain=True)
                 
                 if result.rc == mqtt.MQTT_ERR_SUCCESS:
                     success_count += 1
-                    logging.debug(f"📊 RSSI: mioty_sensor_{sensor_eui}_signal_strength → {round(rssi, 2)}")
+                    logging.debug(f"📊 RSSI: mioty_{sensor_eui}/signal_strength → {round(rssi, 2)}")
                 
                 total_count += 1
             
