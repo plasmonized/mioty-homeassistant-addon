@@ -482,7 +482,7 @@ class BSSCIAddon:
                 "name": "payload_size",
                 "display_name": "Payload Size",
                 "device_class": "data_size",
-                "unit": "bytes",
+                "unit": "B",
                 "icon": "mdi:database",
                 "value_template": "{{ value_json.payload_size }}"
             },
@@ -618,7 +618,6 @@ class BSSCIAddon:
             "unique_id": unique_id,
             "state_topic": f"homeassistant/sensor/{unique_id}/state",
             "json_attributes_topic": f"homeassistant/sensor/{unique_id}/attributes",
-            "device_class": "connectivity",
             "icon": "mdi:antenna",
             "device": device_info
         }
