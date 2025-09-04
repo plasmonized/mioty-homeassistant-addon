@@ -58,8 +58,10 @@ class BSSCIAddon:
         # Versuche zuerst gespeicherte Einstellungen zu laden
         try:
             # REPARIERT: Absoluter Pfad für Add-on Umgebung
-            settings_path = os.path.join(os.path.dirname(__file__), '..', 'settings.json')
-            if not os.path.exists(settings_path):
+            # Persistente Speicherung in /data für Home Assistant Add-on
+            if os.path.exists('/data'):
+                settings_path = '/data/settings.json'
+            else:
                 settings_path = 'settings.json'  # Fallback für Entwicklung
             settings = SettingsManager(settings_path)
             saved_settings = settings.get_all_settings()
@@ -282,7 +284,8 @@ class BSSCIAddon:
         # Prüfe manuelle Metadaten zuerst
         try:
             import json
-            with open('manual_sensor_metadata.json', 'r') as f:
+            metadata_file = '/data/manual_sensor_metadata.json' if os.path.exists('/data') else 'manual_sensor_metadata.json'
+            with open(metadata_file, 'r') as f:
                 manual_metadata = json.load(f)
                 if sensor_eui in manual_metadata:
                     manual_info = manual_metadata[sensor_eui]

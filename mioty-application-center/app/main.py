@@ -58,8 +58,10 @@ class BSSCIAddon:
         # Versuche zuerst gespeicherte Einstellungen zu laden
         try:
             # REPARIERT: Absoluter Pfad für Add-on Umgebung
-            settings_path = os.path.join(os.path.dirname(__file__), '..', 'settings.json')
-            if not os.path.exists(settings_path):
+            # Persistente Speicherung in /data für Home Assistant Add-on
+            if os.path.exists('/data'):
+                settings_path = '/data/settings.json'
+            else:
                 settings_path = 'settings.json'  # Fallback für Entwicklung
             settings = SettingsManager(settings_path)
             saved_settings = settings.get_all_settings()
@@ -224,7 +226,7 @@ class BSSCIAddon:
         
         # Home Assistant Discovery
         if self.config['auto_discovery'] and self.mqtt_manager:
-            self.create_sensor_discovery(sensor_eui, data, decoded_payload)
+            self.create_sensor_discovery(sensor_eui, data, decoded_payload or {})
     
     def handle_sensor_config(self, sensor_eui: str, config: Dict[str, Any]):
         """Verarbeite Sensor-Konfigurationsanfragen."""
@@ -267,64 +269,302 @@ class BSSCIAddon:
         if self.config['auto_discovery']:
             self.create_basestation_discovery(bs_eui, status)
     
-    def create_sensor_discovery(self, sensor_eui: str, data: Dict[str, Any], decoded_payload: Dict[str, Any] = None):
-        """Erstelle Home Assistant MQTT Discovery für Sensor."""
-        device_name = f"mioty Sensor {sensor_eui}"
-        unique_id = f"bssci_sensor_{sensor_eui}"
+    def _get_device_info_from_decoder(self, sensor_eui: str, device_id: str) -> Dict[str, Any]:
+        """Extrahiere Device-Informationen aus zugewiesenem Decoder."""
         
-        # Discovery Konfiguration
-        discovery_config = {
-            "name": device_name,
-            "unique_id": unique_id,
-            "state_topic": f"homeassistant/sensor/{unique_id}/state",
-            "json_attributes_topic": f"homeassistant/sensor/{unique_id}/attributes",
-            "device_class": "data_size",
-            "unit_of_measurement": "bytes",
-            "icon": "mdi:access-point",
-            "device": {
-                "identifiers": [f"bssci_sensor_{sensor_eui}"],
-                "name": device_name,
-                "model": "mioty IoT Sensor",
-                "manufacturer": "BSSCI"
-            }
+        # Standard Fallback-Werte
+        device_info = {
+            "identifiers": [device_id],
+            "name": f"mioty Sensor {sensor_eui}",
+            "model": "mioty IoT Sensor",
+            "manufacturer": "Unknown",
+            "sw_version": "1.0"
         }
         
-        # Discovery Nachricht senden
-        discovery_topic = f"homeassistant/sensor/{unique_id}/config"
-        if self.mqtt_manager:
-            logging.info(f"🔍 Sensor Discovery: {sensor_eui}")
-            logging.info(f"   📤 Topic: {discovery_topic}")
-            logging.info(f"   🏷️ Device: {device_name}")
-            success = self.mqtt_manager.publish_discovery(discovery_topic, discovery_config)
-            if success:
-                logging.info(f"✅ Sensor Discovery erfolgreich gesendet")
-            else:
-                logging.warning(f"❌ Sensor Discovery fehlgeschlagen (HA MQTT nicht verbunden)")
+        # Prüfe manuelle Metadaten zuerst
+        try:
+            import json
+            metadata_file = '/data/manual_sensor_metadata.json' if os.path.exists('/data') else 'manual_sensor_metadata.json'
+            with open(metadata_file, 'r') as f:
+                manual_metadata = json.load(f)
+                if sensor_eui in manual_metadata:
+                    manual_info = manual_metadata[sensor_eui]
+                    device_info.update({
+                        "name": manual_info.get('name', device_info["name"]),
+                        "model": manual_info.get('model', device_info["model"]),
+                        "manufacturer": manual_info.get('manufacturer', device_info["manufacturer"])
+                    })
+                    logging.debug(f"🔧 Manuelle Metadaten für {sensor_eui} geladen: {device_info['manufacturer']} - {device_info['model']}")
+                    return device_info
+        except FileNotFoundError:
+            pass
         
-        # Status und Attribute senden
-        state_value = len(data.get('data', []))
-        attributes = {
-            "sensor_eui": sensor_eui,
-            "base_station_eui": data.get('bs_eui', 'Unknown'),
+        # Prüfe ob Decoder zugewiesen
+        if hasattr(self, 'decoder_manager') and self.decoder_manager:
+            try:
+                # Hole Decoder-Zuweisungen
+                assignments = self.decoder_manager.payload_decoder.decoders
+                if sensor_eui in assignments:
+                    decoder_name = assignments[sensor_eui]
+                    
+                    # Hole Decoder-Datei-Informationen
+                    decoder_files = self.decoder_manager.payload_decoder.decoder_files
+                    if decoder_name in decoder_files:
+                        decoder_info = decoder_files[decoder_name]
+                        
+                        # Extrahiere Device-Informationen aus Decoder
+                        if decoder_info['type'] == 'iodd':
+                            # IODD Decoder - verwende Vendor/Device-Informationen
+                            vendor_name = decoder_info.get('vendor_name', 'Unknown')
+                            device_name = decoder_info.get('device_name', f'mioty Sensor {sensor_eui}')
+                            
+                            device_info.update({
+                                "name": device_name,
+                                "model": device_name,
+                                "manufacturer": vendor_name
+                            })
+                            
+                        elif decoder_info['type'] in ['blueprint', 'javascript']:
+                            # Blueprint/JS Decoder - verwende Name/Description
+                            decoder_display_name = decoder_info.get('name', f'mioty Sensor {sensor_eui}')
+                            
+                            device_info.update({
+                                "name": decoder_display_name,
+                                "model": decoder_display_name,
+                                "manufacturer": "Sentinum"
+                            })
+                            
+                        logging.debug(f"🔍 Device Info aus Decoder {decoder_name}: {device_info['manufacturer']} - {device_info['model']}")
+                        
+            except Exception as e:
+                logging.warning(f"Fehler beim Extrahieren der Device-Info für {sensor_eui}: {e}")
+        
+        return device_info
+    
+    def _get_basestation_info(self, bs_eui: str, device_id: str) -> Dict[str, Any]:
+        """Extrahiere Device-Informationen für Base Station."""
+        
+        # Standard Fallback-Werte für Base Stations
+        device_info = {
+            "identifiers": [device_id],
+            "name": f"mioty Base Station {bs_eui}",
+            "model": "mioty Base Station",
+            "manufacturer": "Unknown",
+            "sw_version": "1.0"
+        }
+        
+        # Prüfe manuelle Metadaten zuerst
+        try:
+            import json
+            with open('manual_basestation_metadata.json', 'r') as f:
+                manual_metadata = json.load(f)
+                if bs_eui in manual_metadata:
+                    manual_info = manual_metadata[bs_eui]
+                    device_info.update({
+                        "name": manual_info.get('name', device_info["name"]),
+                        "model": manual_info.get('model', device_info["model"]),
+                        "manufacturer": manual_info.get('manufacturer', device_info["manufacturer"])
+                    })
+                    logging.debug(f"🔧 Manuelle BaseStation Metadaten für {bs_eui} geladen: {device_info['manufacturer']} - {device_info['model']}")
+                    return device_info
+        except FileNotFoundError:
+            pass
+        
+        # Fallback: Versuche bekannte Base Station Hersteller zu erkennen
+        if bs_eui.startswith('70b3d5'):
+            device_info.update({
+                "name": f"Swissphone MBS20 {bs_eui}",
+                "model": "MBS20 Base Station",
+                "manufacturer": "Swissphone"
+            })
+        elif bs_eui.startswith('3e5446'):
+            device_info.update({
+                "name": f"Kerlink Base Station {bs_eui}",
+                "model": "Kerlink Wirnet",
+                "manufacturer": "Kerlink"
+            })
+        elif bs_eui.startswith('9c65f9'):
+            device_info.update({
+                "name": f"Industrial Base Station {bs_eui}",
+                "model": "Industrial Gateway",
+                "manufacturer": "Generic"
+            })
+        
+        return device_info
+    
+    def _validate_device_info(self, device_info: Dict[str, Any], allow_fallback: bool = True) -> bool:
+        """Prüfe ob Device-Informationen vollständig sind."""
+        required_fields = ['manufacturer', 'model', 'name']
+        
+        for field in required_fields:
+            value = device_info.get(field, '')
+            if not value:
+                logging.debug(f"⚠️ Device-Info unvollständig: {field} ist leer")
+                return False
+            # Bei allow_fallback sind auch "Unknown" Werte OK
+            if not allow_fallback and value == 'Unknown':
+                logging.debug(f"⚠️ Device-Info unvollständig: {field} = '{value}'")
+                return False
+        
+        return True
+        
+    def create_sensor_discovery(self, sensor_eui: str, data: Dict[str, Any], decoded_payload: Dict[str, Any] = None):
+        """Erstelle Home Assistant MQTT Discovery für Sensor - Automatische Device-Metadaten aus Decodern."""
+        device_id = f"mioty_{sensor_eui}"
+        
+        # 🔍 Device-Informationen aus zugewiesenem Decoder extrahieren
+        device_info = self._get_device_info_from_decoder(sensor_eui, device_id)
+        device_name = device_info["name"]
+        
+        # ❗ Prüfe Device-Informationen (mit Fallback erlaubt)
+        if not self._validate_device_info(device_info, allow_fallback=True):
+            logging.warning(f"❌ Auto Discovery abgebrochen für {sensor_eui}: Device-Informationen unvollständig")
+            logging.info(f"💡 Bitte ergänzen Sie Manufacturer/Model über Decoder-Einstellungen")
+            return
+        
+        # ⚠️ Warnung bei Standard-Werten
+        if device_info.get('manufacturer') == 'Unknown':
+            logging.info(f"💡 {sensor_eui}: Auto Discovery mit Standard-Werten (Manufacturer: Unknown)")
+            logging.info(f"   Tipp: Für bessere HA-Integration Decoder mit Device-Metadaten hinzufügen")
+        
+        # State Topic für JSON-Daten 
+        state_topic = f"homeassistant/sensor/{device_id}/state"
+        
+        # Individuelle Sensoren erstellen (nach HA Discovery Protokoll)
+        sensors = [
+            {
+                "name": "payload_size",
+                "display_name": "Payload Size",
+                "device_class": "data_size",
+                "unit": "bytes",
+                "icon": "mdi:database",
+                "value_template": "{{ value_json.payload_size }}"
+            },
+            {
+                "name": "snr",
+                "display_name": "Signal-to-Noise Ratio",
+                "device_class": "signal_strength", 
+                "unit": "dB",
+                "icon": "mdi:signal",
+                "value_template": "{{ value_json.snr }}"
+            },
+            {
+                "name": "rssi",
+                "display_name": "Signal Strength",
+                "device_class": "signal_strength",
+                "unit": "dBm",
+                "icon": "mdi:wifi-strength-3",
+                "value_template": "{{ value_json.rssi }}"
+            },
+            {
+                "name": "message_counter",
+                "display_name": "Message Counter",
+                "device_class": None,
+                "unit": None,
+                "icon": "mdi:counter",
+                "value_template": "{{ value_json.message_counter }}"
+            }
+        ]
+        
+        # Decoded Data Sensor hinzufügen falls Decoder aktiv
+        if decoded_payload:
+            sensors.append({
+                "name": "decoded_data",
+                "display_name": "Decoded Data",
+                "device_class": None,
+                "unit": None,
+                "icon": "mdi:code-json",
+                "value_template": "{{ value_json.decoded_data | default('N/A') }}"
+            })
+        
+        # Für jeden Sensor individuelle Discovery-Nachricht senden
+        for sensor in sensors:
+            unique_id = f"{device_id}_{sensor['name']}"
+            discovery_topic = f"homeassistant/sensor/{device_id}/{sensor['name']}/config"
+            
+            config = {
+                "name": sensor['display_name'],
+                "unique_id": unique_id,
+                "state_topic": state_topic,
+                "value_template": sensor['value_template'],
+                "device": device_info,
+                "availability_topic": f"homeassistant/sensor/{device_id}/availability",
+                "payload_available": "online",
+                "payload_not_available": "offline"
+            }
+            
+            # Optional: Device Class, Unit, Icon
+            if sensor['device_class']:
+                config['device_class'] = sensor['device_class']
+            if sensor['unit']:
+                config['unit_of_measurement'] = sensor['unit']
+            if sensor['icon']:
+                config['icon'] = sensor['icon']
+            
+            # Discovery senden
+            if self.mqtt_manager:
+                logging.info(f"🔍 Sensor Discovery: {sensor_eui} - {sensor['display_name']}")
+                logging.debug(f"   📤 Topic: {discovery_topic}")
+                logging.debug(f"   🏷️ Manufacturer: {device_info['manufacturer']} | Model: {device_info['model']}")
+                success = self.mqtt_manager.publish_discovery(discovery_topic, config)
+                if success:
+                    logging.debug(f"✅ {sensor['display_name']} Discovery erfolgreich")
+                else:
+                    logging.warning(f"❌ {sensor['display_name']} Discovery fehlgeschlagen")
+        
+        # Device Availability senden
+        if self.mqtt_manager:
+            availability_topic = f"homeassistant/sensor/{device_id}/availability"
+            if self.mqtt_manager.ha_client:
+                self.mqtt_manager.ha_client.publish(availability_topic, "online", retain=True)
+        
+        # JSON State Data senden (nach HA Discovery Protokoll)
+        device_id = f"mioty_{sensor_eui}"
+        state_topic = f"homeassistant/sensor/{device_id}/state"
+        
+        # JSON State für alle Sensoren
+        state_data = {
+            "payload_size": len(data.get('data', [])),
             "snr": data.get('snr'),
             "rssi": data.get('rssi'),
             "message_counter": data.get('cnt'),
+            "sensor_eui": sensor_eui,
+            "base_station_eui": data.get('bs_eui', 'Unknown'),
             "receive_time": self.format_timestamp(data.get('rxTime')),
             "signal_quality": self.assess_signal_quality(data.get('snr'), data.get('rssi')),
-            "raw_data": data.get('data', [])[:10],  # Nur erste 10 Bytes zeigen
             "decoded_data": decoded_payload.get('data') if decoded_payload else None,
             "decoder_used": decoded_payload.get('decoder_name') if decoded_payload else None
         }
         
         if self.mqtt_manager:
-            logging.debug(f"📊 Sensor Status Update: {sensor_eui} → {state_value} bytes")
-            success = self.mqtt_manager.publish_sensor_state(unique_id, state_value, attributes)
-            if not success:
-                logging.debug(f"⚠️ Sensor Status nicht gesendet (HA MQTT nicht verbunden)")
+            logging.info(f"📊 Sensor Update: {sensor_eui} → {len(data.get('data', []))} bytes")
+            # JSON State zu HA senden
+            import json
+            if self.mqtt_manager.ha_client:
+                success = self.mqtt_manager.ha_client.publish(state_topic, json.dumps(state_data), retain=False)
+                if not success:
+                    logging.debug(f"⚠️ Sensor State nicht gesendet (HA MQTT nicht verbunden)")
+            else:
+                logging.debug(f"⚠️ HA MQTT Client nicht verfügbar")
     
     def create_basestation_discovery(self, bs_eui: str, status: Dict[str, Any]):
         """Erstelle Home Assistant MQTT Discovery für Base Station."""
-        device_name = f"mioty Base Station {bs_eui}"
+        device_id = f"bssci_basestation_{bs_eui}"
+        
+        # 🔍 Device-Informationen für Base Station extrahieren
+        device_info = self._get_basestation_info(bs_eui, device_id)
+        device_name = device_info["name"]
+        
+        # ❗ Prüfe Device-Informationen (mit Fallback erlaubt)
+        if not self._validate_device_info(device_info, allow_fallback=True):
+            logging.warning(f"❌ BaseStation Discovery abgebrochen für {bs_eui}: Device-Informationen unvollständig")
+            return
+        
+        # ⚠️ Warnung bei Standard-Werten
+        if device_info.get('manufacturer') == 'Unknown':
+            logging.info(f"💡 {bs_eui}: BaseStation Discovery mit Standard-Werten (Manufacturer: Unknown)")
+            logging.info(f"   Tipp: Base Station Metadaten über manuellen Eintrag hinzufügen")
+        
         unique_id = f"bssci_basestation_{bs_eui}"
         
         discovery_config = {
@@ -334,12 +574,7 @@ class BSSCIAddon:
             "json_attributes_topic": f"homeassistant/sensor/{unique_id}/attributes",
             "device_class": "connectivity",
             "icon": "mdi:antenna",
-            "device": {
-                "identifiers": [f"bssci_basestation_{bs_eui}"],
-                "name": device_name,
-                "model": "MBS20 Base Station",
-                "manufacturer": "Swissphone"
-            }
+            "device": device_info
         }
         
         discovery_topic = f"homeassistant/sensor/{unique_id}/config"

@@ -12,8 +12,14 @@ from typing import Dict, Any
 class SettingsManager:
     """Verwaltet Add-on Einstellungen."""
     
-    def __init__(self, config_file: str = "settings.json"):
+    def __init__(self, config_file: str = None):
         """Initialisiere Settings Manager."""
+        if config_file is None:
+            # Persistente Speicherung in /data für Home Assistant Add-on
+            if os.path.exists('/data'):
+                config_file = '/data/settings.json'
+            else:
+                config_file = 'settings.json'  # Fallback für Entwicklung
         self.config_file = config_file
         self.settings = {}
         self.load_settings()

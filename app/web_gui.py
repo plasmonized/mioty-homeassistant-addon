@@ -23,8 +23,10 @@ class WebGUI:
         self.addon = addon_instance
         
         # REPARIERT: Absoluter Pfad für Add-on Umgebung
-        settings_path = os.path.join(os.path.dirname(__file__), '..', 'settings.json')
-        if not os.path.exists(settings_path):
+        # Persistente Speicherung in /data für Home Assistant Add-on
+        if os.path.exists('/data'):
+            settings_path = '/data/settings.json'
+        else:
             settings_path = 'settings.json'  # Fallback für Entwicklung
         self.settings = SettingsManager(settings_path)
         logging.info(f"🔧 WEB GUI SETTINGS PFAD: {settings_path}")
@@ -360,7 +362,11 @@ class WebGUI:
                     return jsonify({'error': 'Manufacturer und Model erforderlich'}), 400
                 
                 # REPARIERT: Korrekter Pfad für Add-on Umgebung
-                metadata_file = os.path.join(os.path.dirname(__file__), '..', 'manual_sensor_metadata.json')
+                # Persistente Speicherung in /data für Home Assistant Add-on
+                if os.path.exists('/data'):
+                    metadata_file = '/data/manual_sensor_metadata.json'
+                else:
+                    metadata_file = 'manual_sensor_metadata.json'  # Fallback für Entwicklung
                 logging.info(f"🔧 METADATEN SPEICHERN: {metadata_file}")
                 metadata = {}
                 
@@ -490,7 +496,11 @@ class WebGUI:
                     metadata['manual'] = True
                     
                     # Speichere HA-Metadaten separat
-                    ha_metadata_file = os.path.join(os.path.dirname(__file__), '..', 'manual_sensor_metadata.json')
+                    # Persistente Speicherung in /data für Home Assistant Add-on
+                    if os.path.exists('/data'):
+                        ha_metadata_file = '/data/manual_sensor_metadata.json'
+                    else:
+                        ha_metadata_file = 'manual_sensor_metadata.json'  # Fallback für Entwicklung
                     ha_metadata = {}
                     
                     try:
