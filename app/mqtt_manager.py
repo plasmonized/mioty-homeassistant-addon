@@ -579,20 +579,20 @@ class MQTTManager:
                 config = sensor_configs[measurement_key]
                 
                 # Discovery Topic für diesen spezifischen Sensor
-                discovery_topic = f"homeassistant/mioty_{sensor_eui}/{measurement_key}/config"
+                discovery_topic = f"homeassistant/sensor/mioty_{sensor_eui}/{measurement_key}/config"
                 
                 # Discovery Payload - mioty spezifisches Format
                 discovery_payload = {
                     "unique_id": f"mioty_{sensor_eui}_{measurement_key}",
                     "object_id": f"mioty_{sensor_eui}_{measurement_key}",
                     "name": f"Sentinum {config['name']}",
-                    "state_topic": f"homeassistant/mioty_{sensor_eui}/{measurement_key}/state",
+                    "state_topic": f"homeassistant/sensor/mioty_{sensor_eui}/{measurement_key}/state",
                     "value_template": "{{ value }}",
                     "unit_of_meas": config["unit_of_measurement"],
                     "icon": config["icon"],
                     "device": device_info,
                     "platform": "mioty",
-                    "availability_topic": f"homeassistant/mioty_{sensor_eui}/{measurement_key}/availability",
+                    "availability_topic": f"homeassistant/sensor/mioty_{sensor_eui}/{measurement_key}/availability",
                     "payload_available": "online",
                     "payload_not_available": "offline"
                 }
@@ -620,18 +620,18 @@ class MQTTManager:
         if snr is not None:
             config = sensor_configs.get('signal_to_noise_ratio', {})
             if config:
-                discovery_topic = f"homeassistant/mioty_{sensor_eui}/signal_to_noise_ratio/config"
+                discovery_topic = f"homeassistant/sensor/mioty_{sensor_eui}/signal_to_noise_ratio/config"
                 discovery_payload = {
                     "unique_id": f"mioty_{sensor_eui}_signal_to_noise_ratio",
                     "object_id": f"mioty_{sensor_eui}_signal_to_noise_ratio",
                     "name": f"Sentinum {config['name']}",
-                    "state_topic": f"homeassistant/mioty_{sensor_eui}/signal_to_noise_ratio/state",
+                    "state_topic": f"homeassistant/sensor/mioty_{sensor_eui}/signal_to_noise_ratio/state",
                     "value_template": "{{ value }}",
                     "unit_of_meas": config["unit_of_measurement"],
                     "icon": config["icon"],
                     "device": device_info,
                     "platform": "mioty",
-                    "availability_topic": f"homeassistant/mioty_{sensor_eui}/signal_to_noise_ratio/availability",
+                    "availability_topic": f"homeassistant/sensor/mioty_{sensor_eui}/signal_to_noise_ratio/availability",
                     "payload_available": "online",
                     "payload_not_available": "offline"
                 }
@@ -650,18 +650,18 @@ class MQTTManager:
         if rssi is not None:
             config = sensor_configs.get('signal_strength', {})
             if config:
-                discovery_topic = f"homeassistant/mioty_{sensor_eui}/signal_strength/config"
+                discovery_topic = f"homeassistant/sensor/mioty_{sensor_eui}/signal_strength/config"
                 discovery_payload = {
                     "unique_id": f"mioty_{sensor_eui}_signal_strength",
                     "object_id": f"mioty_{sensor_eui}_signal_strength",
                     "name": f"Sentinum {config['name']}",
-                    "state_topic": f"homeassistant/mioty_{sensor_eui}/signal_strength/state",
+                    "state_topic": f"homeassistant/sensor/mioty_{sensor_eui}/signal_strength/state",
                     "value_template": "{{ value }}",
                     "unit_of_meas": config["unit_of_measurement"],
                     "icon": config["icon"],
                     "device": device_info,
                     "platform": "mioty",
-                    "availability_topic": f"homeassistant/mioty_{sensor_eui}/signal_strength/availability",
+                    "availability_topic": f"homeassistant/sensor/mioty_{sensor_eui}/signal_strength/availability",
                     "payload_available": "online",
                     "payload_not_available": "offline"
                 }
@@ -694,8 +694,8 @@ class MQTTManager:
             # Dekodierte Daten senden
             for measurement_key, measurement_data in decoded_data.items():
                 if isinstance(measurement_data, dict) and 'value' in measurement_data:
-                    state_topic = f"homeassistant/mioty_{sensor_eui}/{measurement_key}/state"
-                    availability_topic = f"homeassistant/mioty_{sensor_eui}/{measurement_key}/availability"
+                    state_topic = f"homeassistant/sensor/mioty_{sensor_eui}/{measurement_key}/state"
+                    availability_topic = f"homeassistant/sensor/mioty_{sensor_eui}/{measurement_key}/availability"
                     
                     # Availability setzen
                     self.ha_client.publish(availability_topic, "online", retain=True)
@@ -706,37 +706,37 @@ class MQTTManager:
                     
                     if result.rc == mqtt.MQTT_ERR_SUCCESS:
                         success_count += 1
-                        logging.debug(f"📊 State: mioty_{sensor_eui}/{measurement_key} → {value}")
+                        logging.debug(f"📊 State: sensor/mioty_{sensor_eui}/{measurement_key} → {value}")
                     else:
-                        logging.warning(f"⚠️ State fehlgeschlagen: mioty_{sensor_eui}/{measurement_key}")
+                        logging.warning(f"⚠️ State fehlgeschlagen: sensor/mioty_{sensor_eui}/{measurement_key}")
                     
                     total_count += 1
             
             # SNR als separaten Sensor senden
             if snr is not None:
-                state_topic = f"homeassistant/mioty_{sensor_eui}/signal_to_noise_ratio/state"
-                availability_topic = f"homeassistant/mioty_{sensor_eui}/signal_to_noise_ratio/availability"
+                state_topic = f"homeassistant/sensor/mioty_{sensor_eui}/signal_to_noise_ratio/state"
+                availability_topic = f"homeassistant/sensor/mioty_{sensor_eui}/signal_to_noise_ratio/availability"
                 
                 self.ha_client.publish(availability_topic, "online", retain=True)
                 result = self.ha_client.publish(state_topic, str(round(snr, 2)), retain=True)
                 
                 if result.rc == mqtt.MQTT_ERR_SUCCESS:
                     success_count += 1
-                    logging.debug(f"📊 SNR: mioty_{sensor_eui}/signal_to_noise_ratio → {round(snr, 2)}")
+                    logging.debug(f"📊 SNR: sensor/mioty_{sensor_eui}/signal_to_noise_ratio → {round(snr, 2)}")
                 
                 total_count += 1
             
             # RSSI als separaten Sensor senden 
             if rssi is not None:
-                state_topic = f"homeassistant/mioty_{sensor_eui}/signal_strength/state"
-                availability_topic = f"homeassistant/mioty_{sensor_eui}/signal_strength/availability"
+                state_topic = f"homeassistant/sensor/mioty_{sensor_eui}/signal_strength/state"
+                availability_topic = f"homeassistant/sensor/mioty_{sensor_eui}/signal_strength/availability"
                 
                 self.ha_client.publish(availability_topic, "online", retain=True)
                 result = self.ha_client.publish(state_topic, str(round(rssi, 2)), retain=True)
                 
                 if result.rc == mqtt.MQTT_ERR_SUCCESS:
                     success_count += 1
-                    logging.debug(f"📊 RSSI: mioty_{sensor_eui}/signal_strength → {round(rssi, 2)}")
+                    logging.debug(f"📊 RSSI: sensor/mioty_{sensor_eui}/signal_strength → {round(rssi, 2)}")
                 
                 total_count += 1
             
