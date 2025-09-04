@@ -490,21 +490,22 @@ class MQTTManager:
             if measurement_key in sensor_configs and isinstance(measurement_data, dict) and 'value' in measurement_data:
                 config = sensor_configs[measurement_key]
                 
-                # Discovery Topic für diesen spezifischen Sensor
-                discovery_topic = f"homeassistant/sensor/mioty_sensor_{sensor_eui}_{measurement_key}/config"
+                # Discovery Topic (korrekte HA Struktur mit Tilde-Notation)
+                discovery_topic = f"homeassistant/sensor/{sensor_eui}/{measurement_key}/config"
                 
-                # Discovery Payload - mioty spezifisches Format
+                # Discovery Payload mit Tilde-Notation (wie Limette-Beispiel)
                 discovery_payload = {
-                    "unique_id": f"mioty_sensor_{sensor_eui}_{measurement_key}",
-                    "object_id": f"mioty_sensor_{sensor_eui}_{measurement_key}",
-                    "name": f"Sentinum {config['name']}",
-                    "state_topic": f"homeassistant/sensor/mioty_sensor_{sensor_eui}_{measurement_key}/state",
-                    "value_template": "{{ value }}",
+                    "~": sensor_eui,
+                    "unique_id": f"{sensor_eui}-{measurement_key}",
+                    "object_id": f"{sensor_eui}_{measurement_key}",
+                    "name": config['name'],
+                    "state_topic": "~/state",
+                    "value_template": f"{{{{value_json.components.{measurement_key}|round(3)}}}}",
                     "unit_of_meas": config["unit_of_measurement"],
                     "icon": config["icon"],
                     "device": device_info,
                     "platform": "mioty",
-                    "availability_topic": f"homeassistant/sensor/mioty_sensor_{sensor_eui}_{measurement_key}/availability",
+                    "availability_topic": "~/availability",
                     "payload_available": "online",
                     "payload_not_available": "offline"
                 }
@@ -522,79 +523,62 @@ class MQTTManager:
                 # Discovery Message senden
                 if self.publish_discovery(discovery_topic, discovery_payload):
                     success_count += 1
-                    logging.info(f"🔍 Individual Discovery: {sensor_eui} - {config['name']} ({measurement_key})")
+                    logging.info(f"🔍 HA Discovery: {sensor_eui}/{measurement_key} - {config['name']}")
                 else:
                     logging.warning(f"⚠️ Discovery fehlgeschlagen: {sensor_eui} - {measurement_key}")
                 
                 total_count += 1
         
-        logging.info(f"✅ Individual Discovery abgeschlossen: {success_count}/{total_count} Sensoren für {sensor_eui}")
+        logging.info(f"✅ HA Discovery abgeschlossen: {success_count}/{total_count} Sensoren für {sensor_eui}")
         return success_count > 0
     
-    def publish_individual_sensor_states(self, sensor_eui: str, decoded_data: Dict[str, Any], snr: float = None, rssi: float = None) -> bool:
-        """Sende individuelle State Topics für jeden Messwert."""
+    def publish_sensor_components_json(self, sensor_eui: str, decoded_data: Dict[str, Any], snr: float = None, rssi: float = None) -> bool:
+        """Sende JSON State mit components-Struktur (korrekte HA Struktur wie Limette-Beispiel)."""
         if not self.ha_connected or not self.ha_client:
-            logging.debug("HA MQTT nicht verfügbar - Individual States übersprungen")
+            logging.debug("HA MQTT nicht verfügbar - JSON Components State übersprungen")
             return False
         
-        success_count = 0
-        total_count = 0
-        
         try:
-            # Dekodierte Daten senden
-            for measurement_key, measurement_data in decoded_data.items():
-                if isinstance(measurement_data, dict) and 'value' in measurement_data:
-                    state_topic = f"homeassistant/sensor/mioty_sensor_{sensor_eui}_{measurement_key}/state"
-                    availability_topic = f"homeassistant/sensor/mioty_sensor_{sensor_eui}_{measurement_key}/availability"
-                    
-                    # Availability setzen
-                    self.ha_client.publish(availability_topic, "online", retain=True)
-                    
-                    # State Wert senden
-                    value = measurement_data['value']
-                    result = self.ha_client.publish(state_topic, str(value), retain=True)
-                    
-                    if result.rc == mqtt.MQTT_ERR_SUCCESS:
-                        success_count += 1
-                        logging.debug(f"📊 State: mioty_sensor_{sensor_eui}_{measurement_key} → {value}")
-                    else:
-                        logging.warning(f"⚠️ State fehlgeschlagen: mioty_sensor_{sensor_eui}_{measurement_key}")
-                    
-                    total_count += 1
+            # State Topic (nur die EUI)
+            state_topic = f"{sensor_eui}/state"
+            availability_topic = f"{sensor_eui}/availability"
             
-            # SNR als separaten Sensor senden
+            # Components JSON Payload erstellen
+            components = {}
+            
+            # Dekodierte Daten hinzufügen
+            for key, data in decoded_data.items():
+                if isinstance(data, dict) and 'value' in data:
+                    components[key] = data['value']
+            
+            # Signal Quality hinzufügen
             if snr is not None:
-                state_topic = f"homeassistant/sensor/mioty_sensor_{sensor_eui}_signal_to_noise_ratio/state"
-                availability_topic = f"homeassistant/sensor/mioty_sensor_{sensor_eui}_signal_to_noise_ratio/availability"
-                
-                self.ha_client.publish(availability_topic, "online", retain=True)
-                result = self.ha_client.publish(state_topic, str(round(snr, 2)), retain=True)
-                
-                if result.rc == mqtt.MQTT_ERR_SUCCESS:
-                    success_count += 1
-                    logging.debug(f"📊 SNR: mioty_sensor_{sensor_eui}_signal_to_noise_ratio → {round(snr, 2)}")
-                
-                total_count += 1
-            
-            # RSSI als separaten Sensor senden 
+                components['signal_to_noise_ratio'] = round(snr, 3)
             if rssi is not None:
-                state_topic = f"homeassistant/sensor/mioty_sensor_{sensor_eui}_signal_strength/state"
-                availability_topic = f"homeassistant/sensor/mioty_sensor_{sensor_eui}_signal_strength/availability"
-                
-                self.ha_client.publish(availability_topic, "online", retain=True)
-                result = self.ha_client.publish(state_topic, str(round(rssi, 2)), retain=True)
-                
-                if result.rc == mqtt.MQTT_ERR_SUCCESS:
-                    success_count += 1
-                    logging.debug(f"📊 RSSI: mioty_sensor_{sensor_eui}_signal_strength → {round(rssi, 2)}")
-                
-                total_count += 1
+                components['signal_strength'] = round(rssi, 3)
             
-            logging.info(f"📊 Individual States: {sensor_eui} → {success_count}/{total_count} erfolgreich")
-            return success_count > 0
+            # JSON Payload im Limette-Format
+            json_payload = {
+                "components": components,
+                "data": []  # Raw data falls benötigt
+            }
+            
+            # Availability setzen
+            self.ha_client.publish(availability_topic, "online", retain=True)
+            
+            # JSON State senden
+            result = self.ha_client.publish(state_topic, json.dumps(json_payload), retain=True)
+            
+            if result.rc == mqtt.MQTT_ERR_SUCCESS:
+                logging.info(f"📊 JSON Components State: {sensor_eui} → {len(components)} Werte")
+                logging.debug(f"📋 JSON Payload: {json_payload}")
+                return True
+            else:
+                logging.warning(f"⚠️ JSON Components State fehlgeschlagen: {sensor_eui}")
+                return False
                 
         except Exception as e:
-            logging.error(f"Fehler beim Senden der Individual Sensor States: {e}")
+            logging.error(f"Fehler beim Senden des JSON Components State: {e}")
             return False
 
     def is_connected(self) -> bool:
