@@ -367,6 +367,31 @@ class MQTTManager:
                 "device_class": "carbon_dioxide",
                 "unit_of_measurement": "ppm",
                 "icon": "mdi:molecule-co2"
+            },
+            # IO-Link Adapter Measurements
+            "vendor_id": {
+                "name": "Vendor ID",
+                "device_class": None,
+                "unit_of_measurement": "",
+                "icon": "mdi:factory"
+            },
+            "device_id": {
+                "name": "Device ID", 
+                "device_class": None,
+                "unit_of_measurement": "",
+                "icon": "mdi:chip"
+            },
+            "adapter_event": {
+                "name": "Adapter Event",
+                "device_class": None,
+                "unit_of_measurement": "",
+                "icon": "mdi:alert-circle"
+            },
+            "control_byte": {
+                "name": "Control Byte",
+                "device_class": None,
+                "unit_of_measurement": "",
+                "icon": "mdi:tune"
             }
         }
         
