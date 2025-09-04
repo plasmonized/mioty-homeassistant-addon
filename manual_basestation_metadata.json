@@ -4,5 +4,11 @@
     "model": "Blau",
     "name": "Diehl Blau",
     "manual": true
+  },
+  "3e5446fffee97b78": {
+    "manufacturer": "RAK",
+    "model": "WISE",
+    "name": "RAK WISE",
+    "manual": true
   }
 }

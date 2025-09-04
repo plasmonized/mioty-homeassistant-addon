@@ -7,6 +7,7 @@ import json
 import logging
 import threading
 import time
+import uuid
 from typing import Callable, Optional, Dict, Any
 
 import paho.mqtt.client as mqtt
@@ -66,7 +67,11 @@ class MQTTManager:
         
         # 1. Verbinde mit externem mioty Broker (für Datenempfang)
         try:
-            self.client = mqtt.Client(client_id="bssci_mioty_client")
+            # Eindeutige Client-ID generieren um Konflikte zu vermeiden
+            unique_id = str(uuid.uuid4())[:8]
+            client_id = f"bssci_mioty_{unique_id}"
+            self.client = mqtt.Client(client_id=client_id)
+            logging.info(f"🔧 MQTT Client ID: {client_id}")
             
             # Authentication
             if self.username:
@@ -98,7 +103,11 @@ class MQTTManager:
         
         # 2. Verbinde mit Home Assistant MQTT Broker (für Discovery)
         try:
-            self.ha_client = mqtt.Client(client_id="bssci_ha_client")
+            # Eindeutige Client-ID für HA Client generieren
+            ha_unique_id = str(uuid.uuid4())[:8]
+            ha_client_id = f"bssci_ha_{ha_unique_id}"
+            self.ha_client = mqtt.Client(client_id=ha_client_id)
+            logging.info(f"🏠 HA MQTT Client ID: {ha_client_id}")
             
             # Authentication für HA
             if self.ha_username:
