@@ -567,9 +567,11 @@ try {{
             it = 7
             
             if decoded['minor_version'] >= 3:
-                # Luftfeuchte ist bei allen Varianten enthalten  
-                decoded['humidity'] = bytes_data[it]
+                # Luftfeuchte ist bei allen Varianten enthalten - Korrektur: Durch 100 teilen
+                humidity_raw = bytes_data[it]
+                decoded['humidity'] = round(humidity_raw / 100.0, 2)  # Korrekte Skalierung für %RH
                 it += 1
+                logging.debug(f"🌡️ Humidity korrigiert: {humidity_raw} raw → {decoded['humidity']}% RH")
                 
                 if decoded['product_version'] & 0x01:  # Co2 und Druck enthalten
                     decoded['pressure'] = (bytes_data[it] << 8) | bytes_data[it + 1]
@@ -598,8 +600,10 @@ try {{
                         it += 2
                         decoded['therm_temperature'] = ((bytes_data[it] << 8) | bytes_data[it + 1]) / 10.0 - 100.0
                         it += 2
-                        decoded['wall_humidity'] = bytes_data[it]
+                        wall_humidity_raw = bytes_data[it]
+                        decoded['wall_humidity'] = round(wall_humidity_raw / 100.0, 2)  # Korrekte Skalierung
                         it += 1
+                        logging.debug(f"🌡️ Wall Humidity korrigiert: {wall_humidity_raw} raw → {decoded['wall_humidity']}% RH")
                         
             # Konvertiere zu erwartetes Format
             formatted_data = {}
