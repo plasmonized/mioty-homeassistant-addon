@@ -338,6 +338,57 @@ class BSSCIAddon:
         
         return device_info
     
+    def _get_basestation_info(self, bs_eui: str, device_id: str) -> Dict[str, Any]:
+        """Extrahiere Device-Informationen für Base Station."""
+        
+        # Standard Fallback-Werte für Base Stations
+        device_info = {
+            "identifiers": [device_id],
+            "name": f"mioty Base Station {bs_eui}",
+            "model": "mioty Base Station",
+            "manufacturer": "Unknown",
+            "sw_version": "1.0"
+        }
+        
+        # Prüfe manuelle Metadaten zuerst
+        try:
+            import json
+            with open('manual_basestation_metadata.json', 'r') as f:
+                manual_metadata = json.load(f)
+                if bs_eui in manual_metadata:
+                    manual_info = manual_metadata[bs_eui]
+                    device_info.update({
+                        "name": manual_info.get('name', device_info["name"]),
+                        "model": manual_info.get('model', device_info["model"]),
+                        "manufacturer": manual_info.get('manufacturer', device_info["manufacturer"])
+                    })
+                    logging.debug(f"🔧 Manuelle BaseStation Metadaten für {bs_eui} geladen: {device_info['manufacturer']} - {device_info['model']}")
+                    return device_info
+        except FileNotFoundError:
+            pass
+        
+        # Fallback: Versuche bekannte Base Station Hersteller zu erkennen
+        if bs_eui.startswith('70b3d5'):
+            device_info.update({
+                "name": f"Swissphone MBS20 {bs_eui}",
+                "model": "MBS20 Base Station",
+                "manufacturer": "Swissphone"
+            })
+        elif bs_eui.startswith('3e5446'):
+            device_info.update({
+                "name": f"Kerlink Base Station {bs_eui}",
+                "model": "Kerlink Wirnet",
+                "manufacturer": "Kerlink"
+            })
+        elif bs_eui.startswith('9c65f9'):
+            device_info.update({
+                "name": f"Industrial Base Station {bs_eui}",
+                "model": "Industrial Gateway",
+                "manufacturer": "Generic"
+            })
+        
+        return device_info
+    
     def _validate_device_info(self, device_info: Dict[str, Any], allow_fallback: bool = True) -> bool:
         """Prüfe ob Device-Informationen vollständig sind."""
         required_fields = ['manufacturer', 'model', 'name']
@@ -495,7 +546,22 @@ class BSSCIAddon:
     
     def create_basestation_discovery(self, bs_eui: str, status: Dict[str, Any]):
         """Erstelle Home Assistant MQTT Discovery für Base Station."""
-        device_name = f"mioty Base Station {bs_eui}"
+        device_id = f"bssci_basestation_{bs_eui}"
+        
+        # 🔍 Device-Informationen für Base Station extrahieren
+        device_info = self._get_basestation_info(bs_eui, device_id)
+        device_name = device_info["name"]
+        
+        # ❗ Prüfe Device-Informationen (mit Fallback erlaubt)
+        if not self._validate_device_info(device_info, allow_fallback=True):
+            logging.warning(f"❌ BaseStation Discovery abgebrochen für {bs_eui}: Device-Informationen unvollständig")
+            return
+        
+        # ⚠️ Warnung bei Standard-Werten
+        if device_info.get('manufacturer') == 'Unknown':
+            logging.info(f"💡 {bs_eui}: BaseStation Discovery mit Standard-Werten (Manufacturer: Unknown)")
+            logging.info(f"   Tipp: Base Station Metadaten über manuellen Eintrag hinzufügen")
+        
         unique_id = f"bssci_basestation_{bs_eui}"
         
         discovery_config = {
@@ -505,12 +571,7 @@ class BSSCIAddon:
             "json_attributes_topic": f"homeassistant/sensor/{unique_id}/attributes",
             "device_class": "connectivity",
             "icon": "mdi:antenna",
-            "device": {
-                "identifiers": [f"bssci_basestation_{bs_eui}"],
-                "name": device_name,
-                "model": "MBS20 Base Station",
-                "manufacturer": "Swissphone"
-            }
+            "device": device_info
         }
         
         discovery_topic = f"homeassistant/sensor/{unique_id}/config"

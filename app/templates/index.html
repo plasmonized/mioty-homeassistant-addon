@@ -182,6 +182,15 @@
             
             <div id="sensors-section">
                 <h2>📡 Sensor-Daten</h2>
+                
+                <!-- Sensor manuell hinzufügen UI -->
+                <div style="margin-bottom: 15px; padding: 10px; background: #e7f3ff; border-radius: 4px; border-left: 3px solid #007bff;">
+                    <small><strong>💡 Sensor manuell hinzufügen:</strong><br>
+                    Für Demo oder wenn Auto-Discovery nicht funktioniert<br>
+                    <button onclick="addManualSensorData()" style="border: none; background: #007bff; color: white; padding: 5px 10px; border-radius: 3px; font-size: 12px; cursor: pointer; margin-top: 5px;">Neuen Sensor hinzufügen</button>
+                    </small>
+                </div>
+                
                 <div id="sensors-list"></div>
             </div>
             
@@ -237,20 +246,96 @@
         }
         
         function addManualSensorData(eui) {
-            const manufacturer = prompt('Hersteller eingeben (z.B. Sentinum, Loriot, etc.):');
-            const model = prompt('Gerätemodell eingeben (z.B. Temperature Sensor v2.1):');
+            // Für bestehende Sensoren
+            if (eui) {
+                const manufacturer = prompt('Hersteller eingeben (z.B. Sentinum, Loriot, etc.):');
+                const model = prompt('Gerätemodell eingeben (z.B. Temperature Sensor v2.1):');
+                
+                if (manufacturer && model) {
+                    fetch(`${BASE_URL}/api/sensors/${eui}/metadata`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ manufacturer, model })
+                    }).then(response => {
+                        if (response.ok) {
+                            alert('✅ Metadaten gespeichert! Auto-Discovery wird beim nächsten Sensor-Update versucht.');
+                            loadSensors(); // Refresh
+                        } else {
+                            alert('❌ Fehler beim Speichern der Metadaten');
+                        }
+                    });
+                }
+            } else {
+                // Demo-Sensor erstellen
+                const sensorEui = prompt('Sensor EUI eingeben (z.B. 1234567890ABCDEF):');
+                if (!sensorEui) return;
+                
+                const manufacturer = prompt('Hersteller eingeben (z.B. Sentinum, Loriot, etc.):');
+                const model = prompt('Gerätemodell eingeben (z.B. Temperature Sensor v2.1):');
+                
+                if (manufacturer && model) {
+                    // Demo-Sensor simulieren
+                    fetch(`${BASE_URL}/api/sensors/${sensorEui}/metadata`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ manufacturer, model })
+                    }).then(response => {
+                        if (response.ok) {
+                            alert('✅ Demo-Sensor erstellt! Metadaten gespeichert.');
+                            // Demo-Sensor-Daten simulieren
+                            simulateDemoSensor(sensorEui);
+                        } else {
+                            alert('❌ Fehler beim Erstellen des Demo-Sensors');
+                        }
+                    });
+                }
+            }
+        }
+        
+        function simulateDemoSensor(eui) {
+            // Erstelle einen Demo-Sensor in der UI
+            const now = new Date().toLocaleString();
+            const demoSensor = {
+                eui: eui,
+                sensor_type: 'Demo Sensor',
+                last_update: now,
+                needs_metadata: false // Da wir gerade Metadaten gesetzt haben
+            };
+            
+            // Füge den Demo-Sensor zur Anzeige hinzu
+            const sensorsList = document.getElementById('sensors-list');
+            const sensorHtml = `
+                <div style="background: #f8f9fa; padding: 15px; margin: 10px 0; border-radius: 8px; border-left: 4px solid #28a745;">
+                    <strong>EUI:</strong> ${demoSensor.eui}<br>
+                    <strong>Typ:</strong> ${demoSensor.sensor_type}<br>
+                    <strong>Letztes Update:</strong> ${demoSensor.last_update}<br>
+                    <div style="margin-top: 10px; padding: 8px; background: #d4edda; border-radius: 4px; border-left: 3px solid #28a745;">
+                        <small><strong>✅ Demo-Sensor:</strong> Metadaten erfolgreich gesetzt</small>
+                    </div>
+                </div>
+            `;
+            sensorsList.insertAdjacentHTML('afterbegin', sensorHtml);
+            
+            // Sensor-Count aktualisieren
+            const currentCount = parseInt(document.getElementById('sensor-count').textContent);
+            document.getElementById('sensor-count').textContent = currentCount + 1;
+        }
+        
+        function addManualBasestationData(eui) {
+            const manufacturer = prompt('Base Station Hersteller eingeben (z.B. Swissphone, Kerlink, etc.):');
+            const model = prompt('Base Station Modell eingeben (z.B. MBS20, Wirnet Station):');
             
             if (manufacturer && model) {
-                fetch(`${BASE_URL}/api/sensors/${eui}/metadata`, {
+                fetch(`${BASE_URL}/api/basestations/${eui}/metadata`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ manufacturer, model })
                 }).then(response => {
                     if (response.ok) {
-                        alert('✅ Metadaten gespeichert! Auto-Discovery wird beim nächsten Sensor-Update versucht.');
-                        loadSensors(); // Refresh
+                        alert('✅ Base Station Metadaten gespeichert! Auto-Discovery wird beim nächsten Update versucht.');
+                        loadBaseStations(); // Refresh
                     } else {
-                        alert('❌ Fehler beim Speichern der Metadaten');
+                        alert('❌ Fehler beim Speichern der Base Station Metadaten');
                     }
                 });
             }
@@ -268,7 +353,15 @@
                     <div style="background: #f8f9fa; padding: 15px; margin: 10px 0; border-radius: 8px; border-left: 4px solid #28a745;">
                         <strong>EUI:</strong> ${bs.eui}<br>
                         <strong>Status:</strong> ${bs.status}<br>
-                        <strong>Letztes Update:</strong> ${bs.last_update}
+                        <strong>Letztes Update:</strong> ${bs.last_update}<br>
+                        ${bs.needs_metadata ? `
+                            <div style="margin-top: 10px; padding: 10px; background: #fff3cd; border-radius: 4px; border-left: 3px solid #ffc107;">
+                                <small><strong>⚠️ Auto-Discovery unvollständig:</strong><br>
+                                Manufacturer/Model fehlen für Base Station. 
+                                <button onclick="addManualBasestationData('${bs.eui}')" style="border: none; background: #007bff; color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px; cursor: pointer;">Manuell ergänzen</button>
+                                </small>
+                            </div>
+                        ` : ''}
                     </div>
                 `).join('');
             } catch (error) {

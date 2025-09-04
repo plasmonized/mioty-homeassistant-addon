@@ -271,12 +271,19 @@ class WebGUI:
                 # Sichere Zugriffe auf Base Station-Daten
                 status_data = data.get('data', {}) if isinstance(data.get('data'), dict) else {}
                 
+                # Prüfe ob Auto-Discovery Device-Metadaten fehlen
+                needs_metadata = False
+                if hasattr(self.addon, '_get_basestation_info'):
+                    device_info = self.addon._get_basestation_info(eui, f"bssci_basestation_{eui}")
+                    needs_metadata = device_info.get('manufacturer') == 'Unknown'
+                
                 bs_info = {
                     'eui': eui,
                     'status': data.get('status', 'Online'),
                     'last_update': self._format_timestamp(data.get('last_seen', 0)),
                     'cpu_usage': status_data.get('cpu_usage', 'N/A'),
-                    'memory_usage': status_data.get('memory_usage', 'N/A')
+                    'memory_usage': status_data.get('memory_usage', 'N/A'),
+                    'needs_metadata': needs_metadata
                 }
                 bs_list.append(bs_info)
             
@@ -352,6 +359,44 @@ class WebGUI:
                 
             except Exception as e:
                 logging.error(f"Fehler beim Speichern der Sensor-Metadaten: {e}")
+                return jsonify({'error': str(e)}), 500
+
+        @self.app.route('/api/basestations/<eui>/metadata', methods=['POST'])
+        def set_basestation_metadata(eui):
+            """API: Base Station-Metadaten manuell setzen."""
+            try:
+                data = request.get_json()
+                manufacturer = data.get('manufacturer', '').strip()
+                model = data.get('model', '').strip()
+                
+                if not manufacturer or not model:
+                    return jsonify({'error': 'Manufacturer und Model erforderlich'}), 400
+                
+                # Speichere Metadaten in einer Datei (einfache Lösung)
+                metadata_file = 'manual_basestation_metadata.json'
+                metadata = {}
+                
+                try:
+                    with open(metadata_file, 'r') as f:
+                        metadata = json.load(f)
+                except FileNotFoundError:
+                    pass
+                
+                metadata[eui] = {
+                    'manufacturer': manufacturer,
+                    'model': model,
+                    'name': f"{manufacturer} {model}",
+                    'manual': True
+                }
+                
+                with open(metadata_file, 'w') as f:
+                    json.dump(metadata, f, indent=2)
+                
+                logging.info(f"📝 Manuelle BaseStation Metadaten für {eui} gespeichert: {manufacturer} - {model}")
+                return jsonify({'success': True, 'message': 'BaseStation Metadaten gespeichert'})
+                
+            except Exception as e:
+                logging.error(f"Fehler beim Speichern der BaseStation-Metadaten: {e}")
                 return jsonify({'error': str(e)}), 500
 
         @self.app.route('/api/sensor/add', methods=['POST'])
