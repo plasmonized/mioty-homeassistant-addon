@@ -1839,8 +1839,12 @@ class WebGUI:
                             <div style="width: 12px; height: 12px; background: ${haMqttColor}; border-radius: 50%; margin-right: 10px;"></div>
                             <strong>${haMqttText}</strong>
                         </div>
+                        <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                            <div style="width: 12px; height: 12px; background: ${status.mqtt_connected && status.ha_mqtt_connected ? '#28a745' : '#ffc107'}; border-radius: 50%; margin-right: 10px;"></div>
+                            <strong>MQTT Status: ${status.mqtt_connected && status.ha_mqtt_connected ? 'Alle Broker verbunden' : 'Konfiguration prüfen'}</strong>
+                        </div>
                         <div style="display: flex; align-items: center;">
-                            <div style="width: 12px; height: 12px; background: #ffc107; border-radius: 50%; margin-right: 10px;"></div>
+                            <div style="width: 12px; height: 12px; background: #17a2b8; border-radius: 50%; margin-right: 10px;"></div>
                             <strong>Sensoren aktiv: ${status.sensor_count || 0}</strong>
                         </div>
                         <div style="display: flex; align-items: center; margin-top: 10px;">

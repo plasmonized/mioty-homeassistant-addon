@@ -268,59 +268,133 @@ class BSSCIAddon:
             self.create_basestation_discovery(bs_eui, status)
     
     def create_sensor_discovery(self, sensor_eui: str, data: Dict[str, Any], decoded_payload: Dict[str, Any] = None):
-        """Erstelle Home Assistant MQTT Discovery für Sensor."""
+        """Erstelle Home Assistant MQTT Discovery für Sensor - Korrekte Implementation nach HA Protokoll."""
         device_name = f"mioty Sensor {sensor_eui}"
-        unique_id = f"bssci_sensor_{sensor_eui}"
+        device_id = f"mioty_{sensor_eui}"
         
-        # Discovery Konfiguration
-        discovery_config = {
+        # Basis Device-Information
+        device_info = {
+            "identifiers": [device_id],
             "name": device_name,
-            "unique_id": unique_id,
-            "state_topic": f"homeassistant/sensor/{unique_id}/state",
-            "json_attributes_topic": f"homeassistant/sensor/{unique_id}/attributes",
-            "device_class": "data_size",
-            "unit_of_measurement": "bytes",
-            "icon": "mdi:access-point",
-            "device": {
-                "identifiers": [f"bssci_sensor_{sensor_eui}"],
-                "name": device_name,
-                "model": "mioty IoT Sensor",
-                "manufacturer": "BSSCI"
-            }
+            "model": "mioty IoT Sensor",
+            "manufacturer": "Sentinum",
+            "sw_version": "1.0"
         }
         
-        # Discovery Nachricht senden
-        discovery_topic = f"homeassistant/sensor/{unique_id}/config"
-        if self.mqtt_manager:
-            logging.info(f"🔍 Sensor Discovery: {sensor_eui}")
-            logging.info(f"   📤 Topic: {discovery_topic}")
-            logging.info(f"   🏷️ Device: {device_name}")
-            success = self.mqtt_manager.publish_discovery(discovery_topic, discovery_config)
-            if success:
-                logging.info(f"✅ Sensor Discovery erfolgreich gesendet")
-            else:
-                logging.warning(f"❌ Sensor Discovery fehlgeschlagen (HA MQTT nicht verbunden)")
+        # State Topic für JSON-Daten 
+        state_topic = f"homeassistant/sensor/{device_id}/state"
         
-        # Status und Attribute senden
-        state_value = len(data.get('data', []))
-        attributes = {
-            "sensor_eui": sensor_eui,
-            "base_station_eui": data.get('bs_eui', 'Unknown'),
+        # Individuelle Sensoren erstellen (nach HA Discovery Protokoll)
+        sensors = [
+            {
+                "name": "payload_size",
+                "display_name": "Payload Size",
+                "device_class": "data_size",
+                "unit": "bytes",
+                "icon": "mdi:database",
+                "value_template": "{{ value_json.payload_size }}"
+            },
+            {
+                "name": "snr",
+                "display_name": "Signal-to-Noise Ratio",
+                "device_class": "signal_strength", 
+                "unit": "dB",
+                "icon": "mdi:signal",
+                "value_template": "{{ value_json.snr }}"
+            },
+            {
+                "name": "rssi",
+                "display_name": "Signal Strength",
+                "device_class": "signal_strength",
+                "unit": "dBm",
+                "icon": "mdi:wifi-strength-3",
+                "value_template": "{{ value_json.rssi }}"
+            },
+            {
+                "name": "message_counter",
+                "display_name": "Message Counter",
+                "device_class": None,
+                "unit": None,
+                "icon": "mdi:counter",
+                "value_template": "{{ value_json.message_counter }}"
+            }
+        ]
+        
+        # Decoded Data Sensor hinzufügen falls Decoder aktiv
+        if decoded_payload:
+            sensors.append({
+                "name": "decoded_data",
+                "display_name": "Decoded Data",
+                "device_class": None,
+                "unit": None,
+                "icon": "mdi:code-json",
+                "value_template": "{{ value_json.decoded_data | default('N/A') }}"
+            })
+        
+        # Für jeden Sensor individuelle Discovery-Nachricht senden
+        for sensor in sensors:
+            unique_id = f"{device_id}_{sensor['name']}"
+            discovery_topic = f"homeassistant/sensor/{device_id}/{sensor['name']}/config"
+            
+            config = {
+                "name": sensor['display_name'],
+                "unique_id": unique_id,
+                "state_topic": state_topic,
+                "value_template": sensor['value_template'],
+                "device": device_info,
+                "availability_topic": f"homeassistant/sensor/{device_id}/availability",
+                "payload_available": "online",
+                "payload_not_available": "offline"
+            }
+            
+            # Optional: Device Class, Unit, Icon
+            if sensor['device_class']:
+                config['device_class'] = sensor['device_class']
+            if sensor['unit']:
+                config['unit_of_measurement'] = sensor['unit']
+            if sensor['icon']:
+                config['icon'] = sensor['icon']
+            
+            # Discovery senden
+            if self.mqtt_manager:
+                logging.info(f"🔍 Sensor Discovery: {sensor_eui} - {sensor['display_name']}")
+                logging.debug(f"   📤 Topic: {discovery_topic}")
+                success = self.mqtt_manager.publish_discovery(discovery_topic, config)
+                if success:
+                    logging.debug(f"✅ {sensor['display_name']} Discovery erfolgreich")
+                else:
+                    logging.warning(f"❌ {sensor['display_name']} Discovery fehlgeschlagen")
+        
+        # Device Availability senden
+        if self.mqtt_manager:
+            availability_topic = f"homeassistant/sensor/{device_id}/availability"
+            self.mqtt_manager.ha_client.publish(availability_topic, "online", retain=True)
+        
+        # JSON State Data senden (nach HA Discovery Protokoll)
+        device_id = f"mioty_{sensor_eui}"
+        state_topic = f"homeassistant/sensor/{device_id}/state"
+        
+        # JSON State für alle Sensoren
+        state_data = {
+            "payload_size": len(data.get('data', [])),
             "snr": data.get('snr'),
             "rssi": data.get('rssi'),
             "message_counter": data.get('cnt'),
+            "sensor_eui": sensor_eui,
+            "base_station_eui": data.get('bs_eui', 'Unknown'),
             "receive_time": self.format_timestamp(data.get('rxTime')),
             "signal_quality": self.assess_signal_quality(data.get('snr'), data.get('rssi')),
-            "raw_data": data.get('data', [])[:10],  # Nur erste 10 Bytes zeigen
             "decoded_data": decoded_payload.get('data') if decoded_payload else None,
             "decoder_used": decoded_payload.get('decoder_name') if decoded_payload else None
         }
         
         if self.mqtt_manager:
-            logging.debug(f"📊 Sensor Status Update: {sensor_eui} → {state_value} bytes")
-            success = self.mqtt_manager.publish_sensor_state(unique_id, state_value, attributes)
+            logging.info(f"📊 Sensor Update: {sensor_eui} → {len(data.get('data', []))} bytes")
+            # JSON State zu HA senden
+            import json
+            success = self.mqtt_manager.ha_client.publish(state_topic, json.dumps(state_data), retain=False)
             if not success:
-                logging.debug(f"⚠️ Sensor Status nicht gesendet (HA MQTT nicht verbunden)")
+                logging.debug(f"⚠️ Sensor State nicht gesendet (HA MQTT nicht verbunden)")
     
     def create_basestation_discovery(self, bs_eui: str, status: Dict[str, Any]):
         """Erstelle Home Assistant MQTT Discovery für Base Station."""
