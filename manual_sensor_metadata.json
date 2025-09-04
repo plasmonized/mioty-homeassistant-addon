@@ -4,5 +4,17 @@
     "model": "Juno-TH",
     "name": "Sentinum Juno-TH",
     "manual": true
+  },
+  "fca84a030000127c": {
+    "manufacturer": "Sentinum",
+    "model": "Febris TH",
+    "name": "Sentinum Febris TH",
+    "manual": true
+  },
+  "fca84a030000127d": {
+    "manufacturer": "Sentinum",
+    "model": "Febris",
+    "name": "Sentinum Febris",
+    "manual": true
   }
 }

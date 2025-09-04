@@ -11,6 +11,7 @@ from typing import Any, Dict
 from flask import Flask, render_template, render_template_string, request, jsonify, redirect, url_for
 from flask_cors import CORS
 from settings_manager import SettingsManager
+from service_center_api import create_service_center_client, ServiceCenterClient
 
 
 class WebGUI:
@@ -194,7 +195,7 @@ class WebGUI:
             
             # KRITISCH: Verwende IMMER die aktuelle externe Template-Datei
             if index_exists:
-                logging.info("✅ Verwende AKTUELLE index.html Template-Datei (Version 1.0.4.6)")
+                logging.info("✅ Verwende AKTUELLE index.html Template-Datei (Version 1.0.5.0)")
                 return render_template('index.html', ingress_path=ingress_path)
             else:
                 logging.error("❌ CRITICAL ERROR: index.html Template-Datei nicht gefunden!")
@@ -238,13 +239,32 @@ class WebGUI:
             # Konvertiere Dictionary zu Liste für Frontend
             sensor_list = []
             for eui, data in sensors_dict.items():
+                # Prüfe ob Auto-Discovery Device-Metadaten fehlen
+                needs_metadata = False
+                if hasattr(self.addon, 'decoder_manager') and self.addon.decoder_manager:
+                    device_info = self.addon._get_device_info_from_decoder(eui, f"mioty_{eui}")
+                    needs_metadata = device_info.get('manufacturer') == 'Unknown'
+                
+                # Hole aktuelle Metadaten für UI
+                metadata = {}
+                if hasattr(self.addon, '_get_device_info_from_decoder'):
+                    device_info = self.addon._get_device_info_from_decoder(eui, f"mioty_{eui}")
+                    metadata = {
+                        'manufacturer': device_info.get('manufacturer', 'Unknown'),
+                        'model': device_info.get('model', 'Unknown'),
+                        'name': device_info.get('name', f'Sensor {eui}'),
+                        'sw_version': device_info.get('sw_version', '1.0')
+                    }
+
                 sensor_info = {
                     'eui': eui,
                     'sensor_type': 'mioty IoT Sensor',
                     'last_update': self._format_timestamp(data.get('last_seen', 0)),
                     'snr': data.get('data', {}).get('snr', 'N/A'),
                     'rssi': data.get('data', {}).get('rssi', 'N/A'),
-                    'signal_quality': data.get('signal_quality', 'Unknown')
+                    'signal_quality': data.get('signal_quality', 'Unknown'),
+                    'needs_metadata': needs_metadata,
+                    'metadata': metadata
                 }
                 sensor_list.append(sensor_info)
             
@@ -264,12 +284,31 @@ class WebGUI:
                 # Sichere Zugriffe auf Base Station-Daten
                 status_data = data.get('data', {}) if isinstance(data.get('data'), dict) else {}
                 
+                # Prüfe ob Auto-Discovery Device-Metadaten fehlen
+                needs_metadata = False
+                if hasattr(self.addon, '_get_basestation_info'):
+                    device_info = self.addon._get_basestation_info(eui, f"bssci_basestation_{eui}")
+                    needs_metadata = device_info.get('manufacturer') == 'Unknown'
+                
+                # Hole aktuelle Metadaten für UI
+                metadata = {}
+                if hasattr(self.addon, '_get_basestation_info'):
+                    device_info = self.addon._get_basestation_info(eui, f"bssci_basestation_{eui}")
+                    metadata = {
+                        'manufacturer': device_info.get('manufacturer', 'Unknown'),
+                        'model': device_info.get('model', 'Unknown'),
+                        'name': device_info.get('name', f'Base Station {eui}'),
+                        'sw_version': device_info.get('sw_version', '1.0')
+                    }
+
                 bs_info = {
                     'eui': eui,
                     'status': data.get('status', 'Online'),
                     'last_update': self._format_timestamp(data.get('last_seen', 0)),
                     'cpu_usage': status_data.get('cpu_usage', 'N/A'),
-                    'memory_usage': status_data.get('memory_usage', 'N/A')
+                    'memory_usage': status_data.get('memory_usage', 'N/A'),
+                    'needs_metadata': needs_metadata,
+                    'metadata': metadata
                 }
                 bs_list.append(bs_info)
             
@@ -309,6 +348,208 @@ class WebGUI:
             
             return jsonify(status)
         
+        @self.app.route('/api/sensors/<eui>/metadata', methods=['POST'])
+        def set_sensor_metadata(eui):
+            """API: Sensor-Metadaten manuell setzen."""
+            try:
+                data = request.get_json()
+                manufacturer = data.get('manufacturer', '').strip()
+                model = data.get('model', '').strip()
+                
+                if not manufacturer or not model:
+                    return jsonify({'error': 'Manufacturer und Model erforderlich'}), 400
+                
+                # REPARIERT: Korrekter Pfad für Add-on Umgebung
+                metadata_file = os.path.join(os.path.dirname(__file__), '..', 'manual_sensor_metadata.json')
+                logging.info(f"🔧 METADATEN SPEICHERN: {metadata_file}")
+                metadata = {}
+                
+                try:
+                    with open(metadata_file, 'r') as f:
+                        metadata = json.load(f)
+                except FileNotFoundError:
+                    pass
+                
+                metadata[eui] = {
+                    'manufacturer': manufacturer,
+                    'model': model,
+                    'name': f"{manufacturer} {model}",
+                    'manual': True
+                }
+                
+                with open(metadata_file, 'w') as f:
+                    json.dump(metadata, f, indent=2)
+                
+                logging.info(f"✅ METADATEN GESPEICHERT für {eui}: {manufacturer} {model}")
+                logging.info(f"📝 Manuelle Metadaten für {eui} gespeichert: {manufacturer} - {model}")
+                return jsonify({'success': True, 'message': 'Metadaten gespeichert'})
+                
+            except Exception as e:
+                logging.error(f"Fehler beim Speichern der Sensor-Metadaten: {e}")
+                return jsonify({'error': str(e)}), 500
+
+        @self.app.route('/api/basestations/<eui>/metadata', methods=['POST'])
+        def set_basestation_metadata(eui):
+            """API: Base Station-Metadaten manuell setzen."""
+            try:
+                data = request.get_json()
+                manufacturer = data.get('manufacturer', '').strip()
+                model = data.get('model', '').strip()
+                
+                if not manufacturer or not model:
+                    return jsonify({'error': 'Manufacturer und Model erforderlich'}), 400
+                
+                # REPARIERT: Korrekter Pfad für Add-on Umgebung
+                metadata_file = os.path.join(os.path.dirname(__file__), '..', 'manual_basestation_metadata.json')
+                logging.info(f"🔧 BASESTATION METADATEN SPEICHERN: {metadata_file}")
+                metadata = {}
+                
+                try:
+                    with open(metadata_file, 'r') as f:
+                        metadata = json.load(f)
+                except FileNotFoundError:
+                    pass
+                
+                metadata[eui] = {
+                    'manufacturer': manufacturer,
+                    'model': model,
+                    'name': f"{manufacturer} {model}",
+                    'manual': True
+                }
+                
+                with open(metadata_file, 'w') as f:
+                    json.dump(metadata, f, indent=2)
+                
+                logging.info(f"📝 Manuelle BaseStation Metadaten für {eui} gespeichert: {manufacturer} - {model}")
+                return jsonify({'success': True, 'message': 'BaseStation Metadaten gespeichert'})
+                
+            except Exception as e:
+                logging.error(f"Fehler beim Speichern der BaseStation-Metadaten: {e}")
+                return jsonify({'error': str(e)}), 500
+
+        @self.app.route('/api/sensor/register', methods=['POST'])
+        def register_sensor():
+            """API: Sensor am Service Center registrieren und Metadaten speichern."""
+            try:
+                data = request.get_json()
+                
+                # Validierung der Pflichtfelder
+                required_fields = ['sensor_eui', 'network_key', 'short_addr']
+                for field in required_fields:
+                    if field not in data or not data[field]:
+                        return jsonify({'error': f'Feld "{field}" ist erforderlich'}), 400
+                
+                eui = data['sensor_eui'].strip()
+                network_key = data['network_key'].strip()
+                short_addr = data['short_addr'].strip()
+                bidirectional = data.get('bidirectional', False)
+                
+                # Hex-Validierung
+                if not _is_valid_hex(eui, 16):
+                    return jsonify({'error': 'EUI muss 16 Hexadezimal-Zeichen enthalten'}), 400
+                if not _is_valid_hex(network_key, 32):
+                    return jsonify({'error': 'Network Key muss 32 Hexadezimal-Zeichen enthalten'}), 400
+                if not _is_valid_hex(short_addr, 4):
+                    return jsonify({'error': 'Short Address muss 4 Hexadezimal-Zeichen enthalten'}), 400
+                
+                logging.info(f"🚀 SENSOR REGISTRATION: {eui} (Short: {short_addr}, Bidi: {bidirectional})")
+                
+                # 1. Service Center Registration (falls aktiviert)
+                service_center_success = False
+                if self.addon and hasattr(self.addon, 'service_center_client'):
+                    try:
+                        result = self.addon.service_center_client.add_sensor(
+                            eui=eui,
+                            network_key=network_key,
+                            short_addr=short_addr,
+                            bidirectional=bidirectional
+                        )
+                        service_center_success = result.get('success', False)
+                        logging.info(f"📡 Service Center Registrierung: {'✅ Erfolgreich' if service_center_success else '❌ Fehlgeschlagen'}")
+                    except Exception as e:
+                        logging.warning(f"⚠️ Service Center Registrierung fehlgeschlagen: {e}")
+                
+                # 2. Metadaten speichern (immer, auch wenn Service Center fehlschlägt)
+                metadata = {
+                    'eui': eui,
+                    'network_key': network_key,
+                    'short_addr': short_addr,
+                    'bidirectional': bidirectional,
+                    'service_center_registered': service_center_success
+                }
+                
+                # Home Assistant Metadaten hinzufügen
+                manufacturer = data.get('manufacturer', '').strip()
+                model = data.get('model', '').strip()
+                device_name = data.get('device_name', '').strip()
+                
+                if manufacturer or model:
+                    metadata['manufacturer'] = manufacturer or 'Unknown'
+                    metadata['model'] = model or 'Unknown'
+                    metadata['name'] = f"{metadata['manufacturer']} {metadata['model']}"
+                    metadata['manual'] = True
+                    
+                    # Speichere HA-Metadaten separat
+                    ha_metadata_file = os.path.join(os.path.dirname(__file__), '..', 'manual_sensor_metadata.json')
+                    ha_metadata = {}
+                    
+                    try:
+                        with open(ha_metadata_file, 'r') as f:
+                            ha_metadata = json.load(f)
+                    except FileNotFoundError:
+                        pass
+                    
+                    ha_metadata[eui] = {
+                        'manufacturer': metadata['manufacturer'],
+                        'model': metadata['model'],
+                        'name': metadata['name'],
+                        'manual': True
+                    }
+                    
+                    with open(ha_metadata_file, 'w') as f:
+                        json.dump(ha_metadata, f, indent=2)
+                    
+                    logging.info(f"✅ HA-Metadaten gespeichert für {eui}: {metadata['name']}")
+                
+                if device_name:
+                    metadata['device_name'] = device_name
+                
+                # 3. Sensor zu lokaler Liste hinzufügen (für Demo/Display)
+                if self.addon:
+                    sensor_data = {
+                        'eui': eui,
+                        'sensor_type': metadata.get('name', 'Registered Sensor'),
+                        'last_update': 'Gerade registriert',
+                        'snr': 'N/A',
+                        'rssi': 'N/A',
+                        'signal_quality': 'Unknown',
+                        'registered': True,
+                        'service_center': service_center_success
+                    }
+                    
+                    # Füge zur lokalen Sensor-Liste hinzu wenn noch nicht vorhanden
+                    if eui not in self.addon.sensors:
+                        self.addon.sensors[eui] = sensor_data
+                        logging.info(f"📋 Sensor {eui} zur lokalen Liste hinzugefügt")
+                
+                return jsonify({
+                    'success': True,
+                    'message': 'Sensor erfolgreich registriert',
+                    'eui': eui,
+                    'service_center_registered': service_center_success,
+                    'metadata_saved': bool(manufacturer or model)
+                })
+                
+            except Exception as e:
+                logging.error(f"Fehler bei Sensor-Registrierung: {e}")
+                return jsonify({'error': str(e)}), 500
+
+        def _is_valid_hex(value, length):
+            """Validiert Hexadezimal-String mit spezifischer Länge."""
+            import re
+            pattern = f'^[0-9A-Fa-f]{{{length}}}$'
+            return bool(re.match(pattern, value))
+
         @self.app.route('/api/sensor/add', methods=['POST'])
         def add_sensor():
             """API: Neuen Sensor hinzufügen."""
@@ -353,6 +594,128 @@ class WebGUI:
                 return jsonify({"success": True, "message": "Sensor erfolgreich entfernt"})
             else:
                 return jsonify({"error": "Sensor konnte nicht entfernt werden"}), 500
+        
+        # Service Center API-Endpunkte
+        @self.app.route('/api/service-center/test-connection')
+        def test_service_center_connection():
+            """API: Service Center Verbindung testen."""
+            client = self._get_service_center_client()
+            if not client:
+                return jsonify({
+                    'connected': False, 
+                    'message': 'Service Center nicht konfiguriert oder deaktiviert'
+                })
+            
+            result = client.test_connection()
+            return jsonify(result)
+        
+        @self.app.route('/api/service-center/sensors')
+        def get_service_center_sensors():
+            """API: Sensoren vom Service Center abrufen."""
+            client = self._get_service_center_client()
+            if not client:
+                return jsonify({'error': 'Service Center nicht verfügbar'}), 503
+            
+            sensors = client.get_sensors()
+            return jsonify({'sensors': sensors})
+        
+        @self.app.route('/api/service-center/sensors', methods=['POST'])
+        def add_service_center_sensor():
+            """API: Sensor am Service Center anmelden."""
+            client = self._get_service_center_client()
+            if not client:
+                return jsonify({'error': 'Service Center nicht verfügbar'}), 503
+            
+            data = request.get_json()
+            
+            # Validierung
+            required_fields = ['eui', 'nw_key']
+            for field in required_fields:
+                if field not in data or not data[field]:
+                    return jsonify({'error': f'Feld "{field}" ist erforderlich'}), 400
+            
+            # Service Center API aufrufen
+            result = client.add_sensor(
+                eui=data['eui'],
+                nw_key=data['nw_key'],
+                short_addr=data.get('short_addr', '0000'),
+                bidi=data.get('bidi', False)
+            )
+            
+            # Optional: Auch lokale Sensor-Metadaten speichern wenn Service Center erfolgreich
+            if result.get('success') and self.settings.get_settings().get('service_center_auto_register', True):
+                try:
+                    # Manuelle Metadaten für lokales System speichern
+                    if self.addon and hasattr(self.addon, 'add_sensor'):
+                        self.addon.add_sensor(
+                            sensor_eui=data['eui'],
+                            manufacturer=data.get('manufacturer', 'Unknown'),
+                            model=data.get('model', 'Unknown'),
+                            description=data.get('description', f"Service Center Sensor {data['eui']}")
+                        )
+                except Exception as e:
+                    logging.warning(f"Lokales Sensor-Management fehlgeschlagen: {e}")
+            
+            return jsonify(result)
+        
+        @self.app.route('/api/service-center/sensors/<eui>', methods=['DELETE'])
+        def delete_service_center_sensor(eui):
+            """API: Sensor vom Service Center löschen."""
+            client = self._get_service_center_client()
+            if not client:
+                return jsonify({'error': 'Service Center nicht verfügbar'}), 503
+            
+            result = client.delete_sensor(eui)
+            
+            # Optional: Auch lokal entfernen
+            if result.get('success'):
+                try:
+                    if self.addon and hasattr(self.addon, 'remove_sensor'):
+                        self.addon.remove_sensor(eui)
+                except Exception as e:
+                    logging.warning(f"Lokales Sensor-Entfernen fehlgeschlagen: {e}")
+            
+            return jsonify(result)
+        
+        @self.app.route('/api/service-center/sensors/<eui>/detach', methods=['POST'])
+        def detach_service_center_sensor(eui):
+            """API: Sensor am Service Center detachieren."""
+            client = self._get_service_center_client()
+            if not client:
+                return jsonify({'error': 'Service Center nicht verfügbar'}), 503
+            
+            result = client.detach_sensor(eui)
+            return jsonify(result)
+        
+        @self.app.route('/api/service-center/sensors/attach-all', methods=['POST'])
+        def attach_all_service_center_sensors():
+            """API: Alle Sensoren am Service Center attachieren."""
+            client = self._get_service_center_client()
+            if not client:
+                return jsonify({'error': 'Service Center nicht verfügbar'}), 503
+            
+            result = client.attach_all_sensors()
+            return jsonify(result)
+        
+        @self.app.route('/api/service-center/sensors/detach-all', methods=['POST'])
+        def detach_all_service_center_sensors():
+            """API: Alle Sensoren am Service Center detachieren."""
+            client = self._get_service_center_client()
+            if not client:
+                return jsonify({'error': 'Service Center nicht verfügbar'}), 503
+            
+            result = client.detach_all_sensors()
+            return jsonify(result)
+        
+        @self.app.route('/api/service-center/sensors/clear-all', methods=['POST'])
+        def clear_all_service_center_sensors():
+            """API: Alle Sensoren am Service Center löschen."""
+            client = self._get_service_center_client()
+            if not client:
+                return jsonify({'error': 'Service Center nicht verfügbar'}), 503
+            
+            result = client.clear_all_sensors()
+            return jsonify(result)
         
         @self.app.route('/api/settings')
         def get_settings():
@@ -1261,6 +1624,17 @@ class WebGUI:
 </html>
         '''
     
+    # Service Center API Integration
+    def _get_service_center_client(self):
+        """Erstelle Service Center Client basierend auf Settings."""
+        settings = self.settings.get_settings()
+        service_center_url = settings.get('service_center_url', '').strip()
+        
+        if not service_center_url or not settings.get('service_center_enabled', False):
+            return None
+            
+        return create_service_center_client(service_center_url)
+    
     def _format_timestamp(self, timestamp):
         """Formatiere Unix Timestamp zu lesbarem String."""
         if timestamp and timestamp > 0:
@@ -1839,8 +2213,12 @@ class WebGUI:
                             <div style="width: 12px; height: 12px; background: ${haMqttColor}; border-radius: 50%; margin-right: 10px;"></div>
                             <strong>${haMqttText}</strong>
                         </div>
+                        <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                            <div style="width: 12px; height: 12px; background: ${status.mqtt_connected && status.ha_mqtt_connected ? '#28a745' : '#ffc107'}; border-radius: 50%; margin-right: 10px;"></div>
+                            <strong>MQTT Status: ${status.mqtt_connected && status.ha_mqtt_connected ? 'Alle Broker verbunden' : 'Konfiguration prüfen'}</strong>
+                        </div>
                         <div style="display: flex; align-items: center;">
-                            <div style="width: 12px; height: 12px; background: #ffc107; border-radius: 50%; margin-right: 10px;"></div>
+                            <div style="width: 12px; height: 12px; background: #17a2b8; border-radius: 50%; margin-right: 10px;"></div>
                             <strong>Sensoren aktiv: ${status.sensor_count || 0}</strong>
                         </div>
                         <div style="display: flex; align-items: center; margin-top: 10px;">
