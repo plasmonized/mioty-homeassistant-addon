@@ -302,18 +302,28 @@ class BSSCIAddon:
         # Prüfe ob Decoder zugewiesen
         if hasattr(self, 'decoder_manager') and self.decoder_manager:
             try:
-                # Hole Decoder-Zuweisungen
-                assignments = self.decoder_manager.payload_decoder.decoders
-                if sensor_eui in assignments:
+                # Hole Decoder-Zuweisungen - sicherstellen, dass es ein Dictionary ist
+                assignments = getattr(self.decoder_manager.payload_decoder, 'decoders', {})
+                if isinstance(assignments, dict) and sensor_eui in assignments:
                     decoder_name = assignments[sensor_eui]
                     
-                    # Hole Decoder-Datei-Informationen
-                    decoder_files = self.decoder_manager.payload_decoder.decoder_files
-                    if decoder_name in decoder_files:
+                    # Validiere, dass decoder_name ein String ist
+                    if not isinstance(decoder_name, str):
+                        logging.warning(f"Decoder-Name für {sensor_eui} ist kein String: {type(decoder_name)}")
+                        return device_info
+                    
+                    # Hole Decoder-Datei-Informationen - sicherstellen, dass es ein Dictionary ist
+                    decoder_files = getattr(self.decoder_manager.payload_decoder, 'decoder_files', {})
+                    if isinstance(decoder_files, dict) and decoder_name in decoder_files:
                         decoder_info = decoder_files[decoder_name]
                         
+                        # Validiere decoder_info
+                        if not isinstance(decoder_info, dict):
+                            logging.warning(f"Decoder Info für {decoder_name} ist kein Dictionary: {type(decoder_info)}")
+                            return device_info
+                        
                         # Extrahiere Device-Informationen aus Decoder
-                        if decoder_info['type'] == 'iodd':
+                        if decoder_info.get('type') == 'iodd':
                             # IODD Decoder - verwende Vendor/Device-Informationen
                             vendor_name = decoder_info.get('vendor_name', 'Unknown')
                             device_name = decoder_info.get('device_name', f'mioty Sensor {sensor_eui}')
@@ -324,7 +334,7 @@ class BSSCIAddon:
                                 "manufacturer": vendor_name
                             })
                             
-                        elif decoder_info['type'] in ['blueprint', 'javascript']:
+                        elif decoder_info.get('type') in ['blueprint', 'javascript']:
                             # Blueprint/JS Decoder - verwende Name/Description
                             decoder_display_name = decoder_info.get('name', f'mioty Sensor {sensor_eui}')
                             
