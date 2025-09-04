@@ -371,7 +371,7 @@ class MQTTManager:
         }
         
         # State Topic für alle Sensoren (gemeinsam)
-        state_topic = f"bssci/sensor/{sensor_eui}/state"
+        state_topic = f"homeassistant/sensor/{sensor_eui}/state"
         
         success_count = 0
         total_count = 0
@@ -394,7 +394,7 @@ class MQTTManager:
                     "unit_of_measurement": config["unit_of_measurement"],
                     "icon": config["icon"],
                     "device": device_info,
-                    "availability_topic": f"bssci/sensor/{sensor_eui}/availability",
+                    "availability_topic": f"homeassistant/sensor/{sensor_eui}/availability",
                     "payload_available": "online",
                     "payload_not_available": "offline"
                 }
@@ -419,7 +419,7 @@ class MQTTManager:
         
         try:
             # State Topic
-            state_topic = f"bssci/sensor/{sensor_eui}/state"
+            state_topic = f"homeassistant/sensor/{sensor_eui}/state"
             
             # JSON Payload mit nur den Werten (ohne Metadaten)
             state_payload = {}
@@ -428,7 +428,7 @@ class MQTTManager:
                     state_payload[key] = data['value']
                     
             # Availability setzen
-            availability_topic = f"bssci/sensor/{sensor_eui}/availability"
+            availability_topic = f"homeassistant/sensor/{sensor_eui}/availability"
             self.ha_client.publish(availability_topic, "online", retain=True)
             
             # State senden
