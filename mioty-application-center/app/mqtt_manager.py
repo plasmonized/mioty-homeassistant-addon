@@ -309,6 +309,142 @@ class MQTTManager:
             logging.error(f"Fehler beim Senden der Konfiguration: {e}")
             return False
     
+    def send_individual_sensor_discoveries(self, sensor_eui: str, decoded_data: Dict[str, Any], device_name: str = "mioty Sensor") -> bool:
+        """Sende separate Home Assistant Discovery Messages für jeden Messwert."""
+        if not self.ha_connected or not self.ha_client:
+            logging.debug("HA MQTT nicht verfügbar - Individual Discovery übersprungen")
+            return False
+        
+        # Device Information für alle Sensoren
+        device_info = {
+            "identifiers": [sensor_eui],
+            "name": device_name,
+            "manufacturer": "Sentinum",
+            "model": "mioty Sensor",
+            "via_device": "bssci_mioty_application_center"
+        }
+        
+        # Sensor Mapping: Messwert → Home Assistant Konfiguration
+        sensor_configs = {
+            "internal_temperature": {
+                "name": "Temperature",
+                "device_class": "temperature",
+                "unit_of_measurement": "°C",
+                "icon": "mdi:thermometer"
+            },
+            "temperature": {
+                "name": "Temperature", 
+                "device_class": "temperature",
+                "unit_of_measurement": "°C",
+                "icon": "mdi:thermometer"
+            },
+            "humidity": {
+                "name": "Humidity",
+                "device_class": "humidity", 
+                "unit_of_measurement": "%",
+                "icon": "mdi:water-percent"
+            },
+            "battery_voltage": {
+                "name": "Battery Voltage",
+                "device_class": "voltage",
+                "unit_of_measurement": "V",
+                "icon": "mdi:battery"
+            },
+            "dew_point": {
+                "name": "Dew Point",
+                "device_class": "temperature",
+                "unit_of_measurement": "°C", 
+                "icon": "mdi:water-thermometer"
+            },
+            "pressure": {
+                "name": "Pressure",
+                "device_class": "atmospheric_pressure",
+                "unit_of_measurement": "hPa",
+                "icon": "mdi:gauge"
+            },
+            "co2": {
+                "name": "CO2",
+                "device_class": "carbon_dioxide",
+                "unit_of_measurement": "ppm",
+                "icon": "mdi:molecule-co2"
+            }
+        }
+        
+        # State Topic für alle Sensoren (gemeinsam)
+        state_topic = f"bssci/sensor/{sensor_eui}/state"
+        
+        success_count = 0
+        total_count = 0
+        
+        # Für jeden dekodierte Wert eine separate Discovery Message senden
+        for measurement_key, measurement_data in decoded_data.items():
+            if measurement_key in sensor_configs and isinstance(measurement_data, dict) and 'value' in measurement_data:
+                config = sensor_configs[measurement_key]
+                
+                # Discovery Topic für diesen spezifischen Sensor
+                discovery_topic = f"homeassistant/sensor/{sensor_eui}_{measurement_key}/config"
+                
+                # Discovery Payload
+                discovery_payload = {
+                    "name": f"{device_name} {config['name']}",
+                    "unique_id": f"{sensor_eui}_{measurement_key}",
+                    "state_topic": state_topic,
+                    "value_template": f"{{{{ value_json.{measurement_key} }}}}",
+                    "device_class": config["device_class"],
+                    "unit_of_measurement": config["unit_of_measurement"],
+                    "icon": config["icon"],
+                    "device": device_info,
+                    "availability_topic": f"bssci/sensor/{sensor_eui}/availability",
+                    "payload_available": "online",
+                    "payload_not_available": "offline"
+                }
+                
+                # Discovery Message senden
+                if self.publish_discovery(discovery_topic, discovery_payload):
+                    success_count += 1
+                    logging.info(f"🔍 Individual Discovery: {sensor_eui} - {config['name']} ({measurement_key})")
+                else:
+                    logging.warning(f"⚠️ Discovery fehlgeschlagen: {sensor_eui} - {measurement_key}")
+                
+                total_count += 1
+        
+        logging.info(f"✅ Individual Discovery abgeschlossen: {success_count}/{total_count} Sensoren für {sensor_eui}")
+        return success_count > 0
+    
+    def publish_sensor_state_json(self, sensor_eui: str, decoded_data: Dict[str, Any]) -> bool:
+        """Sende Sensor-Status als JSON für alle individuellen Sensoren."""
+        if not self.ha_connected or not self.ha_client:
+            logging.debug("HA MQTT nicht verfügbar - JSON State übersprungen")
+            return False
+        
+        try:
+            # State Topic
+            state_topic = f"bssci/sensor/{sensor_eui}/state"
+            
+            # JSON Payload mit nur den Werten (ohne Metadaten)
+            state_payload = {}
+            for key, data in decoded_data.items():
+                if isinstance(data, dict) and 'value' in data:
+                    state_payload[key] = data['value']
+                    
+            # Availability setzen
+            availability_topic = f"bssci/sensor/{sensor_eui}/availability"
+            self.ha_client.publish(availability_topic, "online", retain=True)
+            
+            # State senden
+            result = self.ha_client.publish(state_topic, json.dumps(state_payload), retain=True)
+            
+            if result.rc == mqtt.MQTT_ERR_SUCCESS:
+                logging.info(f"📊 JSON State Update: {sensor_eui} → {len(state_payload)} Werte")
+                return True
+            else:
+                logging.warning(f"⚠️ JSON State Update fehlgeschlagen: {sensor_eui}")
+                return False
+                
+        except Exception as e:
+            logging.error(f"Fehler beim Senden des JSON Sensor-Status: {e}")
+            return False
+
     def is_connected(self) -> bool:
         """Prüfe MQTT Verbindungsstatus."""
         return self.connected

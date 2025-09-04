@@ -224,8 +224,24 @@ class BSSCIAddon:
             )
         }
         
-        # Home Assistant Discovery
-        if self.config['auto_discovery'] and self.mqtt_manager:
+        # Home Assistant Discovery - Individual Sensor Discovery
+        if self.config['auto_discovery'] and self.mqtt_manager and decoded_payload:
+            try:
+                decoded_data = decoded_payload.get('data', {})
+                if decoded_data:
+                    # Separate Discovery Messages für jeden Messwert senden
+                    device_name = f"Sentinum Febris TH"  # TODO: Aus Metadaten extrahieren
+                    self.mqtt_manager.send_individual_sensor_discoveries(sensor_eui, decoded_data, device_name)
+                    
+                    # JSON State für alle individuellen Sensoren senden
+                    self.mqtt_manager.publish_sensor_state_json(sensor_eui, decoded_data)
+                else:
+                    logging.debug(f"Keine dekodierte Daten für Discovery: {sensor_eui}")
+            except Exception as e:
+                logging.error(f"Fehler bei Individual Discovery für {sensor_eui}: {e}")
+        
+        # Fallback: Alte Discovery für nicht-dekodierte Sensoren
+        elif self.config['auto_discovery'] and self.mqtt_manager:
             self.create_sensor_discovery(sensor_eui, data, decoded_payload or {})
     
     def handle_sensor_config(self, sensor_eui: str, config: Dict[str, Any]):

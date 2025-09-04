@@ -1,0 +1,452 @@
+2025-09-04 12:39:22,814 - root - INFO - 🗄️ Base Station 00073200007e221d in Dictionary gespeichert. Anzahl Base Stations: 4
+2025-09-04 12:39:22,814 - root - INFO - 💡 00073200007e221d: BaseStation Discovery mit Standard-Werten (Manufacturer: Unknown)
+2025-09-04 12:39:22,814 - root - INFO -    Tipp: Base Station Metadaten über manuellen Eintrag hinzufügen
+2025-09-04 12:39:22,814 - root - INFO - 🏢 BaseStation Discovery: 00073200007e221d
+2025-09-04 12:39:22,814 - root - INFO -    📤 Topic: homeassistant/sensor/bssci_basestation_00073200007e221d/config
+2025-09-04 12:39:22,815 - root - INFO -    🏷️ Device: mioty Base Station 00073200007e221d
+2025-09-04 12:39:22,815 - root - INFO - ✅ BaseStation Discovery erfolgreich gesendet
+2025-09-04 12:39:22,815 - root - INFO - Base Station Status empfangen: 00073200007e221d
+2025-09-04 12:39:22,853 - root - INFO - 📨 MQTT Nachricht empfangen: bssci/bs/70b3d59cd00009f6 (Payload: 140 bytes)
+2025-09-04 12:39:22,853 - root - INFO - 🏢 HANDLE_BASE_STATION_DATA AUFGERUFEN für 70b3d59cd00009f6
+2025-09-04 12:39:22,853 - root - INFO - Base Station Status empfangen von 70b3d59cd00009f6
+2025-09-04 12:39:22,853 - root - INFO - 🗄️ Base Station 70b3d59cd00009f6 in Dictionary gespeichert. Anzahl Base Stations: 4
+2025-09-04 12:39:22,853 - root - INFO - 🏢 BaseStation Discovery: 70b3d59cd00009f6
+2025-09-04 12:39:22,854 - root - INFO -    📤 Topic: homeassistant/sensor/bssci_basestation_70b3d59cd00009f6/config
+2025-09-04 12:39:22,854 - root - INFO -    🏷️ Device: Swissphone MBS20 70b3d59cd00009f6
+2025-09-04 12:39:22,854 - root - INFO - ✅ BaseStation Discovery erfolgreich gesendet
+2025-09-04 12:39:22,854 - root - INFO - Base Station Status empfangen: 70b3d59cd00009f6
+2025-09-04 12:39:22,855 - root - INFO - 📨 MQTT Nachricht empfangen: bssci/bs/9c65f9fffe6be145 (Payload: 142 bytes)
+2025-09-04 12:39:22,855 - root - INFO - 🏢 HANDLE_BASE_STATION_DATA AUFGERUFEN für 9c65f9fffe6be145
+2025-09-04 12:39:22,855 - root - INFO - Base Station Status empfangen von 9c65f9fffe6be145
+2025-09-04 12:39:22,855 - root - INFO - 🗄️ Base Station 9c65f9fffe6be145 in Dictionary gespeichert. Anzahl Base Stations: 4
+2025-09-04 12:39:22,855 - root - INFO - 🏢 BaseStation Discovery: 9c65f9fffe6be145
+2025-09-04 12:39:22,855 - root - INFO -    📤 Topic: homeassistant/sensor/bssci_basestation_9c65f9fffe6be145/config
+2025-09-04 12:39:22,856 - root - INFO -    🏷️ Device: Industrial Base Station 9c65f9fffe6be145
+2025-09-04 12:39:22,856 - root - INFO - ✅ BaseStation Discovery erfolgreich gesendet
+2025-09-04 12:39:22,856 - root - INFO - Base Station Status empfangen: 9c65f9fffe6be145
+2025-09-04 12:39:22,857 - root - INFO - 📨 MQTT Nachricht empfangen: bssci/bs/3e5446fffee97b78 (Payload: 139 bytes)
+2025-09-04 12:39:22,857 - root - INFO - 🏢 HANDLE_BASE_STATION_DATA AUFGERUFEN für 3e5446fffee97b78
+2025-09-04 12:39:22,857 - root - INFO - Base Station Status empfangen von 3e5446fffee97b78
+2025-09-04 12:39:22,858 - root - INFO - 🗄️ Base Station 3e5446fffee97b78 in Dictionary gespeichert. Anzahl Base Stations: 4
+2025-09-04 12:39:22,858 - root - INFO - 🏢 BaseStation Discovery: 3e5446fffee97b78
+2025-09-04 12:39:22,858 - root - INFO -    📤 Topic: homeassistant/sensor/bssci_basestation_3e5446fffee97b78/config
+2025-09-04 12:39:22,858 - root - INFO -    🏷️ Device: Kerlink Base Station 3e5446fffee97b78
+2025-09-04 12:39:22,858 - root - INFO - ✅ BaseStation Discovery erfolgreich gesendet
+2025-09-04 12:39:22,859 - root - INFO - Base Station Status empfangen: 3e5446fffee97b78
+2025-09-04 12:39:52,816 - root - INFO - 📨 MQTT Nachricht empfangen: bssci/bs/00073200007e221d (Payload: 151 bytes)
+2025-09-04 12:39:52,817 - root - INFO - 🏢 HANDLE_BASE_STATION_DATA AUFGERUFEN für 00073200007e221d
+2025-09-04 12:39:52,817 - root - INFO - Base Station Status empfangen von 00073200007e221d
+2025-09-04 12:39:52,817 - root - INFO - 🗄️ Base Station 00073200007e221d in Dictionary gespeichert. Anzahl Base Stations: 4
+2025-09-04 12:39:52,817 - root - INFO - 💡 00073200007e221d: BaseStation Discovery mit Standard-Werten (Manufacturer: Unknown)
+2025-09-04 12:39:52,817 - root - INFO -    Tipp: Base Station Metadaten über manuellen Eintrag hinzufügen
+2025-09-04 12:39:52,817 - root - INFO - 🏢 BaseStation Discovery: 00073200007e221d
+2025-09-04 12:39:52,817 - root - INFO -    📤 Topic: homeassistant/sensor/bssci_basestation_00073200007e221d/config
+2025-09-04 12:39:52,817 - root - INFO -    🏷️ Device: mioty Base Station 00073200007e221d
+2025-09-04 12:39:52,818 - root - INFO - ✅ BaseStation Discovery erfolgreich gesendet
+2025-09-04 12:39:52,818 - root - INFO - Base Station Status empfangen: 00073200007e221d
+2025-09-04 12:39:52,819 - root - INFO - 📨 MQTT Nachricht empfangen: bssci/bs/70b3d59cd00009f6 (Payload: 140 bytes)
+2025-09-04 12:39:52,819 - root - INFO - 🏢 HANDLE_BASE_STATION_DATA AUFGERUFEN für 70b3d59cd00009f6
+2025-09-04 12:39:52,819 - root - INFO - Base Station Status empfangen von 70b3d59cd00009f6
+2025-09-04 12:39:52,819 - root - INFO - 🗄️ Base Station 70b3d59cd00009f6 in Dictionary gespeichert. Anzahl Base Stations: 4
+2025-09-04 12:39:52,819 - root - INFO - 🏢 BaseStation Discovery: 70b3d59cd00009f6
+2025-09-04 12:39:52,819 - root - INFO -    📤 Topic: homeassistant/sensor/bssci_basestation_70b3d59cd00009f6/config
+2025-09-04 12:39:52,819 - root - INFO -    🏷️ Device: Swissphone MBS20 70b3d59cd00009f6
+2025-09-04 12:39:52,820 - root - INFO - ✅ BaseStation Discovery erfolgreich gesendet
+2025-09-04 12:39:52,820 - root - INFO - Base Station Status empfangen: 70b3d59cd00009f6
+2025-09-04 12:39:52,821 - root - INFO - 📨 MQTT Nachricht empfangen: bssci/bs/3e5446fffee97b78 (Payload: 140 bytes)
+2025-09-04 12:39:52,821 - root - INFO - 🏢 HANDLE_BASE_STATION_DATA AUFGERUFEN für 3e5446fffee97b78
+2025-09-04 12:39:52,821 - root - INFO - Base Station Status empfangen von 3e5446fffee97b78
+2025-09-04 12:39:52,821 - root - INFO - 🗄️ Base Station 3e5446fffee97b78 in Dictionary gespeichert. Anzahl Base Stations: 4
+2025-09-04 12:39:52,821 - root - INFO - 🏢 BaseStation Discovery: 3e5446fffee97b78
+2025-09-04 12:39:52,821 - root - INFO -    📤 Topic: homeassistant/sensor/bssci_basestation_3e5446fffee97b78/config
+2025-09-04 12:39:52,822 - root - INFO -    🏷️ Device: Kerlink Base Station 3e5446fffee97b78
+2025-09-04 12:39:52,822 - root - INFO - ✅ BaseStation Discovery erfolgreich gesendet
+2025-09-04 12:39:52,822 - root - INFO - Base Station Status empfangen: 3e5446fffee97b78
+2025-09-04 12:39:52,822 - root - INFO - 📨 MQTT Nachricht empfangen: bssci/bs/9c65f9fffe6be145 (Payload: 142 bytes)
+2025-09-04 12:39:52,823 - root - INFO - 🏢 HANDLE_BASE_STATION_DATA AUFGERUFEN für 9c65f9fffe6be145
+2025-09-04 12:39:52,823 - root - INFO - Base Station Status empfangen von 9c65f9fffe6be145
+2025-09-04 12:39:52,823 - root - INFO - 🗄️ Base Station 9c65f9fffe6be145 in Dictionary gespeichert. Anzahl Base Stations: 4
+2025-09-04 12:39:52,823 - root - INFO - 🏢 BaseStation Discovery: 9c65f9fffe6be145
+2025-09-04 12:39:52,823 - root - INFO -    📤 Topic: homeassistant/sensor/bssci_basestation_9c65f9fffe6be145/config
+2025-09-04 12:39:52,823 - root - INFO -    🏷️ Device: Industrial Base Station 9c65f9fffe6be145
+2025-09-04 12:39:52,824 - root - INFO - ✅ BaseStation Discovery erfolgreich gesendet
+2025-09-04 12:39:52,824 - root - INFO - Base Station Status empfangen: 9c65f9fffe6be145
+2025-09-04 12:40:22,821 - root - INFO - 📨 MQTT Nachricht empfangen: bssci/bs/00073200007e221d (Payload: 151 bytes)
+2025-09-04 12:40:22,821 - root - INFO - 🏢 HANDLE_BASE_STATION_DATA AUFGERUFEN für 00073200007e221d
+2025-09-04 12:40:22,821 - root - INFO - Base Station Status empfangen von 00073200007e221d
+2025-09-04 12:40:22,821 - root - INFO - 🗄️ Base Station 00073200007e221d in Dictionary gespeichert. Anzahl Base Stations: 4
+2025-09-04 12:40:22,822 - root - INFO - 💡 00073200007e221d: BaseStation Discovery mit Standard-Werten (Manufacturer: Unknown)
+2025-09-04 12:40:22,822 - root - INFO -    Tipp: Base Station Metadaten über manuellen Eintrag hinzufügen
+2025-09-04 12:40:22,822 - root - INFO - 🏢 BaseStation Discovery: 00073200007e221d
+2025-09-04 12:40:22,822 - root - INFO -    📤 Topic: homeassistant/sensor/bssci_basestation_00073200007e221d/config
+2025-09-04 12:40:22,822 - root - INFO -    🏷️ Device: mioty Base Station 00073200007e221d
+2025-09-04 12:40:22,822 - root - INFO - ✅ BaseStation Discovery erfolgreich gesendet
+2025-09-04 12:40:22,822 - root - INFO - Base Station Status empfangen: 00073200007e221d
+2025-09-04 12:40:22,861 - root - INFO - 📨 MQTT Nachricht empfangen: bssci/bs/3e5446fffee97b78 (Payload: 138 bytes)
+2025-09-04 12:40:22,861 - root - INFO - 🏢 HANDLE_BASE_STATION_DATA AUFGERUFEN für 3e5446fffee97b78
+2025-09-04 12:40:22,861 - root - INFO - Base Station Status empfangen von 3e5446fffee97b78
+2025-09-04 12:40:22,861 - root - INFO - 🗄️ Base Station 3e5446fffee97b78 in Dictionary gespeichert. Anzahl Base Stations: 4
+2025-09-04 12:40:22,861 - root - INFO - 🏢 BaseStation Discovery: 3e5446fffee97b78
+2025-09-04 12:40:22,862 - root - INFO -    📤 Topic: homeassistant/sensor/bssci_basestation_3e5446fffee97b78/config
+2025-09-04 12:40:22,862 - root - INFO -    🏷️ Device: Kerlink Base Station 3e5446fffee97b78
+2025-09-04 12:40:22,862 - root - INFO - ✅ BaseStation Discovery erfolgreich gesendet
+2025-09-04 12:40:22,862 - root - INFO - Base Station Status empfangen: 3e5446fffee97b78
+2025-09-04 12:40:22,863 - root - INFO - 📨 MQTT Nachricht empfangen: bssci/bs/9c65f9fffe6be145 (Payload: 142 bytes)
+2025-09-04 12:40:22,863 - root - INFO - 🏢 HANDLE_BASE_STATION_DATA AUFGERUFEN für 9c65f9fffe6be145
+2025-09-04 12:40:22,863 - root - INFO - Base Station Status empfangen von 9c65f9fffe6be145
+2025-09-04 12:40:22,863 - root - INFO - 🗄️ Base Station 9c65f9fffe6be145 in Dictionary gespeichert. Anzahl Base Stations: 4
+2025-09-04 12:40:22,863 - root - INFO - 🏢 BaseStation Discovery: 9c65f9fffe6be145
+2025-09-04 12:40:22,863 - root - INFO -    📤 Topic: homeassistant/sensor/bssci_basestation_9c65f9fffe6be145/config
+2025-09-04 12:40:22,863 - root - INFO -    🏷️ Device: Industrial Base Station 9c65f9fffe6be145
+2025-09-04 12:40:22,864 - root - INFO - ✅ BaseStation Discovery erfolgreich gesendet
+2025-09-04 12:40:22,864 - root - INFO - Base Station Status empfangen: 9c65f9fffe6be145
+2025-09-04 12:40:22,865 - root - INFO - 📨 MQTT Nachricht empfangen: bssci/bs/70b3d59cd00009f6 (Payload: 140 bytes)
+2025-09-04 12:40:22,865 - root - INFO - 🏢 HANDLE_BASE_STATION_DATA AUFGERUFEN für 70b3d59cd00009f6
+2025-09-04 12:40:22,865 - root - INFO - Base Station Status empfangen von 70b3d59cd00009f6
+2025-09-04 12:40:22,865 - root - INFO - 🗄️ Base Station 70b3d59cd00009f6 in Dictionary gespeichert. Anzahl Base Stations: 4
+2025-09-04 12:40:22,865 - root - INFO - 🏢 BaseStation Discovery: 70b3d59cd00009f6
+2025-09-04 12:40:22,865 - root - INFO -    📤 Topic: homeassistant/sensor/bssci_basestation_70b3d59cd00009f6/config
+2025-09-04 12:40:22,865 - root - INFO -    🏷️ Device: Swissphone MBS20 70b3d59cd00009f6
+2025-09-04 12:40:22,866 - root - INFO - ✅ BaseStation Discovery erfolgreich gesendet
+2025-09-04 12:40:22,866 - root - INFO - Base Station Status empfangen: 70b3d59cd00009f6
+2025-09-04 12:40:52,833 - root - INFO - 📨 MQTT Nachricht empfangen: bssci/bs/00073200007e221d (Payload: 151 bytes)
+2025-09-04 12:40:52,834 - root - INFO - 🏢 HANDLE_BASE_STATION_DATA AUFGERUFEN für 00073200007e221d
+2025-09-04 12:40:52,834 - root - INFO - Base Station Status empfangen von 00073200007e221d
+2025-09-04 12:40:52,834 - root - INFO - 🗄️ Base Station 00073200007e221d in Dictionary gespeichert. Anzahl Base Stations: 4
+2025-09-04 12:40:52,834 - root - INFO - 💡 00073200007e221d: BaseStation Discovery mit Standard-Werten (Manufacturer: Unknown)
+2025-09-04 12:40:52,834 - root - INFO -    Tipp: Base Station Metadaten über manuellen Eintrag hinzufügen
+2025-09-04 12:40:52,834 - root - INFO - 🏢 BaseStation Discovery: 00073200007e221d
+2025-09-04 12:40:52,834 - root - INFO -    📤 Topic: homeassistant/sensor/bssci_basestation_00073200007e221d/config
+2025-09-04 12:40:52,834 - root - INFO -    🏷️ Device: mioty Base Station 00073200007e221d
+2025-09-04 12:40:52,835 - root - INFO - ✅ BaseStation Discovery erfolgreich gesendet
+2025-09-04 12:40:52,835 - root - INFO - Base Station Status empfangen: 00073200007e221d
+2025-09-04 12:40:52,835 - root - INFO - 📨 MQTT Nachricht empfangen: bssci/bs/70b3d59cd00009f6 (Payload: 140 bytes)
+2025-09-04 12:40:52,836 - root - INFO - 🏢 HANDLE_BASE_STATION_DATA AUFGERUFEN für 70b3d59cd00009f6
+2025-09-04 12:40:52,836 - root - INFO - Base Station Status empfangen von 70b3d59cd00009f6
+2025-09-04 12:40:52,836 - root - INFO - 🗄️ Base Station 70b3d59cd00009f6 in Dictionary gespeichert. Anzahl Base Stations: 4
+2025-09-04 12:40:52,836 - root - INFO - 🏢 BaseStation Discovery: 70b3d59cd00009f6
+2025-09-04 12:40:52,836 - root - INFO -    📤 Topic: homeassistant/sensor/bssci_basestation_70b3d59cd00009f6/config
+2025-09-04 12:40:52,836 - root - INFO -    🏷️ Device: Swissphone MBS20 70b3d59cd00009f6
+2025-09-04 12:40:52,837 - root - INFO - ✅ BaseStation Discovery erfolgreich gesendet
+2025-09-04 12:40:52,837 - root - INFO - Base Station Status empfangen: 70b3d59cd00009f6
+2025-09-04 12:40:52,841 - root - INFO - 📨 MQTT Nachricht empfangen: bssci/bs/9c65f9fffe6be145 (Payload: 140 bytes)
+2025-09-04 12:40:52,841 - root - INFO - 🏢 HANDLE_BASE_STATION_DATA AUFGERUFEN für 9c65f9fffe6be145
+2025-09-04 12:40:52,841 - root - INFO - Base Station Status empfangen von 9c65f9fffe6be145
+2025-09-04 12:40:52,841 - root - INFO - 🗄️ Base Station 9c65f9fffe6be145 in Dictionary gespeichert. Anzahl Base Stations: 4
+2025-09-04 12:40:52,841 - root - INFO - 🏢 BaseStation Discovery: 9c65f9fffe6be145
+2025-09-04 12:40:52,842 - root - INFO -    📤 Topic: homeassistant/sensor/bssci_basestation_9c65f9fffe6be145/config
+2025-09-04 12:40:52,842 - root - INFO -    🏷️ Device: Industrial Base Station 9c65f9fffe6be145
+2025-09-04 12:40:52,842 - root - INFO - ✅ BaseStation Discovery erfolgreich gesendet
+2025-09-04 12:40:52,842 - root - INFO - Base Station Status empfangen: 9c65f9fffe6be145
+2025-09-04 12:40:52,845 - root - INFO - 📨 MQTT Nachricht empfangen: bssci/bs/3e5446fffee97b78 (Payload: 140 bytes)
+2025-09-04 12:40:52,845 - root - INFO - 🏢 HANDLE_BASE_STATION_DATA AUFGERUFEN für 3e5446fffee97b78
+2025-09-04 12:40:52,845 - root - INFO - Base Station Status empfangen von 3e5446fffee97b78
+2025-09-04 12:40:52,845 - root - INFO - 🗄️ Base Station 3e5446fffee97b78 in Dictionary gespeichert. Anzahl Base Stations: 4
+2025-09-04 12:40:52,845 - root - INFO - 🏢 BaseStation Discovery: 3e5446fffee97b78
+2025-09-04 12:40:52,845 - root - INFO -    📤 Topic: homeassistant/sensor/bssci_basestation_3e5446fffee97b78/config
+2025-09-04 12:40:52,845 - root - INFO -    🏷️ Device: Kerlink Base Station 3e5446fffee97b78
+2025-09-04 12:40:52,846 - root - INFO - ✅ BaseStation Discovery erfolgreich gesendet
+2025-09-04 12:40:52,846 - root - INFO - Base Station Status empfangen: 3e5446fffee97b78
+2025-09-04 12:41:22,832 - root - INFO - 📨 MQTT Nachricht empfangen: bssci/bs/00073200007e221d (Payload: 151 bytes)
+2025-09-04 12:41:22,832 - root - INFO - 🏢 HANDLE_BASE_STATION_DATA AUFGERUFEN für 00073200007e221d
+2025-09-04 12:41:22,833 - root - INFO - Base Station Status empfangen von 00073200007e221d
+2025-09-04 12:41:22,833 - root - INFO - 🗄️ Base Station 00073200007e221d in Dictionary gespeichert. Anzahl Base Stations: 4
+2025-09-04 12:41:22,833 - root - INFO - 💡 00073200007e221d: BaseStation Discovery mit Standard-Werten (Manufacturer: Unknown)
+2025-09-04 12:41:22,833 - root - INFO -    Tipp: Base Station Metadaten über manuellen Eintrag hinzufügen
+2025-09-04 12:41:22,833 - root - INFO - 🏢 BaseStation Discovery: 00073200007e221d
+2025-09-04 12:41:22,833 - root - INFO -    📤 Topic: homeassistant/sensor/bssci_basestation_00073200007e221d/config
+2025-09-04 12:41:22,833 - root - INFO -    🏷️ Device: mioty Base Station 00073200007e221d
+2025-09-04 12:41:22,833 - root - INFO - ✅ BaseStation Discovery erfolgreich gesendet
+2025-09-04 12:41:22,834 - root - INFO - Base Station Status empfangen: 00073200007e221d
+2025-09-04 12:41:22,871 - root - INFO - 📨 MQTT Nachricht empfangen: bssci/bs/70b3d59cd00009f6 (Payload: 140 bytes)
+2025-09-04 12:41:22,871 - root - INFO - 🏢 HANDLE_BASE_STATION_DATA AUFGERUFEN für 70b3d59cd00009f6
+2025-09-04 12:41:22,872 - root - INFO - Base Station Status empfangen von 70b3d59cd00009f6
+2025-09-04 12:41:22,872 - root - INFO - 🗄️ Base Station 70b3d59cd00009f6 in Dictionary gespeichert. Anzahl Base Stations: 4
+2025-09-04 12:41:22,872 - root - INFO - 🏢 BaseStation Discovery: 70b3d59cd00009f6
+2025-09-04 12:41:22,872 - root - INFO -    📤 Topic: homeassistant/sensor/bssci_basestation_70b3d59cd00009f6/config
+2025-09-04 12:41:22,872 - root - INFO -    🏷️ Device: Swissphone MBS20 70b3d59cd00009f6
+2025-09-04 12:41:22,872 - root - INFO - ✅ BaseStation Discovery erfolgreich gesendet
+2025-09-04 12:41:22,873 - root - INFO - Base Station Status empfangen: 70b3d59cd00009f6
+2025-09-04 12:41:22,873 - root - INFO - 📨 MQTT Nachricht empfangen: bssci/bs/9c65f9fffe6be145 (Payload: 142 bytes)
+2025-09-04 12:41:22,873 - root - INFO - 🏢 HANDLE_BASE_STATION_DATA AUFGERUFEN für 9c65f9fffe6be145
+2025-09-04 12:41:22,874 - root - INFO - Base Station Status empfangen von 9c65f9fffe6be145
+2025-09-04 12:41:22,874 - root - INFO - 🗄️ Base Station 9c65f9fffe6be145 in Dictionary gespeichert. Anzahl Base Stations: 4
+2025-09-04 12:41:22,874 - root - INFO - 🏢 BaseStation Discovery: 9c65f9fffe6be145
+2025-09-04 12:41:22,874 - root - INFO -    📤 Topic: homeassistant/sensor/bssci_basestation_9c65f9fffe6be145/config
+2025-09-04 12:41:22,874 - root - INFO -    🏷️ Device: Industrial Base Station 9c65f9fffe6be145
+2025-09-04 12:41:22,874 - root - INFO - ✅ BaseStation Discovery erfolgreich gesendet
+2025-09-04 12:41:22,875 - root - INFO - Base Station Status empfangen: 9c65f9fffe6be145
+2025-09-04 12:41:22,875 - root - INFO - 📨 MQTT Nachricht empfangen: bssci/bs/3e5446fffee97b78 (Payload: 139 bytes)
+2025-09-04 12:41:22,875 - root - INFO - 🏢 HANDLE_BASE_STATION_DATA AUFGERUFEN für 3e5446fffee97b78
+2025-09-04 12:41:22,875 - root - INFO - Base Station Status empfangen von 3e5446fffee97b78
+2025-09-04 12:41:22,875 - root - INFO - 🗄️ Base Station 3e5446fffee97b78 in Dictionary gespeichert. Anzahl Base Stations: 4
+2025-09-04 12:41:22,876 - root - INFO - 🏢 BaseStation Discovery: 3e5446fffee97b78
+2025-09-04 12:41:22,876 - root - INFO -    📤 Topic: homeassistant/sensor/bssci_basestation_3e5446fffee97b78/config
+2025-09-04 12:41:22,876 - root - INFO -    🏷️ Device: Kerlink Base Station 3e5446fffee97b78
+2025-09-04 12:41:22,876 - root - INFO - ✅ BaseStation Discovery erfolgreich gesendet
+2025-09-04 12:41:22,876 - root - INFO - Base Station Status empfangen: 3e5446fffee97b78
+2025-09-04 12:41:52,832 - root - INFO - 📨 MQTT Nachricht empfangen: bssci/bs/00073200007e221d (Payload: 151 bytes)
+2025-09-04 12:41:52,833 - root - INFO - 🏢 HANDLE_BASE_STATION_DATA AUFGERUFEN für 00073200007e221d
+2025-09-04 12:41:52,833 - root - INFO - Base Station Status empfangen von 00073200007e221d
+2025-09-04 12:41:52,833 - root - INFO - 🗄️ Base Station 00073200007e221d in Dictionary gespeichert. Anzahl Base Stations: 4
+2025-09-04 12:41:52,833 - root - INFO - 💡 00073200007e221d: BaseStation Discovery mit Standard-Werten (Manufacturer: Unknown)
+2025-09-04 12:41:52,833 - root - INFO -    Tipp: Base Station Metadaten über manuellen Eintrag hinzufügen
+2025-09-04 12:41:52,833 - root - INFO - 🏢 BaseStation Discovery: 00073200007e221d
+2025-09-04 12:41:52,833 - root - INFO -    📤 Topic: homeassistant/sensor/bssci_basestation_00073200007e221d/config
+2025-09-04 12:41:52,833 - root - INFO -    🏷️ Device: mioty Base Station 00073200007e221d
+2025-09-04 12:41:52,833 - root - INFO - ✅ BaseStation Discovery erfolgreich gesendet
+2025-09-04 12:41:52,834 - root - INFO - Base Station Status empfangen: 00073200007e221d
+2025-09-04 12:41:52,835 - root - INFO - 📨 MQTT Nachricht empfangen: bssci/bs/70b3d59cd00009f6 (Payload: 140 bytes)
+2025-09-04 12:41:52,835 - root - INFO - 🏢 HANDLE_BASE_STATION_DATA AUFGERUFEN für 70b3d59cd00009f6
+2025-09-04 12:41:52,836 - root - INFO - Base Station Status empfangen von 70b3d59cd00009f6
+2025-09-04 12:41:52,836 - root - INFO - 🗄️ Base Station 70b3d59cd00009f6 in Dictionary gespeichert. Anzahl Base Stations: 4
+2025-09-04 12:41:52,836 - root - INFO - 🏢 BaseStation Discovery: 70b3d59cd00009f6
+2025-09-04 12:41:52,836 - root - INFO -    📤 Topic: homeassistant/sensor/bssci_basestation_70b3d59cd00009f6/config
+2025-09-04 12:41:52,836 - root - INFO -    🏷️ Device: Swissphone MBS20 70b3d59cd00009f6
+2025-09-04 12:41:52,837 - root - INFO - ✅ BaseStation Discovery erfolgreich gesendet
+2025-09-04 12:41:52,837 - root - INFO - Base Station Status empfangen: 70b3d59cd00009f6
+2025-09-04 12:41:52,840 - root - INFO - 📨 MQTT Nachricht empfangen: bssci/bs/9c65f9fffe6be145 (Payload: 142 bytes)
+2025-09-04 12:41:52,840 - root - INFO - 🏢 HANDLE_BASE_STATION_DATA AUFGERUFEN für 9c65f9fffe6be145
+2025-09-04 12:41:52,840 - root - INFO - Base Station Status empfangen von 9c65f9fffe6be145
+2025-09-04 12:41:52,840 - root - INFO - 🗄️ Base Station 9c65f9fffe6be145 in Dictionary gespeichert. Anzahl Base Stations: 4
+2025-09-04 12:41:52,840 - root - INFO - 🏢 BaseStation Discovery: 9c65f9fffe6be145
+2025-09-04 12:41:52,840 - root - INFO -    📤 Topic: homeassistant/sensor/bssci_basestation_9c65f9fffe6be145/config
+2025-09-04 12:41:52,840 - root - INFO -    🏷️ Device: Industrial Base Station 9c65f9fffe6be145
+2025-09-04 12:41:52,841 - root - INFO - ✅ BaseStation Discovery erfolgreich gesendet
+2025-09-04 12:41:52,841 - root - INFO - Base Station Status empfangen: 9c65f9fffe6be145
+2025-09-04 12:41:52,845 - root - INFO - 📨 MQTT Nachricht empfangen: bssci/bs/3e5446fffee97b78 (Payload: 140 bytes)
+2025-09-04 12:41:52,845 - root - INFO - 🏢 HANDLE_BASE_STATION_DATA AUFGERUFEN für 3e5446fffee97b78
+2025-09-04 12:41:52,845 - root - INFO - Base Station Status empfangen von 3e5446fffee97b78
+2025-09-04 12:41:52,845 - root - INFO - 🗄️ Base Station 3e5446fffee97b78 in Dictionary gespeichert. Anzahl Base Stations: 4
+2025-09-04 12:41:52,846 - root - INFO - 🏢 BaseStation Discovery: 3e5446fffee97b78
+2025-09-04 12:41:52,846 - root - INFO -    📤 Topic: homeassistant/sensor/bssci_basestation_3e5446fffee97b78/config
+2025-09-04 12:41:52,846 - root - INFO -    🏷️ Device: Kerlink Base Station 3e5446fffee97b78
+2025-09-04 12:41:52,846 - root - INFO - ✅ BaseStation Discovery erfolgreich gesendet
+2025-09-04 12:41:52,847 - root - INFO - Base Station Status empfangen: 3e5446fffee97b78
+2025-09-04 12:42:21,950 - root - INFO - 📨 MQTT Nachricht empfangen: bssci/ep/fca84a090000000a/ul (Payload: 181 bytes)
+2025-09-04 12:42:21,951 - root - INFO - Sensor-Daten empfangen von fca84a090000000a
+2025-09-04 12:42:21,951 - root - INFO - Raw Payload: [17, 33, 89, 13, 189, 164, 1, 5, 130, 46]
+2025-09-04 12:42:21,951 - root - INFO - Metadata: SNR=22.023799896240234, RSSI=-107.75596618652344, Base Station=00073200007e221d
+2025-09-04 12:42:21,951 - root - INFO - 🔍 DECODE_PAYLOAD AUFGERUFEN für fca84a090000000a
+2025-09-04 12:42:21,951 - root - INFO -    📋 Verfügbare Decoder-Zuweisungen: ['fca84a090000000a', 'fca84a030000127b', 'fca84a0300001276', 'fca84a030000127c', 'fca84a030000127d']
+2025-09-04 12:42:21,951 - root - INFO -    📋 Verfügbare Decoder-Dateien: ['febris_th', 'febris_scw', 'apollon-qtr', 'apollon-qpp', 'juno_th', 'febris_co2', 'temp_humidity_sentinum', 'decoder_registry', 'temp_humidity_blueprint']
+2025-09-04 12:42:21,952 - root - INFO - ✅ Decoder für fca84a090000000a gefunden: {'decoder_name': 'juno_th', 'assigned_at': 1756961451.8448348}
+2025-09-04 12:42:21,955 - root - WARNING - Node.js nicht verfügbar, verwende verbesserte Sentinum Engine
+2025-09-04 12:42:21,955 - root - INFO - Erkannter Sensor-Typ: IO-Link-Adapter
+2025-09-04 12:42:21,955 - root - INFO - 🔗 IO-LINK ADAPTER ERKANNT!
+2025-09-04 12:42:21,955 - root - INFO - 🏭 Vendor ID: 22797 (0x590D)
+2025-09-04 12:42:21,956 - root - INFO - 📱 Device ID: 41985 (0xA401)
+2025-09-04 12:42:21,956 - root - INFO - 📊 PD-in: 33 bytes
+2025-09-04 12:42:21,956 - root - INFO - 🔧 Bytes 2-3 (Vendor): 59 0D
+2025-09-04 12:42:21,956 - root - INFO - 🔧 Bytes 5-6 (Device): A4 01 (Big-Endian)
+2025-09-04 12:42:21,956 - root - INFO - ✅ Payload für fca84a090000000a erfolgreich dekodiert
+2025-09-04 12:42:21,957 - root - INFO - 🔧 Decoder: IO-Link Adapter (mioty)
+2025-09-04 12:42:21,957 - root - INFO - 📊 Dekodierte Daten:
+2025-09-04 12:42:21,957 - root - INFO -    control_byte: {"value":17,"unit":"","description":"Control Byte"}
+2025-09-04 12:42:21,957 - root - INFO -    control_bit_0: {"value":true,"unit":"","description":"Control Bit 0"}
+2025-09-04 12:42:21,957 - root - INFO -    control_bit_1: {"value":false,"unit":"","description":"Control Bit 1"}
+2025-09-04 12:42:21,957 - root - INFO -    control_bit_2: {"value":false,"unit":"","description":"Control Bit 2"}
+2025-09-04 12:42:21,957 - root - INFO -    control_bit_3: {"value":false,"unit":"","description":"Control Bit 3"}
+2025-09-04 12:42:21,957 - root - INFO -    pd_in_length: {"value":33,"unit":"bytes","description":"Pd In Length"}
+2025-09-04 12:42:21,957 - root - INFO -    vendor_id: {"value":22797,"unit":"","description":"Vendor ID"}
+2025-09-04 12:42:21,958 - root - INFO -    vendor_id_hex: {"value":"0x590D","unit":"","description":"Vendor ID (Hex)"}
+2025-09-04 12:42:21,958 - root - INFO -    device_id: {"value":41985,"unit":"","description":"Device ID"}
+2025-09-04 12:42:21,958 - root - INFO -    device_id_hex: {"value":"0xA401","unit":"","description":"Device ID (Hex)"}
+2025-09-04 12:42:21,958 - root - INFO -    event_data: {"value":[1,5,130],"unit":"","description":"Event Data"}
+2025-09-04 12:42:21,958 - root - INFO -    adapter_event: {"value":46,"unit":"","description":"Adapter Event"}
+2025-09-04 12:42:21,959 - root - INFO - 🔍 Sensor Discovery: fca84a090000000a - Payload Size
+2025-09-04 12:42:21,959 - root - INFO - 🔍 Sensor Discovery: fca84a090000000a - Signal-to-Noise Ratio
+2025-09-04 12:42:21,960 - root - INFO - 🔍 Sensor Discovery: fca84a090000000a - Signal Strength
+2025-09-04 12:42:21,960 - root - INFO - 🔍 Sensor Discovery: fca84a090000000a - Message Counter
+2025-09-04 12:42:21,960 - root - INFO - 🔍 Sensor Discovery: fca84a090000000a - Decoded Data
+2025-09-04 12:42:21,961 - root - INFO - 📊 Sensor Update: fca84a090000000a → 10 bytes
+2025-09-04 12:42:22,831 - root - INFO - 📨 MQTT Nachricht empfangen: bssci/bs/00073200007e221d (Payload: 151 bytes)
+2025-09-04 12:42:22,831 - root - INFO - 🏢 HANDLE_BASE_STATION_DATA AUFGERUFEN für 00073200007e221d
+2025-09-04 12:42:22,831 - root - INFO - Base Station Status empfangen von 00073200007e221d
+2025-09-04 12:42:22,831 - root - INFO - 🗄️ Base Station 00073200007e221d in Dictionary gespeichert. Anzahl Base Stations: 4
+2025-09-04 12:42:22,831 - root - INFO - 💡 00073200007e221d: BaseStation Discovery mit Standard-Werten (Manufacturer: Unknown)
+2025-09-04 12:42:22,832 - root - INFO -    Tipp: Base Station Metadaten über manuellen Eintrag hinzufügen
+2025-09-04 12:42:22,832 - root - INFO - 🏢 BaseStation Discovery: 00073200007e221d
+2025-09-04 12:42:22,832 - root - INFO -    📤 Topic: homeassistant/sensor/bssci_basestation_00073200007e221d/config
+2025-09-04 12:42:22,832 - root - INFO -    🏷️ Device: mioty Base Station 00073200007e221d
+2025-09-04 12:42:22,832 - root - INFO - ✅ BaseStation Discovery erfolgreich gesendet
+2025-09-04 12:42:22,832 - root - INFO - Base Station Status empfangen: 00073200007e221d
+2025-09-04 12:42:22,833 - root - INFO - 📨 MQTT Nachricht empfangen: bssci/bs/70b3d59cd00009f6 (Payload: 141 bytes)
+2025-09-04 12:42:22,833 - root - INFO - 🏢 HANDLE_BASE_STATION_DATA AUFGERUFEN für 70b3d59cd00009f6
+2025-09-04 12:42:22,833 - root - INFO - Base Station Status empfangen von 70b3d59cd00009f6
+2025-09-04 12:42:22,834 - root - INFO - 🗄️ Base Station 70b3d59cd00009f6 in Dictionary gespeichert. Anzahl Base Stations: 4
+2025-09-04 12:42:22,834 - root - INFO - 🏢 BaseStation Discovery: 70b3d59cd00009f6
+2025-09-04 12:42:22,834 - root - INFO -    📤 Topic: homeassistant/sensor/bssci_basestation_70b3d59cd00009f6/config
+2025-09-04 12:42:22,834 - root - INFO -    🏷️ Device: Swissphone MBS20 70b3d59cd00009f6
+2025-09-04 12:42:22,834 - root - INFO - ✅ BaseStation Discovery erfolgreich gesendet
+2025-09-04 12:42:22,834 - root - INFO - Base Station Status empfangen: 70b3d59cd00009f6
+2025-09-04 12:42:22,836 - root - INFO - 📨 MQTT Nachricht empfangen: bssci/bs/3e5446fffee97b78 (Payload: 139 bytes)
+2025-09-04 12:42:22,836 - root - INFO - 🏢 HANDLE_BASE_STATION_DATA AUFGERUFEN für 3e5446fffee97b78
+2025-09-04 12:42:22,836 - root - INFO - Base Station Status empfangen von 3e5446fffee97b78
+2025-09-04 12:42:22,836 - root - INFO - 🗄️ Base Station 3e5446fffee97b78 in Dictionary gespeichert. Anzahl Base Stations: 4
+2025-09-04 12:42:22,836 - root - INFO - 🏢 BaseStation Discovery: 3e5446fffee97b78
+2025-09-04 12:42:22,837 - root - INFO -    📤 Topic: homeassistant/sensor/bssci_basestation_3e5446fffee97b78/config
+2025-09-04 12:42:22,837 - root - INFO -    🏷️ Device: Kerlink Base Station 3e5446fffee97b78
+2025-09-04 12:42:22,837 - root - INFO - ✅ BaseStation Discovery erfolgreich gesendet
+2025-09-04 12:42:22,838 - root - INFO - Base Station Status empfangen: 3e5446fffee97b78
+2025-09-04 12:42:22,838 - root - INFO - 📨 MQTT Nachricht empfangen: bssci/bs/9c65f9fffe6be145 (Payload: 140 bytes)
+2025-09-04 12:42:22,838 - root - INFO - 🏢 HANDLE_BASE_STATION_DATA AUFGERUFEN für 9c65f9fffe6be145
+2025-09-04 12:42:22,838 - root - INFO - Base Station Status empfangen von 9c65f9fffe6be145
+2025-09-04 12:42:22,839 - root - INFO - 🗄️ Base Station 9c65f9fffe6be145 in Dictionary gespeichert. Anzahl Base Stations: 4
+2025-09-04 12:42:22,839 - root - INFO - 🏢 BaseStation Discovery: 9c65f9fffe6be145
+2025-09-04 12:42:22,839 - root - INFO -    📤 Topic: homeassistant/sensor/bssci_basestation_9c65f9fffe6be145/config
+2025-09-04 12:42:22,839 - root - INFO -    🏷️ Device: Industrial Base Station 9c65f9fffe6be145
+2025-09-04 12:42:22,839 - root - INFO - ✅ BaseStation Discovery erfolgreich gesendet
+2025-09-04 12:42:22,840 - root - INFO - Base Station Status empfangen: 9c65f9fffe6be145
+2025-09-04 12:42:52,838 - root - INFO - 📨 MQTT Nachricht empfangen: bssci/bs/00073200007e221d (Payload: 152 bytes)
+2025-09-04 12:42:52,839 - root - INFO - 🏢 HANDLE_BASE_STATION_DATA AUFGERUFEN für 00073200007e221d
+2025-09-04 12:42:52,839 - root - INFO - Base Station Status empfangen von 00073200007e221d
+2025-09-04 12:42:52,839 - root - INFO - 🗄️ Base Station 00073200007e221d in Dictionary gespeichert. Anzahl Base Stations: 4
+2025-09-04 12:42:52,839 - root - INFO - 💡 00073200007e221d: BaseStation Discovery mit Standard-Werten (Manufacturer: Unknown)
+2025-09-04 12:42:52,839 - root - INFO -    Tipp: Base Station Metadaten über manuellen Eintrag hinzufügen
+2025-09-04 12:42:52,839 - root - INFO - 🏢 BaseStation Discovery: 00073200007e221d
+2025-09-04 12:42:52,839 - root - INFO -    📤 Topic: homeassistant/sensor/bssci_basestation_00073200007e221d/config
+2025-09-04 12:42:52,839 - root - INFO -    🏷️ Device: mioty Base Station 00073200007e221d
+2025-09-04 12:42:52,840 - root - INFO - ✅ BaseStation Discovery erfolgreich gesendet
+2025-09-04 12:42:52,840 - root - INFO - Base Station Status empfangen: 00073200007e221d
+2025-09-04 12:42:52,841 - root - INFO - 📨 MQTT Nachricht empfangen: bssci/bs/9c65f9fffe6be145 (Payload: 142 bytes)
+2025-09-04 12:42:52,841 - root - INFO - 🏢 HANDLE_BASE_STATION_DATA AUFGERUFEN für 9c65f9fffe6be145
+2025-09-04 12:42:52,841 - root - INFO - Base Station Status empfangen von 9c65f9fffe6be145
+2025-09-04 12:42:52,841 - root - INFO - 🗄️ Base Station 9c65f9fffe6be145 in Dictionary gespeichert. Anzahl Base Stations: 4
+2025-09-04 12:42:52,841 - root - INFO - 🏢 BaseStation Discovery: 9c65f9fffe6be145
+2025-09-04 12:42:52,841 - root - INFO -    📤 Topic: homeassistant/sensor/bssci_basestation_9c65f9fffe6be145/config
+2025-09-04 12:42:52,841 - root - INFO -    🏷️ Device: Industrial Base Station 9c65f9fffe6be145
+2025-09-04 12:42:52,842 - root - INFO - ✅ BaseStation Discovery erfolgreich gesendet
+2025-09-04 12:42:52,842 - root - INFO - Base Station Status empfangen: 9c65f9fffe6be145
+2025-09-04 12:42:52,842 - root - INFO - 📨 MQTT Nachricht empfangen: bssci/bs/70b3d59cd00009f6 (Payload: 141 bytes)
+2025-09-04 12:42:52,842 - root - INFO - 🏢 HANDLE_BASE_STATION_DATA AUFGERUFEN für 70b3d59cd00009f6
+2025-09-04 12:42:52,842 - root - INFO - Base Station Status empfangen von 70b3d59cd00009f6
+2025-09-04 12:42:52,842 - root - INFO - 🗄️ Base Station 70b3d59cd00009f6 in Dictionary gespeichert. Anzahl Base Stations: 4
+2025-09-04 12:42:52,843 - root - INFO - 🏢 BaseStation Discovery: 70b3d59cd00009f6
+2025-09-04 12:42:52,843 - root - INFO -    📤 Topic: homeassistant/sensor/bssci_basestation_70b3d59cd00009f6/config
+2025-09-04 12:42:52,843 - root - INFO -    🏷️ Device: Swissphone MBS20 70b3d59cd00009f6
+2025-09-04 12:42:52,843 - root - INFO - ✅ BaseStation Discovery erfolgreich gesendet
+2025-09-04 12:42:52,843 - root - INFO - Base Station Status empfangen: 70b3d59cd00009f6
+2025-09-04 12:42:52,849 - root - INFO - 📨 MQTT Nachricht empfangen: bssci/bs/3e5446fffee97b78 (Payload: 138 bytes)
+2025-09-04 12:42:52,850 - root - INFO - 🏢 HANDLE_BASE_STATION_DATA AUFGERUFEN für 3e5446fffee97b78
+2025-09-04 12:42:52,850 - root - INFO - Base Station Status empfangen von 3e5446fffee97b78
+2025-09-04 12:42:52,850 - root - INFO - 🗄️ Base Station 3e5446fffee97b78 in Dictionary gespeichert. Anzahl Base Stations: 4
+2025-09-04 12:42:52,851 - root - INFO - 🏢 BaseStation Discovery: 3e5446fffee97b78
+2025-09-04 12:42:52,851 - root - INFO -    📤 Topic: homeassistant/sensor/bssci_basestation_3e5446fffee97b78/config
+2025-09-04 12:42:52,851 - root - INFO -    🏷️ Device: Kerlink Base Station 3e5446fffee97b78
+2025-09-04 12:42:52,851 - root - INFO - ✅ BaseStation Discovery erfolgreich gesendet
+2025-09-04 12:42:52,852 - root - INFO - Base Station Status empfangen: 3e5446fffee97b78
+2025-09-04 12:43:22,842 - root - INFO - 📨 MQTT Nachricht empfangen: bssci/bs/00073200007e221d (Payload: 152 bytes)
+2025-09-04 12:43:22,843 - root - INFO - 🏢 HANDLE_BASE_STATION_DATA AUFGERUFEN für 00073200007e221d
+2025-09-04 12:43:22,843 - root - INFO - Base Station Status empfangen von 00073200007e221d
+2025-09-04 12:43:22,843 - root - INFO - 🗄️ Base Station 00073200007e221d in Dictionary gespeichert. Anzahl Base Stations: 4
+2025-09-04 12:43:22,843 - root - INFO - 💡 00073200007e221d: BaseStation Discovery mit Standard-Werten (Manufacturer: Unknown)
+2025-09-04 12:43:22,844 - root - INFO -    Tipp: Base Station Metadaten über manuellen Eintrag hinzufügen
+2025-09-04 12:43:22,844 - root - INFO - 🏢 BaseStation Discovery: 00073200007e221d
+2025-09-04 12:43:22,844 - root - INFO -    📤 Topic: homeassistant/sensor/bssci_basestation_00073200007e221d/config
+2025-09-04 12:43:22,844 - root - INFO -    🏷️ Device: mioty Base Station 00073200007e221d
+2025-09-04 12:43:22,845 - root - INFO - ✅ BaseStation Discovery erfolgreich gesendet
+2025-09-04 12:43:22,847 - root - INFO - Base Station Status empfangen: 00073200007e221d
+2025-09-04 12:43:22,904 - root - INFO - 📨 MQTT Nachricht empfangen: bssci/bs/9c65f9fffe6be145 (Payload: 142 bytes)
+2025-09-04 12:43:22,904 - root - INFO - 🏢 HANDLE_BASE_STATION_DATA AUFGERUFEN für 9c65f9fffe6be145
+2025-09-04 12:43:22,905 - root - INFO - Base Station Status empfangen von 9c65f9fffe6be145
+2025-09-04 12:43:22,905 - root - INFO - 🗄️ Base Station 9c65f9fffe6be145 in Dictionary gespeichert. Anzahl Base Stations: 4
+2025-09-04 12:43:22,905 - root - INFO - 🏢 BaseStation Discovery: 9c65f9fffe6be145
+2025-09-04 12:43:22,905 - root - INFO -    📤 Topic: homeassistant/sensor/bssci_basestation_9c65f9fffe6be145/config
+2025-09-04 12:43:22,905 - root - INFO -    🏷️ Device: Industrial Base Station 9c65f9fffe6be145
+2025-09-04 12:43:22,906 - root - INFO - ✅ BaseStation Discovery erfolgreich gesendet
+2025-09-04 12:43:22,907 - root - INFO - Base Station Status empfangen: 9c65f9fffe6be145
+2025-09-04 12:43:22,907 - root - INFO - 📨 MQTT Nachricht empfangen: bssci/bs/70b3d59cd00009f6 (Payload: 140 bytes)
+2025-09-04 12:43:22,908 - root - INFO - 🏢 HANDLE_BASE_STATION_DATA AUFGERUFEN für 70b3d59cd00009f6
+2025-09-04 12:43:22,908 - root - INFO - Base Station Status empfangen von 70b3d59cd00009f6
+2025-09-04 12:43:22,908 - root - INFO - 🗄️ Base Station 70b3d59cd00009f6 in Dictionary gespeichert. Anzahl Base Stations: 4
+2025-09-04 12:43:22,908 - root - INFO - 🏢 BaseStation Discovery: 70b3d59cd00009f6
+2025-09-04 12:43:22,908 - root - INFO -    📤 Topic: homeassistant/sensor/bssci_basestation_70b3d59cd00009f6/config
+2025-09-04 12:43:22,908 - root - INFO -    🏷️ Device: Swissphone MBS20 70b3d59cd00009f6
+2025-09-04 12:43:22,909 - root - INFO - ✅ BaseStation Discovery erfolgreich gesendet
+2025-09-04 12:43:22,910 - root - INFO - Base Station Status empfangen: 70b3d59cd00009f6
+2025-09-04 12:43:22,910 - root - INFO - 📨 MQTT Nachricht empfangen: bssci/bs/3e5446fffee97b78 (Payload: 138 bytes)
+2025-09-04 12:43:22,910 - root - INFO - 🏢 HANDLE_BASE_STATION_DATA AUFGERUFEN für 3e5446fffee97b78
+2025-09-04 12:43:22,911 - root - INFO - Base Station Status empfangen von 3e5446fffee97b78
+2025-09-04 12:43:22,911 - root - INFO - 🗄️ Base Station 3e5446fffee97b78 in Dictionary gespeichert. Anzahl Base Stations: 4
+2025-09-04 12:43:22,911 - root - INFO - 🏢 BaseStation Discovery: 3e5446fffee97b78
+2025-09-04 12:43:22,911 - root - INFO -    📤 Topic: homeassistant/sensor/bssci_basestation_3e5446fffee97b78/config
+2025-09-04 12:43:22,912 - root - INFO -    🏷️ Device: Kerlink Base Station 3e5446fffee97b78
+2025-09-04 12:43:22,912 - root - INFO - ✅ BaseStation Discovery erfolgreich gesendet
+2025-09-04 12:43:22,913 - root - INFO - Base Station Status empfangen: 3e5446fffee97b78
+2025-09-04 12:43:52,839 - root - INFO - 📨 MQTT Nachricht empfangen: bssci/bs/00073200007e221d (Payload: 151 bytes)
+2025-09-04 12:43:52,840 - root - INFO - 🏢 HANDLE_BASE_STATION_DATA AUFGERUFEN für 00073200007e221d
+2025-09-04 12:43:52,840 - root - INFO - Base Station Status empfangen von 00073200007e221d
+2025-09-04 12:43:52,840 - root - INFO - 🗄️ Base Station 00073200007e221d in Dictionary gespeichert. Anzahl Base Stations: 4
+2025-09-04 12:43:52,840 - root - INFO - 💡 00073200007e221d: BaseStation Discovery mit Standard-Werten (Manufacturer: Unknown)
+2025-09-04 12:43:52,840 - root - INFO -    Tipp: Base Station Metadaten über manuellen Eintrag hinzufügen
+2025-09-04 12:43:52,840 - root - INFO - 🏢 BaseStation Discovery: 00073200007e221d
+2025-09-04 12:43:52,840 - root - INFO -    📤 Topic: homeassistant/sensor/bssci_basestation_00073200007e221d/config
+2025-09-04 12:43:52,840 - root - INFO -    🏷️ Device: mioty Base Station 00073200007e221d
+2025-09-04 12:43:52,841 - root - INFO - ✅ BaseStation Discovery erfolgreich gesendet
+2025-09-04 12:43:52,841 - root - INFO - Base Station Status empfangen: 00073200007e221d
+2025-09-04 12:43:52,846 - root - INFO - 📨 MQTT Nachricht empfangen: bssci/bs/9c65f9fffe6be145 (Payload: 142 bytes)
+2025-09-04 12:43:52,846 - root - INFO - 🏢 HANDLE_BASE_STATION_DATA AUFGERUFEN für 9c65f9fffe6be145
+2025-09-04 12:43:52,846 - root - INFO - Base Station Status empfangen von 9c65f9fffe6be145
+2025-09-04 12:43:52,846 - root - INFO - 🗄️ Base Station 9c65f9fffe6be145 in Dictionary gespeichert. Anzahl Base Stations: 4
+2025-09-04 12:43:52,846 - root - INFO - 🏢 BaseStation Discovery: 9c65f9fffe6be145
+2025-09-04 12:43:52,847 - root - INFO -    📤 Topic: homeassistant/sensor/bssci_basestation_9c65f9fffe6be145/config
+2025-09-04 12:43:52,847 - root - INFO -    🏷️ Device: Industrial Base Station 9c65f9fffe6be145
+2025-09-04 12:43:52,847 - root - INFO - ✅ BaseStation Discovery erfolgreich gesendet
+2025-09-04 12:43:52,848 - root - INFO - Base Station Status empfangen: 9c65f9fffe6be145
+2025-09-04 12:43:52,849 - root - INFO - 📨 MQTT Nachricht empfangen: bssci/bs/70b3d59cd00009f6 (Payload: 140 bytes)
+2025-09-04 12:43:52,849 - root - INFO - 🏢 HANDLE_BASE_STATION_DATA AUFGERUFEN für 70b3d59cd00009f6
+2025-09-04 12:43:52,849 - root - INFO - Base Station Status empfangen von 70b3d59cd00009f6
+2025-09-04 12:43:52,850 - root - INFO - 🗄️ Base Station 70b3d59cd00009f6 in Dictionary gespeichert. Anzahl Base Stations: 4
+2025-09-04 12:43:52,850 - root - INFO - 🏢 BaseStation Discovery: 70b3d59cd00009f6
+2025-09-04 12:43:52,850 - root - INFO -    📤 Topic: homeassistant/sensor/bssci_basestation_70b3d59cd00009f6/config
+2025-09-04 12:43:52,850 - root - INFO -    🏷️ Device: Swissphone MBS20 70b3d59cd00009f6
+2025-09-04 12:43:52,850 - root - INFO - ✅ BaseStation Discovery erfolgreich gesendet
+2025-09-04 12:43:52,851 - root - INFO - Base Station Status empfangen: 70b3d59cd00009f6
+2025-09-04 12:43:52,852 - root - INFO - 📨 MQTT Nachricht empfangen: bssci/bs/3e5446fffee97b78 (Payload: 138 bytes)
+2025-09-04 12:43:52,852 - root - INFO - 🏢 HANDLE_BASE_STATION_DATA AUFGERUFEN für 3e5446fffee97b78
+2025-09-04 12:43:52,853 - root - INFO - Base Station Status empfangen von 3e5446fffee97b78
+2025-09-04 12:43:52,853 - root - INFO - 🗄️ Base Station 3e5446fffee97b78 in Dictionary gespeichert. Anzahl Base Stations: 4
+2025-09-04 12:43:52,853 - root - INFO - 🏢 BaseStation Discovery: 3e5446fffee97b78
+2025-09-04 12:43:52,853 - root - INFO -    📤 Topic: homeassistant/sensor/bssci_basestation_3e5446fffee97b78/config
+2025-09-04 12:43:52,853 - root - INFO -    🏷️ Device: Kerlink Base Station 3e5446fffee97b78
+2025-09-04 12:43:52,853 - root - INFO - ✅ BaseStation Discovery erfolgreich gesendet
+2025-09-04 12:43:52,854 - root - INFO - Base Station Status empfangen: 3e5446fffee97b78
+2025-09-04 12:44:22,846 - root - INFO - 📨 MQTT Nachricht empfangen: bssci/bs/00073200007e221d (Payload: 151 bytes)
+2025-09-04 12:44:22,846 - root - INFO - 🏢 HANDLE_BASE_STATION_DATA AUFGERUFEN für 00073200007e221d
+2025-09-04 12:44:22,846 - root - INFO - Base Station Status empfangen von 00073200007e221d
+2025-09-04 12:44:22,846 - root - INFO - 🗄️ Base Station 00073200007e221d in Dictionary gespeichert. Anzahl Base Stations: 4
+2025-09-04 12:44:22,846 - root - INFO - 💡 00073200007e221d: BaseStation Discovery mit Standard-Werten (Manufacturer: Unknown)
+2025-09-04 12:44:22,847 - root - INFO -    Tipp: Base Station Metadaten über manuellen Eintrag hinzufügen
+2025-09-04 12:44:22,847 - root - INFO - 🏢 BaseStation Discovery: 00073200007e221d
+2025-09-04 12:44:22,847 - root - INFO -    📤 Topic: homeassistant/sensor/bssci_basestation_00073200007e221d/config
+2025-09-04 12:44:22,847 - root - INFO -    🏷️ Device: mioty Base Station 00073200007e221d
+2025-09-04 12:44:22,847 - root - INFO - ✅ BaseStation Discovery erfolgreich gesendet
+2025-09-04 12:44:22,849 - root - INFO - Base Station Status empfangen: 00073200007e221d
+2025-09-04 12:44:22,884 - root - INFO - 📨 MQTT Nachricht empfangen: bssci/bs/70b3d59cd00009f6 (Payload: 139 bytes)
+2025-09-04 12:44:22,885 - root - INFO - 🏢 HANDLE_BASE_STATION_DATA AUFGERUFEN für 70b3d59cd00009f6
+2025-09-04 12:44:22,885 - root - INFO - Base Station Status empfangen von 70b3d59cd00009f6
+2025-09-04 12:44:22,885 - root - INFO - 🗄️ Base Station 70b3d59cd00009f6 in Dictionary gespeichert. Anzahl Base Stations: 4
+2025-09-04 12:44:22,885 - root - INFO - 🏢 BaseStation Discovery: 70b3d59cd00009f6
+2025-09-04 12:44:22,885 - root - INFO -    📤 Topic: homeassistant/sensor/bssci_basestation_70b3d59cd00009f6/config
+2025-09-04 12:44:22,885 - root - INFO -    🏷️ Device: Swissphone MBS20 70b3d59cd00009f6
+2025-09-04 12:44:22,885 - root - INFO - ✅ BaseStation Discovery erfolgreich gesendet
+2025-09-04 12:44:22,886 - root - INFO - Base Station Status empfangen: 70b3d59cd00009f6
+2025-09-04 12:44:22,886 - root - INFO - 📨 MQTT Nachricht empfangen: bssci/bs/3e5446fffee97b78 (Payload: 138 bytes)
+2025-09-04 12:44:22,886 - root - INFO - 🏢 HANDLE_BASE_STATION_DATA AUFGERUFEN für 3e5446fffee97b78
+2025-09-04 12:44:22,887 - root - INFO - Base Station Status empfangen von 3e5446fffee97b78
+2025-09-04 12:44:22,887 - root - INFO - 🗄️ Base Station 3e5446fffee97b78 in Dictionary gespeichert. Anzahl Base Stations: 4
+2025-09-04 12:44:22,887 - root - INFO - 🏢 BaseStation Discovery: 3e5446fffee97b78
+2025-09-04 12:44:22,887 - root - INFO -    📤 Topic: homeassistant/sensor/bssci_basestation_3e5446fffee97b78/config
+2025-09-04 12:44:22,887 - root - INFO -    🏷️ Device: Kerlink Base Station 3e5446fffee97b78
+2025-09-04 12:44:22,887 - root - INFO - ✅ BaseStation Discovery erfolgreich gesendet
+2025-09-04 12:44:22,888 - root - INFO - Base Station Status empfangen: 3e5446fffee97b78
+2025-09-04 12:44:22,888 - root - INFO - 📨 MQTT Nachricht empfangen: bssci/bs/9c65f9fffe6be145 (Payload: 141 bytes)
+2025-09-04 12:44:22,888 - root - INFO - 🏢 HANDLE_BASE_STATION_DATA AUFGERUFEN für 9c65f9fffe6be145
+2025-09-04 12:44:22,889 - root - INFO - Base Station Status empfangen von 9c65f9fffe6be145
+2025-09-04 12:44:22,889 - root - INFO - 🗄️ Base Station 9c65f9fffe6be145 in Dictionary gespeichert. Anzahl Base Stations: 4
+2025-09-04 12:44:22,889 - root - INFO - 🏢 BaseStation Discovery: 9c65f9fffe6be145
+2025-09-04 12:44:22,889 - root - INFO -    📤 Topic: homeassistant/sensor/bssci_basestation_9c65f9fffe6be145/config
+2025-09-04 12:44:22,889 - root - INFO -    🏷️ Device: Industrial Base Station 9c65f9fffe6be145
+2025-09-04 12:44:22,889 - root - INFO - ✅ BaseStation Discovery erfolgreich gesendet
+2025-09-04 12:44:22,890 - root - INFO - Base Station Status empfangen: 9c65f9fffe6be145
