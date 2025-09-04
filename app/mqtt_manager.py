@@ -398,25 +398,29 @@ class MQTTManager:
                 "name": "Uplink Count",
                 "device_class": None,
                 "unit_of_measurement": "",
-                "icon": "mdi:counter"
+                "icon": "mdi:counter",
+                "state_class": "total_increasing"
             },
             "base_id": {
                 "name": "Base ID",
                 "device_class": None,
                 "unit_of_measurement": "",
-                "icon": "mdi:identifier"
+                "icon": "mdi:identifier",
+                "state_class": None
             },
             "major_version": {
                 "name": "Major Version",
                 "device_class": None,
                 "unit_of_measurement": "",
-                "icon": "mdi:information"
+                "icon": "mdi:information",
+                "state_class": None
             },
             "minor_version": {
                 "name": "Minor Version",
                 "device_class": None,
                 "unit_of_measurement": "",
-                "icon": "mdi:information"
+                "icon": "mdi:information",
+                "state_class": None
             }
         }
         
@@ -434,20 +438,31 @@ class MQTTManager:
                 # Discovery Topic für diesen spezifischen Sensor
                 discovery_topic = f"homeassistant/sensor/{sensor_eui}_{measurement_key}/config"
                 
-                # Discovery Payload
+                # Discovery Payload - Home Assistant Standard Format
                 discovery_payload = {
-                    "name": f"{device_name} {config['name']}",
+                    "~": f"bssci/sensor/{sensor_eui}",
                     "unique_id": f"{sensor_eui}_{measurement_key}",
-                    "state_topic": state_topic,
+                    "object_id": f"{sensor_eui}_{measurement_key}",
+                    "name": f"{config['name']}",
+                    "state_topic": f"~/state",
                     "value_template": f"{{{{ value_json.{measurement_key} }}}}",
-                    "device_class": config["device_class"],
-                    "unit_of_measurement": config["unit_of_measurement"],
+                    "unit_of_meas": config["unit_of_measurement"],
                     "icon": config["icon"],
                     "device": device_info,
-                    "availability_topic": f"bssci/sensor/{sensor_eui}/availability",
+                    "availability_topic": f"~/availability",
                     "payload_available": "online",
                     "payload_not_available": "offline"
                 }
+                
+                # Device Class nur hinzufügen wenn definiert
+                if config["device_class"]:
+                    discovery_payload["device_class"] = config["device_class"]
+                
+                # State Class hinzufügen (measurement, total, total_increasing oder None)
+                if "state_class" in config and config["state_class"]:
+                    discovery_payload["state_class"] = config["state_class"]
+                elif config["device_class"] in ["temperature", "humidity", "voltage", "pressure", "carbon_dioxide"]:
+                    discovery_payload["state_class"] = "measurement"
                 
                 # Discovery Message senden
                 if self.publish_discovery(discovery_topic, discovery_payload):
