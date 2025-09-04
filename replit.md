@@ -10,7 +10,17 @@ Preferred communication style: Simple, everyday language.
 
 # Recent Changes
 
-**03.09.2025 - Settings-Persistierung beim Add-on Neustart behoben (Version 1.0.4.6.8) - ✅ AKTUELL:**
+**04.09.2025 - AUTO-DISCOVERY KOMPLETT REPARIERT mit UI für Sensor-Metadaten (Version 1.0.4.7) - ✅ AKTUELL:**
+- **KRITISCHES AUTO-DISCOVERY PROBLEM BEHOBEN:** Device-Metadaten-Validierung erlaubt jetzt Fallback-Werte für Auto-Discovery
+- **FALLBACK-MECHANISMUS IMPLEMENTIERT:** Auto-Discovery funktioniert auch wenn Manufacturer/Model "Unknown" sind
+- **AKTIVES UI-WARNSYSTEM:** Dashboard zeigt Warnungen für Sensoren mit unvollständigen Device-Metadaten
+- **MANUELLE METADATEN-EINGABE:** Button "Manuell ergänzen" ermöglicht direkte Eingabe von Manufacturer/Model
+- **BACKEND API ERWEITERT:** `/api/sensors/{eui}/metadata` Endpoint für Speichern manueller Device-Informationen
+- **PERSISTENT STORAGE:** Manuelle Metadaten werden in `manual_sensor_metadata.json` gespeichert und haben Vorrang
+- **INTELLIGENTE PRIORISIERUNG:** Manuelle Metadaten > Decoder-Metadaten > Fallback-Werte
+- **LOGO CLEANUP:** Kaputtes Logo vom Dashboard entfernt für bessere Performance
+
+**03.09.2025 - Settings-Persistierung beim Add-on Neustart behoben (Version 1.0.4.6.8) - ✅ ERFOLGREICH:**
 - **KRITISCHES PERSISTIERUNG-PROBLEM BEHOBEN:** Settings-Dateipfad für Add-on Container-Umgebung repariert
 - **ABSOLUTER PFAD-ZUGRIFF:** Settings werden nun aus korrektem Verzeichnis geladen (../settings.json)
 - **CONTAINER-KOMPATIBILITÄT:** Settings bleiben nach Add-on Neustart persistent erhalten

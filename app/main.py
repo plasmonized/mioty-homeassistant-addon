@@ -279,6 +279,23 @@ class BSSCIAddon:
             "sw_version": "1.0"
         }
         
+        # Prüfe manuelle Metadaten zuerst
+        try:
+            import json
+            with open('manual_sensor_metadata.json', 'r') as f:
+                manual_metadata = json.load(f)
+                if sensor_eui in manual_metadata:
+                    manual_info = manual_metadata[sensor_eui]
+                    device_info.update({
+                        "name": manual_info.get('name', device_info["name"]),
+                        "model": manual_info.get('model', device_info["model"]),
+                        "manufacturer": manual_info.get('manufacturer', device_info["manufacturer"])
+                    })
+                    logging.debug(f"🔧 Manuelle Metadaten für {sensor_eui} geladen: {device_info['manufacturer']} - {device_info['model']}")
+                    return device_info
+        except FileNotFoundError:
+            pass
+        
         # Prüfe ob Decoder zugewiesen
         if hasattr(self, 'decoder_manager') and self.decoder_manager:
             try:
@@ -321,13 +338,17 @@ class BSSCIAddon:
         
         return device_info
     
-    def _validate_device_info(self, device_info: Dict[str, Any]) -> bool:
+    def _validate_device_info(self, device_info: Dict[str, Any], allow_fallback: bool = True) -> bool:
         """Prüfe ob Device-Informationen vollständig sind."""
         required_fields = ['manufacturer', 'model', 'name']
         
         for field in required_fields:
             value = device_info.get(field, '')
-            if not value or value == 'Unknown':
+            if not value:
+                logging.debug(f"⚠️ Device-Info unvollständig: {field} ist leer")
+                return False
+            # Bei allow_fallback sind auch "Unknown" Werte OK
+            if not allow_fallback and value == 'Unknown':
                 logging.debug(f"⚠️ Device-Info unvollständig: {field} = '{value}'")
                 return False
         
@@ -341,11 +362,16 @@ class BSSCIAddon:
         device_info = self._get_device_info_from_decoder(sensor_eui, device_id)
         device_name = device_info["name"]
         
-        # ❗ Abbruch wenn Device-Informationen unvollständig
-        if not self._validate_device_info(device_info):
+        # ❗ Prüfe Device-Informationen (mit Fallback erlaubt)
+        if not self._validate_device_info(device_info, allow_fallback=True):
             logging.warning(f"❌ Auto Discovery abgebrochen für {sensor_eui}: Device-Informationen unvollständig")
             logging.info(f"💡 Bitte ergänzen Sie Manufacturer/Model über Decoder-Einstellungen")
             return
+        
+        # ⚠️ Warnung bei Standard-Werten
+        if device_info.get('manufacturer') == 'Unknown':
+            logging.info(f"💡 {sensor_eui}: Auto Discovery mit Standard-Werten (Manufacturer: Unknown)")
+            logging.info(f"   Tipp: Für bessere HA-Integration Decoder mit Device-Metadaten hinzufügen")
         
         # State Topic für JSON-Daten 
         state_topic = f"homeassistant/sensor/{device_id}/state"
