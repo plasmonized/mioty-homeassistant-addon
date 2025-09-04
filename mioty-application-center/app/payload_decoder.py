@@ -567,11 +567,11 @@ try {{
             it = 7
             
             if decoded['minor_version'] >= 3:
-                # Luftfeuchte ist bei allen Varianten enthalten - Korrektur: Durch 100 teilen
-                humidity_raw = bytes_data[it]
-                decoded['humidity'] = round(humidity_raw / 100.0, 2)  # Korrekte Skalierung für %RH
-                it += 1
-                logging.debug(f"🌡️ Humidity korrigiert: {humidity_raw} raw → {decoded['humidity']}% RH")
+                # Luftfeuchte: 2 Bytes (7-8) - entspricht JavaScript Decoder  
+                humidity_raw = (bytes_data[it] << 8) | bytes_data[it + 1]  # 2 Bytes kombinieren
+                decoded['humidity'] = round(humidity_raw / 100.0, 1)  # Durch 100 teilen für %RH
+                it += 2  # 2 Bytes verbraucht
+                logging.debug(f"🌡️ Humidity korrigiert: {humidity_raw} raw → {decoded['humidity']}% RH (2-Byte)")
                 
                 if decoded['product_version'] & 0x01:  # Co2 und Druck enthalten
                     decoded['pressure'] = (bytes_data[it] << 8) | bytes_data[it + 1]
@@ -600,10 +600,11 @@ try {{
                         it += 2
                         decoded['therm_temperature'] = ((bytes_data[it] << 8) | bytes_data[it + 1]) / 10.0 - 100.0
                         it += 2
+                        # Wall Humidity: Nur 1 Byte für Wandfeuchte
                         wall_humidity_raw = bytes_data[it]
-                        decoded['wall_humidity'] = round(wall_humidity_raw / 100.0, 2)  # Korrekte Skalierung
+                        decoded['wall_humidity'] = wall_humidity_raw  # Direkt verwenden (schon in %)
                         it += 1
-                        logging.debug(f"🌡️ Wall Humidity korrigiert: {wall_humidity_raw} raw → {decoded['wall_humidity']}% RH")
+                        logging.debug(f"🌡️ Wall Humidity: {wall_humidity_raw}% RH (1-Byte direkt)")
                         
             # Konvertiere zu erwartetes Format
             formatted_data = {}
