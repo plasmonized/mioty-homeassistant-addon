@@ -392,6 +392,31 @@ class MQTTManager:
                 "device_class": None,
                 "unit_of_measurement": "",
                 "icon": "mdi:tune"
+            },
+            # Juno TH Sensor Measurements
+            "up_cnt": {
+                "name": "Uplink Count",
+                "device_class": None,
+                "unit_of_measurement": "",
+                "icon": "mdi:counter"
+            },
+            "base_id": {
+                "name": "Base ID",
+                "device_class": None,
+                "unit_of_measurement": "",
+                "icon": "mdi:identifier"
+            },
+            "major_version": {
+                "name": "Major Version",
+                "device_class": None,
+                "unit_of_measurement": "",
+                "icon": "mdi:information"
+            },
+            "minor_version": {
+                "name": "Minor Version",
+                "device_class": None,
+                "unit_of_measurement": "",
+                "icon": "mdi:information"
             }
         }
         

@@ -841,16 +841,19 @@ try {{
                                metadata: Dict[str, Any]) -> Dict[str, Any]:
         """Professionelle Sentinum Engine Dekodierung in Python."""
         try:
-            # 1. Sensor-Typ basierend auf Payload erkennen
-            sensor_type = self._detect_sensor_type(payload_bytes)
-            logging.info(f"Erkannter Sensor-Typ: {sensor_type}")
-            
-            # 2. Spezifischen Decoder basierend auf JS-Content und Sensor-Typ wählen
-            if 'febris' in js_content.lower() and sensor_type == 'FEBR-Environmental':
-                return self._decode_febris_sentinum(payload_bytes, metadata)
-            elif 'juno' in js_content.lower():
+            # 1. ERSTE PRIORITÄT: Zugewiesene JS Decoder respektieren
+            if 'juno' in js_content.lower():
+                logging.info("🎯 Verwende zugewiesenen Juno JS Decoder")
                 return self._decode_juno_sentinum(payload_bytes, metadata)
-            elif sensor_type == 'IO-Link-Adapter':
+            elif 'febris' in js_content.lower():
+                logging.info("🎯 Verwende zugewiesenen Febris JS Decoder")
+                return self._decode_febris_sentinum(payload_bytes, metadata)
+            
+            # 2. ZWEITE PRIORITÄT: Automatische Sensor-Typ-Erkennung als Fallback
+            sensor_type = self._detect_sensor_type(payload_bytes)
+            logging.info(f"🔍 Fallback Auto-Detection: {sensor_type}")
+            
+            if sensor_type == 'IO-Link-Adapter':
                 return self._decode_iolink_adapter(payload_bytes, metadata)
             elif sensor_type == 'FEBR-Environmental':
                 return self._decode_febris_sentinum(payload_bytes, metadata)
