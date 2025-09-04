@@ -349,6 +349,17 @@ class PayloadDecoder:
     def decode_payload(self, sensor_eui: str, payload_bytes: List[int], 
                       metadata: Dict[str, Any] = None) -> Dict[str, Any]:
         """Dekodiere Payload für spezifischen Sensor."""
+        logging.info(f"🔍 DECODE_PAYLOAD AUFGERUFEN für {sensor_eui}")
+        logging.info(f"   📋 Verfügbare Decoder-Zuweisungen: {list(self.decoders.keys())}")
+        logging.info(f"   📋 Verfügbare Decoder-Dateien: {list(self.decoder_files.keys())}")
+        
+        if sensor_eui not in self.decoders:
+            logging.warning(f"❌ Kein Decoder für {sensor_eui} zugewiesen - versuche generische Dekodierung")
+            # Fallback: Generische Sentinum Dekodierung versuchen
+            return self._decode_generic_sentinum(payload_bytes, metadata or {}, "mioty")
+        
+        logging.info(f"✅ Decoder für {sensor_eui} gefunden: {self.decoders[sensor_eui]}")
+        
         if sensor_eui not in self.decoders:
             return {
                 'decoded': False,
