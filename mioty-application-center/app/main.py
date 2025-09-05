@@ -645,6 +645,14 @@ class BSSCIAddon:
                 "unit": None,
                 "icon": "mdi:antenna",
                 "value_template": "{{ value_json.state }}"
+            },
+            {
+                "name": "eui",
+                "display_name": "EUI (Serial Number)",
+                "device_class": None,
+                "unit": None,
+                "icon": "mdi:identifier",
+                "value_template": "{{ value_json.base_station_eui }}"
             }
         ]
         
@@ -856,7 +864,7 @@ class BSSCIAddon:
             config["value_template"] = f"{{{{ value_json.{field_name}.value | default(value_json.{field_name}) }}}}"
             sensor_configs[field_name] = config
         
-        # Immer RSSI und SNR hinzufügen
+        # Immer RSSI, SNR und EUI hinzufügen
         sensor_configs["rssi"] = {
             "name": "RSSI",
             "unit_of_measurement": "dBm",
@@ -868,6 +876,11 @@ class BSSCIAddon:
             "unit_of_measurement": "dB",
             "icon": "mdi:signal-variant",
             "value_template": "{{ value_json.snr }}"
+        }
+        sensor_configs["eui"] = {
+            "name": "EUI (Serial Number)",
+            "icon": "mdi:identifier",
+            "value_template": "{{ value_json.sensor_eui }}"
         }
         
         success_count = 0
