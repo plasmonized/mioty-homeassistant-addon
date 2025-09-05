@@ -48,6 +48,7 @@ tmp/
 temp/
 *.tmp
 *.temp
+attached_assets/
 
 # Build outputs
 dist/
