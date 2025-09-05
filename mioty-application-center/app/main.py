@@ -691,9 +691,9 @@ class BSSCIAddon:
             "state": state_value,  # Hauptstatus
             "base_station_eui": bs_eui,
             "status_code": status.get('code'),
-            "memory_usage": f"{status.get('memLoad', 0) * 100:.1f}%",
-            "cpu_usage": f"{status.get('cpuLoad', 0) * 100:.1f}%",
-            "duty_cycle": f"{status.get('dutyCycle', 0) * 100:.1f}%",
+            "memory_usage": round(status.get('memLoad', 0) * 100, 1),
+            "cpu_usage": round(status.get('cpuLoad', 0) * 100, 1),
+            "duty_cycle": round(status.get('dutyCycle', 0) * 100, 1),
             "uptime": self.format_uptime(status.get('uptime', 0)),
             "last_seen": self.format_timestamp(status.get('time')),
             "raw_memory_load": status.get('memLoad', 0),
