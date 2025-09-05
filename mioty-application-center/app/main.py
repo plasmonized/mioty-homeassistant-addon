@@ -629,7 +629,7 @@ class BSSCIAddon:
             else:
                 logging.warning(f"❌ BaseStation Discovery fehlgeschlagen (HA MQTT nicht verbunden)")
         
-        # Status
+        # Status und Attribute Topics publizieren
         state_value = "online" if status.get('code', 1) == 0 else "offline"
         attributes = {
             "base_station_eui": bs_eui,
@@ -641,8 +641,21 @@ class BSSCIAddon:
             "last_seen": self.format_timestamp(status.get('time'))
         }
         
+        # State und Attribute Topics publizieren für Home Assistant Device
         if self.mqtt_manager:
+            state_topic = f"homeassistant/sensor/{unique_id}/state"
+            attributes_topic = f"homeassistant/sensor/{unique_id}/attributes"
+            
+            # State publizieren
+            self.mqtt_manager.ha_client.publish(state_topic, state_value, retain=True)
+            
+            # Attributes publizieren  
+            import json
+            self.mqtt_manager.ha_client.publish(attributes_topic, json.dumps(attributes), retain=True)
+            
             logging.debug(f"📊 BaseStation Status Update: {bs_eui} → {state_value}")
+            logging.debug(f"📤 Published State: {state_topic}")
+            logging.debug(f"📤 Published Attributes: {attributes_topic}")
             success = self.mqtt_manager.publish_sensor_state(unique_id, state_value, attributes)
             if not success:
                 logging.debug(f"⚠️ BaseStation Status nicht gesendet (HA MQTT nicht verbunden)")

@@ -303,12 +303,21 @@ class WebGUI:
                         'sw_version': device_info.get('sw_version', '1.0')
                     }
 
+                # CPU und Memory von cpuLoad/memLoad zu Prozentangaben konvertieren
+                cpu_usage = 'N/A'
+                memory_usage = 'N/A'
+                
+                if 'cpuLoad' in status_data:
+                    cpu_usage = f"{status_data.get('cpuLoad', 0) * 100:.1f}%"
+                if 'memLoad' in status_data:
+                    memory_usage = f"{status_data.get('memLoad', 0) * 100:.1f}%"
+                
                 bs_info = {
                     'eui': eui,
                     'status': data.get('status', 'Online'),
                     'last_update': self._format_timestamp(data.get('last_seen', 0)),
-                    'cpu_usage': status_data.get('cpu_usage', 'N/A'),
-                    'memory_usage': status_data.get('memory_usage', 'N/A'),
+                    'cpu_usage': cpu_usage,
+                    'memory_usage': memory_usage,
                     'needs_metadata': needs_metadata,
                     'metadata': metadata
                 }
