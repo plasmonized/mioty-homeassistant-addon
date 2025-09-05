@@ -402,7 +402,7 @@ class MQTTManager:
         # Signal Qualität Messwerte
         "signal_strength": {
             "name": "Signal Strength",
-            "device_class": "signal_strength",
+            "device_class": None,  # signal_strength ist nicht gültig in HA
             "unit_of_measurement": "dBm",
             "icon": "mdi:wifi-strength-3"
         },
