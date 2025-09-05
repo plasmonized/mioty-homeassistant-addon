@@ -773,46 +773,46 @@ class BSSCIAddon:
                 "device_class": "temperature",
                 "unit_of_measurement": "°C",
                 "icon": "mdi:thermometer",
-                "value_template": "{{ value_json.temperature }}"
+                "value_template": "{{ value_json.temperature.value | default(value_json.temperature) }}"
             },
             "humidity": {
                 "name": "Humidity",
                 "device_class": "humidity", 
                 "unit_of_measurement": "%",
                 "icon": "mdi:water-percent",
-                "value_template": "{{ value_json.humidity }}"
+                "value_template": "{{ value_json.humidity.value | default(value_json.humidity) }}"
             },
             "battery_voltage": {
                 "name": "Battery Voltage",
                 "device_class": "voltage",
                 "unit_of_measurement": "V",
                 "icon": "mdi:battery",
-                "value_template": "{{ value_json.battery_voltage }}"
+                "value_template": "{{ value_json.battery_voltage.value | default(value_json.battery_voltage) }}"
             },
             "sensor_id": {
                 "name": "Sensor ID",
                 "icon": "mdi:identifier",
-                "value_template": "{{ value_json.sensor_id }}"
+                "value_template": "{{ value_json.sensor_id.value | default(value_json.sensor_id) }}"
             },
             "packet_type": {
                 "name": "Packet Type",
                 "icon": "mdi:package-variant",
-                "value_template": "{{ value_json.packet_type }}"
+                "value_template": "{{ value_json.packet_type.value | default(value_json.packet_type) }}"
             },
             "value1": {
                 "name": "Value 1",
                 "icon": "mdi:numeric-1-box",
-                "value_template": "{{ value_json.value1 }}"
+                "value_template": "{{ value_json.value1.value | default(value_json.value1) }}"
             },
             "value2": {
                 "name": "Value 2", 
                 "icon": "mdi:numeric-2-box",
-                "value_template": "{{ value_json.value2 }}"
+                "value_template": "{{ value_json.value2.value | default(value_json.value2) }}"
             },
             "raw_hex": {
                 "name": "Raw Data",
                 "icon": "mdi:code-array",
-                "value_template": "{{ value_json.raw_hex }}"
+                "value_template": "{{ value_json.raw_hex.value | default(value_json.raw_hex) }}"
             },
             "rssi": {
                 "name": "RSSI",
