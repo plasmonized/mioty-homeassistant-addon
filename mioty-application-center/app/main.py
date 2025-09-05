@@ -264,7 +264,7 @@ class BSSCIAddon:
         # Home Assistant Discovery für Base Station
         if self.config['auto_discovery']:
             try:
-                self.create_basestation_discovery_NEW_VERSION(bs_eui, data)
+                self.create_basestation_discovery(bs_eui, data)
             except AttributeError:
                 logging.debug(f"Base Station Discovery für {bs_eui} übersprungen")
     
@@ -584,7 +584,7 @@ class BSSCIAddon:
             else:
                 logging.debug(f"⚠️ HA MQTT Client nicht verfügbar")
     
-    def create_basestation_discovery_NEW_VERSION(self, bs_eui: str, status: Dict[str, Any]):
+    def create_basestation_discovery(self, bs_eui: str, status: Dict[str, Any]):
         """Erstelle einheitliche Base Station MQTT Discovery - identisch zu Sensor Discovery."""
         device_id = f"mioty_bs_{bs_eui}"
         
