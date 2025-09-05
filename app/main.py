@@ -245,9 +245,9 @@ class BSSCIAddon:
             except Exception as e:
                 logging.error(f"Fehler bei Individual Discovery für {sensor_eui}: {e}")
         
-        # Fallback: Alte Discovery für nicht-dekodierte Sensoren
-        elif self.config['auto_discovery'] and self.mqtt_manager:
-            self.create_sensor_discovery(sensor_eui, data, decoded_payload or {})
+        # Legacy Discovery System deaktiviert - Individual Discovery wird verwendet  
+        # elif self.config['auto_discovery'] and self.mqtt_manager:
+        #     self.create_sensor_discovery(sensor_eui, data, decoded_payload or {})
     
     def handle_sensor_config(self, sensor_eui: str, config: Dict[str, Any]):
         """Verarbeite Sensor-Konfigurationsanfragen."""
