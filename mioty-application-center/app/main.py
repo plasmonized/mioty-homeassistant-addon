@@ -671,6 +671,10 @@ class BSSCIAddon:
                     config['unit_of_measurement'] = metric['unit']
                 
                 logging.info(f"🔧 Korrekte Discovery: {bs_eui} - {metric['display_name']} → {discovery_topic}")
+                # 🐛 Debug: Was wird genau gesendet?
+                logging.debug(f"🔍 DEBUG Discovery Config für {bs_eui}:")
+                logging.debug(f"   Device Info: {device_info}")
+                logging.debug(f"   Serial Number: {device_info.get('serial_number', 'NICHT_GESETZT')}")
                 success = self.mqtt_manager.publish_discovery(discovery_topic, config)
                 if success:
                     logging.debug(f"✅ {metric['display_name']} Discovery erfolgreich")
@@ -904,6 +908,10 @@ class BSSCIAddon:
                 
                 # Discovery Message senden
                 if self.mqtt_manager and self.mqtt_manager.ha_client:
+                    # 🐛 Debug: Was wird genau gesendet?
+                    logging.debug(f"🔍 DEBUG Discovery Config für {sensor_eui}:")
+                    logging.debug(f"   Device Info: {device_info}")
+                    logging.debug(f"   Serial Number: {device_info.get('serial_number', 'NICHT_GESETZT')}")
                     success = self.mqtt_manager.publish_discovery(discovery_topic, discovery_config)
                     if success:
                         success_count += 1
