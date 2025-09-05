@@ -22,7 +22,7 @@ function decodeUplink(input) {
             it = 7;
         
             //Luftfeuchte ist bei allen Varianten enthalten
-            decoded.humidity = bytes[it++] / 10.0;
+            decoded.humidity = bytes[it++] / 2.5;
     
             if (decoded.product_version & 0x01) { // Co2 und Druck sind enthalten wenn subversion bit0 = 1, andernfalls 0
                 decoded.pressure = (bytes[it++] << 8 | bytes[it++]);
@@ -42,14 +42,14 @@ function decodeUplink(input) {
             if (decoded.product_version & 0x04) {
                 decoded.wall_temperature = ((bytes[it++] << 8) | bytes[it++]) / 10 - 100;
                 decoded.therm_temperature = ((bytes[it++] << 8) | bytes[it++]) / 10 - 100;
-                decoded.wall_humidity = bytes[it++] / 10.0;
+                decoded.wall_humidity = bytes[it++] / 2.5;
             }
     
         }else{
             it = 7;
         
             //Luftfeuchte ist bei allen Varianten enthalten
-            decoded.humidity = bytes[it++] / 10.0;
+            decoded.humidity = bytes[it++] / 2.5;
     
             if (decoded.product_version & 0x01) { // Co2 und Druck sind enthalten wenn subversion bit0 = 1, andernfalls 0
                 decoded.pressure = (bytes[it++] << 8 | bytes[it++]);
@@ -73,7 +73,7 @@ function decodeUplink(input) {
             if (decoded.product_version & 0x04) {
                 decoded.wall_temperature = bytes[it++] - 100;
                 decoded.therm_temperature = bytes[it++] - 100;
-                decoded.wall_humidity = bytes[it++] / 10.0;
+                decoded.wall_humidity = bytes[it++] / 2.5;
     
             }
     
