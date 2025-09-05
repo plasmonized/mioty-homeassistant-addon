@@ -703,39 +703,124 @@ class BSSCIAddon:
             return f"{days}d {hours}h"
     
     def create_unified_sensor_discovery(self, sensor_eui: str, data: Dict[str, Any], decoded_payload: Dict[str, Any]):
-        """Erstelle einheitliche MQTT Discovery mit vereinfachter Topic-Struktur."""
+        """Erstelle korrekte MQTT Discovery - ein Subtopic pro Messwert mit gemeinsamem State."""
         device_id = f"mioty_{sensor_eui}"
         decoded_data = decoded_payload.get('data', {})
         
         # Device Information extrahieren
         device_info = self._get_device_info_from_decoder(sensor_eui, device_id)
         
-        # State Topic für alle Daten als JSON
+        # State Topic für alle Daten als JSON (gemeinsam für alle Messwerte)
         state_topic = f"homeassistant/sensor/{device_id}/state"
         
-        # Erstelle nur ein Discovery Topic pro Sensor mit JSON state
-        discovery_config = {
-            "name": device_info["name"],
-            "unique_id": device_id,
-            "state_topic": state_topic,
-            "value_template": "{{ value_json.state }}",
-            "json_attributes_topic": state_topic,
-            "icon": "mdi:antenna",
-            "device": device_info
+        # Sensor Mapping: Messwert → Home Assistant Konfiguration
+        sensor_configs = {
+            "temperature": {
+                "name": "Temperature",
+                "device_class": "temperature",
+                "unit_of_measurement": "°C",
+                "icon": "mdi:thermometer",
+                "value_template": "{{ value_json.temperature }}"
+            },
+            "humidity": {
+                "name": "Humidity",
+                "device_class": "humidity", 
+                "unit_of_measurement": "%",
+                "icon": "mdi:water-percent",
+                "value_template": "{{ value_json.humidity }}"
+            },
+            "battery_voltage": {
+                "name": "Battery Voltage",
+                "device_class": "voltage",
+                "unit_of_measurement": "V",
+                "icon": "mdi:battery",
+                "value_template": "{{ value_json.battery_voltage }}"
+            },
+            "sensor_id": {
+                "name": "Sensor ID",
+                "icon": "mdi:identifier",
+                "value_template": "{{ value_json.sensor_id }}"
+            },
+            "packet_type": {
+                "name": "Packet Type",
+                "icon": "mdi:package-variant",
+                "value_template": "{{ value_json.packet_type }}"
+            },
+            "value1": {
+                "name": "Value 1",
+                "icon": "mdi:numeric-1-box",
+                "value_template": "{{ value_json.value1 }}"
+            },
+            "value2": {
+                "name": "Value 2", 
+                "icon": "mdi:numeric-2-box",
+                "value_template": "{{ value_json.value2 }}"
+            },
+            "raw_hex": {
+                "name": "Raw Data",
+                "icon": "mdi:code-array",
+                "value_template": "{{ value_json.raw_hex }}"
+            },
+            "rssi": {
+                "name": "RSSI",
+                "unit_of_measurement": "dBm",
+                "icon": "mdi:wifi-strength-2",
+                "value_template": "{{ value_json.rssi }}"
+            },
+            "snr": {
+                "name": "SNR",
+                "unit_of_measurement": "dB",
+                "icon": "mdi:signal-variant",
+                "value_template": "{{ value_json.snr }}"
+            }
         }
         
-        discovery_topic = f"homeassistant/sensor/{device_id}/config"
+        success_count = 0
+        total_count = 0
         
-        # Discovery Message senden
-        if self.mqtt_manager and self.mqtt_manager.ha_client:
-            success = self.mqtt_manager.publish_discovery(discovery_topic, discovery_config)
-            if success:
-                logging.info(f"🔧 Unified Discovery: {sensor_eui} → {discovery_topic}")
+        # Erstelle für jeden verfügbaren Messwert ein eigenes Discovery Topic
+        for measurement_key, config in sensor_configs.items():
+            # Prüfe ob dieser Messwert in den Daten vorhanden ist
+            has_value = (measurement_key in decoded_data or 
+                        measurement_key in ['rssi', 'snr'] or  # Metadaten immer verfügbar
+                        measurement_key == 'raw_hex')  # Raw Daten immer verfügbar
+            
+            if has_value:
+                total_count += 1
                 
-                # State Message mit allen Daten als JSON erstellen
-                self.send_unified_state_message(sensor_eui, data, decoded_payload)
-            else:
-                logging.warning(f"❌ Unified Discovery fehlgeschlagen für {sensor_eui}")
+                # Erstelle Discovery Config für diesen Messwert
+                discovery_config = {
+                    "name": config["name"],
+                    "unique_id": f"{device_id}_{measurement_key}",
+                    "state_topic": state_topic,
+                    "value_template": config["value_template"],
+                    "icon": config["icon"],
+                    "device": device_info
+                }
+                
+                # Füge optionale Attribute hinzu
+                if "device_class" in config:
+                    discovery_config["device_class"] = config["device_class"]
+                if "unit_of_measurement" in config:
+                    discovery_config["unit_of_measurement"] = config["unit_of_measurement"]
+                
+                # Discovery Topic für diesen Messwert
+                discovery_topic = f"homeassistant/sensor/{device_id}/{measurement_key}/config"
+                
+                # Discovery Message senden
+                if self.mqtt_manager and self.mqtt_manager.ha_client:
+                    success = self.mqtt_manager.publish_discovery(discovery_topic, discovery_config)
+                    if success:
+                        success_count += 1
+                        logging.info(f"🔧 Korrekte Discovery: {sensor_eui} - {config['name']} → {discovery_topic}")
+                    else:
+                        logging.warning(f"❌ Discovery fehlgeschlagen: {sensor_eui} - {measurement_key}")
+        
+        logging.info(f"✅ Korrekte Discovery abgeschlossen: {success_count}/{total_count} Messwerte für {sensor_eui}")
+        
+        # State Message mit allen Daten als JSON erstellen
+        if success_count > 0:
+            self.send_unified_state_message(sensor_eui, data, decoded_payload)
     
     def send_unified_state_message(self, sensor_eui: str, data: Dict[str, Any], decoded_payload: Dict[str, Any]):
         """Sende alle Sensor-Daten als JSON in einem einzigen state topic."""
