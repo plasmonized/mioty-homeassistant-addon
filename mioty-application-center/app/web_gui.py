@@ -197,7 +197,7 @@ class WebGUI:
             
             # KRITISCH: Verwende IMMER die aktuelle externe Template-Datei
             if index_exists:
-                logging.info("✅ Verwende AKTUELLE index.html Template-Datei (Version 1.0.5.6.14)")
+                logging.info("✅ Verwende AKTUELLE index.html Template-Datei (Version 1.0.5.6.15)")
                 return render_template('index.html', ingress_path=ingress_path)
             else:
                 logging.error("❌ CRITICAL ERROR: index.html Template-Datei nicht gefunden!")
@@ -1011,7 +1011,7 @@ class WebGUI:
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>mioty Application Center für Homeassistant v1.0.5.6.14</title>
+    <title>mioty Application Center für Homeassistant v1.0.5.6.15</title>
     <style>
         * {
             margin: 0;

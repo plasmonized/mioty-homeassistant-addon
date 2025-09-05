@@ -291,7 +291,7 @@ class BSSCIAddon:
             "model": "mioty IoT Sensor",
             "manufacturer": "Unknown",
             "serial_number": sensor_eui,  # ✅ EUI als Seriennummer in Home Assistant anzeigen
-            "sw_version": "1.0.5.6.14"
+            "sw_version": "1.0.5.6.15"
         }
         
         # Prüfe manuelle Metadaten zuerst
@@ -388,7 +388,7 @@ class BSSCIAddon:
             "model": "mioty Base Station",
             "manufacturer": "Unknown",
             "serial_number": bs_eui,  # ✅ EUI als Seriennummer in Home Assistant anzeigen
-            "sw_version": "1.0.5.6.14"
+            "sw_version": "1.0.5.6.15"
         }
         
         # Prüfe manuelle Metadaten zuerst
@@ -890,7 +890,7 @@ class BSSCIAddon:
         for measurement_key, config in sensor_configs.items():
             # Prüfe ob dieser Messwert in den Daten vorhanden ist
             has_value = (measurement_key in decoded_data or 
-                        measurement_key in ['rssi', 'snr'] or  # Metadaten immer verfügbar
+                        measurement_key in ['rssi', 'snr', 'eui'] or  # Metadaten immer verfügbar
                         measurement_key == 'raw_hex')  # Raw Daten immer verfügbar
             
             if has_value:
