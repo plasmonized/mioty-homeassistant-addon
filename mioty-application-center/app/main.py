@@ -290,7 +290,8 @@ class BSSCIAddon:
             "name": f"mioty Sensor {sensor_eui}",
             "model": "mioty IoT Sensor",
             "manufacturer": "Unknown",
-            "sw_version": "1.0"
+            "serial_number": sensor_eui,  # ✅ EUI als Seriennummer in Home Assistant anzeigen
+            "sw_version": "1.0.5.6.11"
         }
         
         # Prüfe manuelle Metadaten zuerst
@@ -386,7 +387,8 @@ class BSSCIAddon:
             "name": f"mioty Base Station {bs_eui}",
             "model": "mioty Base Station",
             "manufacturer": "Unknown",
-            "sw_version": "1.0"
+            "serial_number": bs_eui,  # ✅ EUI als Seriennummer in Home Assistant anzeigen
+            "sw_version": "1.0.5.6.11"
         }
         
         # Prüfe manuelle Metadaten zuerst
