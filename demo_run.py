@@ -8,8 +8,8 @@ import os
 import sys
 import logging
 
-# Add app directory to Python path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'app'))
+# Add mioty-application-center app directory to Python path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'mioty-application-center', 'app'))
 
 # Set demo environment variables
 # Update these with your real MQTT broker credentials
