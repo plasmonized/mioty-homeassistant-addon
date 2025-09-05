@@ -1,7 +1,7 @@
 # BSSCI mioty Home Assistant Add-on Konfiguration
 name: "mioty Application Center für Homeassistant"
 description: "mioty Application Center für die Verwaltung von mioty IoT Sensoren mit MQTT Integration und Web-GUI"
-version: "1.0.5.6.6"
+version: "1.0.6.0.0"
 slug: mioty-application-center
 logo: logo.png
 init: false

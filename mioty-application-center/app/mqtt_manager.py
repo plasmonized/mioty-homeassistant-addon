@@ -310,10 +310,9 @@ class MQTTManager:
             return False
     
     def send_individual_sensor_discoveries(self, sensor_eui: str, decoded_data: Dict[str, Any], device_name: str = "mioty Sensor") -> bool:
-        """Sende separate Home Assistant Discovery Messages für jeden Messwert."""
-        if not self.ha_connected or not self.ha_client:
-            logging.debug("HA MQTT nicht verfügbar - Individual Discovery übersprungen")
-            return False
+        """DEAKTIVIERT: Individual Discovery System (40+ Topics pro Sensor) - ersetzt durch einheitliche Topic-Struktur."""
+        logging.debug(f"Individual Discovery System deaktiviert für {sensor_eui} - einheitliche Struktur verwendet")
+        return True  # Erfolgreich "deaktiviert"
         
         # Device Information für alle Sensoren
         device_info = {

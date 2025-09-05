@@ -224,21 +224,17 @@ class BSSCIAddon:
             )
         }
         
-        # Home Assistant Discovery - Individual Sensor Discovery
+        # ✅ NEUE EINHEITLICHE MQTT DISCOVERY 
         if self.config['auto_discovery'] and self.mqtt_manager and decoded_payload:
             try:
                 decoded_data = decoded_payload.get('data', {})
                 if decoded_data:
-                    # Separate Discovery Messages für jeden Messwert senden
-                    device_name = f"Sentinum Febris TH"  # TODO: Aus Metadaten extrahieren
-                    self.mqtt_manager.send_individual_sensor_discoveries(sensor_eui, decoded_data, device_name)
-                    
-                    # JSON State für alle individuellen Sensoren senden
-                    self.mqtt_manager.publish_sensor_state_json(sensor_eui, decoded_data)
+                    # Neue einheitliche Discovery und State Message
+                    self.create_unified_sensor_discovery(sensor_eui, data, decoded_payload)
                 else:
-                    logging.debug(f"Keine dekodierte Daten für Discovery: {sensor_eui}")
+                    logging.debug(f"Keine dekodierte Daten für neue Unified Discovery: {sensor_eui}")
             except Exception as e:
-                logging.error(f"Fehler bei Individual Discovery für {sensor_eui}: {e}")
+                logging.error(f"Fehler bei Unified Discovery für {sensor_eui}: {e}")
         
         # Legacy Discovery System deaktiviert - Individual Discovery wird verwendet
         # elif self.config['auto_discovery'] and self.mqtt_manager:
@@ -589,8 +585,8 @@ class BSSCIAddon:
                 logging.debug(f"⚠️ HA MQTT Client nicht verfügbar")
     
     def create_basestation_discovery(self, bs_eui: str, status: Dict[str, Any]):
-        """Erstelle Home Assistant MQTT Discovery für Base Station."""
-        device_id = f"bssci_basestation_{bs_eui}"
+        """Erstelle einheitliche Base Station MQTT Discovery mit neuer Topic-Struktur."""
+        device_id = f"mioty_bs_{bs_eui}"
         
         # 🔍 Device-Informationen für Base Station extrahieren
         device_info = self._get_basestation_info(bs_eui, device_id)
@@ -601,62 +597,66 @@ class BSSCIAddon:
             logging.warning(f"❌ BaseStation Discovery abgebrochen für {bs_eui}: Device-Informationen unvollständig")
             return
         
-        # ⚠️ Warnung bei Standard-Werten
-        if device_info.get('manufacturer') == 'Unknown':
-            logging.info(f"💡 {bs_eui}: BaseStation Discovery mit Standard-Werten (Manufacturer: Unknown)")
-            logging.info(f"   Tipp: Base Station Metadaten über manuellen Eintrag hinzufügen")
+        # State Topic für alle Base Station Daten als JSON
+        state_topic = f"homeassistant/sensor/{device_id}/state"
         
-        unique_id = f"bssci_basestation_{bs_eui}"
-        
+        # Einheitliche Discovery Config
         discovery_config = {
             "name": device_name,
-            "unique_id": unique_id,
-            "state_topic": f"homeassistant/sensor/{unique_id}/state",
-            "json_attributes_topic": f"homeassistant/sensor/{unique_id}/attributes",
+            "unique_id": device_id,
+            "state_topic": state_topic,
+            "value_template": "{{ value_json.state }}",
+            "json_attributes_topic": state_topic,
             "icon": "mdi:antenna",
             "device": device_info
         }
         
-        discovery_topic = f"homeassistant/sensor/{unique_id}/config"
+        discovery_topic = f"homeassistant/sensor/{device_id}/config"
         if self.mqtt_manager:
-            logging.info(f"🏢 BaseStation Discovery: {bs_eui}")
+            logging.info(f"🏢 Unified BaseStation Discovery: {bs_eui}")
             logging.info(f"   📤 Topic: {discovery_topic}")
             logging.info(f"   🏷️ Device: {device_name}")
             success = self.mqtt_manager.publish_discovery(discovery_topic, discovery_config)
             if success:
-                logging.info(f"✅ BaseStation Discovery erfolgreich gesendet")
+                logging.info(f"✅ Unified BaseStation Discovery erfolgreich gesendet")
+                
+                # State Message mit allen Daten als JSON senden
+                self.send_unified_basestation_state(bs_eui, status)
             else:
                 logging.warning(f"❌ BaseStation Discovery fehlgeschlagen (HA MQTT nicht verbunden)")
+    
+    def send_unified_basestation_state(self, bs_eui: str, status: Dict[str, Any]):
+        """Sende alle Base Station Daten als JSON in einem einzigen state topic."""
+        device_id = f"mioty_bs_{bs_eui}"
+        state_topic = f"homeassistant/sensor/{device_id}/state"
         
-        # Status und Attribute Topics publizieren
+        # Status berechnen
         state_value = "online" if status.get('code', 1) == 0 else "offline"
-        attributes = {
+        
+        # Alle Base Station Daten in einem JSON zusammenfassen
+        state_data = {
+            "state": state_value,  # Hauptstatus
             "base_station_eui": bs_eui,
             "status_code": status.get('code'),
-            "memory_load": f"{status.get('memLoad', 0) * 100:.1f}%",
-            "cpu_load": f"{status.get('cpuLoad', 0) * 100:.1f}%",
+            "memory_usage": f"{status.get('memLoad', 0) * 100:.1f}%",
+            "cpu_usage": f"{status.get('cpuLoad', 0) * 100:.1f}%",
             "duty_cycle": f"{status.get('dutyCycle', 0) * 100:.1f}%",
             "uptime": self.format_uptime(status.get('uptime', 0)),
-            "last_seen": self.format_timestamp(status.get('time'))
+            "last_seen": self.format_timestamp(status.get('time')),
+            "raw_memory_load": status.get('memLoad', 0),
+            "raw_cpu_load": status.get('cpuLoad', 0),
+            "raw_duty_cycle": status.get('dutyCycle', 0),
+            "raw_uptime": status.get('uptime', 0)
         }
         
-        # State und Attribute Topics publizieren für Home Assistant Device
-        if self.mqtt_manager:
-            state_topic = f"homeassistant/sensor/{unique_id}/state"
-            attributes_topic = f"homeassistant/sensor/{unique_id}/attributes"
-            
-            # State publizieren
-            self.mqtt_manager.ha_client.publish(state_topic, state_value, retain=True)
-            
-            # Attributes publizieren  
-            import json
-            self.mqtt_manager.ha_client.publish(attributes_topic, json.dumps(attributes), retain=True)
-            
-            logging.debug(f"📊 BaseStation Status Update: {bs_eui} → {state_value}")
-            logging.debug(f"📤 Published State: {state_topic}")
-            logging.debug(f"📤 Published Attributes: {attributes_topic}")
-            success = self.mqtt_manager.publish_sensor_state(unique_id, state_value, attributes)
-            if not success:
+        # State Message senden
+        import json
+        if self.mqtt_manager and self.mqtt_manager.ha_client:
+            success = self.mqtt_manager.ha_client.publish(state_topic, json.dumps(state_data), retain=True)
+            if success:
+                logging.info(f"📊 Unified BaseStation State: {bs_eui} → alle Daten als JSON")
+            else:
+                logging.warning(f"❌ Unified BaseStation State fehlgeschlagen für {bs_eui}")
                 logging.debug(f"⚠️ BaseStation Status nicht gesendet (HA MQTT nicht verbunden)")
     
     def assess_signal_quality(self, snr, rssi) -> str:
@@ -701,6 +701,70 @@ class BSSCIAddon:
             days = seconds // 86400
             hours = (seconds % 86400) // 3600
             return f"{days}d {hours}h"
+    
+    def create_unified_sensor_discovery(self, sensor_eui: str, data: Dict[str, Any], decoded_payload: Dict[str, Any]):
+        """Erstelle einheitliche MQTT Discovery mit vereinfachter Topic-Struktur."""
+        device_id = f"mioty_{sensor_eui}"
+        decoded_data = decoded_payload.get('data', {})
+        
+        # Device Information extrahieren
+        device_info = self._get_device_info_from_decoder(sensor_eui, device_id)
+        
+        # State Topic für alle Daten als JSON
+        state_topic = f"homeassistant/sensor/{device_id}/state"
+        
+        # Erstelle nur ein Discovery Topic pro Sensor mit JSON state
+        discovery_config = {
+            "name": device_info["name"],
+            "unique_id": device_id,
+            "state_topic": state_topic,
+            "value_template": "{{ value_json.state }}",
+            "json_attributes_topic": state_topic,
+            "icon": "mdi:antenna",
+            "device": device_info
+        }
+        
+        discovery_topic = f"homeassistant/sensor/{device_id}/config"
+        
+        # Discovery Message senden
+        if self.mqtt_manager and self.mqtt_manager.ha_client:
+            success = self.mqtt_manager.publish_discovery(discovery_topic, discovery_config)
+            if success:
+                logging.info(f"🔧 Unified Discovery: {sensor_eui} → {discovery_topic}")
+                
+                # State Message mit allen Daten als JSON erstellen
+                self.send_unified_state_message(sensor_eui, data, decoded_payload)
+            else:
+                logging.warning(f"❌ Unified Discovery fehlgeschlagen für {sensor_eui}")
+    
+    def send_unified_state_message(self, sensor_eui: str, data: Dict[str, Any], decoded_payload: Dict[str, Any]):
+        """Sende alle Sensor-Daten als JSON in einem einzigen state topic."""
+        device_id = f"mioty_{sensor_eui}"
+        state_topic = f"homeassistant/sensor/{device_id}/state"
+        
+        decoded_data = decoded_payload.get('data', {})
+        
+        # Alle Daten in einem JSON zusammenfassen
+        state_data = {
+            "state": "online",  # Hauptstatus
+            "sensor_eui": sensor_eui,
+            "snr": data.get('snr'),
+            "rssi": data.get('rssi'),
+            "base_station_eui": data.get('bs_eui'),
+            "receive_time": self.format_timestamp(data.get('rxTime')),
+            "message_counter": data.get('cnt'),
+            "decoder_used": decoded_payload.get('decoder_name', 'Generic mioty'),
+            **decoded_data  # Alle dekodierten Messwerte hinzufügen
+        }
+        
+        # State Message senden
+        import json
+        if self.mqtt_manager and self.mqtt_manager.ha_client:
+            success = self.mqtt_manager.ha_client.publish(state_topic, json.dumps(state_data), retain=True)
+            if success:
+                logging.info(f"📊 Unified State: {sensor_eui} → alle Daten als JSON")
+            else:
+                logging.warning(f"❌ Unified State fehlgeschlagen für {sensor_eui}")
     
     def reload_settings(self):
         """Lade Einstellungen neu und wende sie auf laufendes System an."""
