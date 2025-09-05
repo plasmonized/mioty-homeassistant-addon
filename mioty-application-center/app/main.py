@@ -904,6 +904,11 @@ class BSSCIAddon:
                 
                 # Discovery Message senden
                 if self.mqtt_manager and self.mqtt_manager.ha_client:
+                    # 🐛 CRITICAL DEBUG: Serial Number Check
+                    logging.info(f"🔍 DEVICE_INFO SERIAL DEBUG für {sensor_eui}:")
+                    logging.info(f"   Serial Number in device_info: {device_info.get('serial_number', 'FEHLT!')}")
+                    logging.info(f"   Vollständige device_info: {device_info}")
+                    
                     success = self.mqtt_manager.publish_discovery(discovery_topic, discovery_config)
                     if success:
                         success_count += 1
