@@ -448,6 +448,8 @@ class BSSCIAddon:
     def create_sensor_discovery(self, sensor_eui: str, data: Dict[str, Any], decoded_payload: Dict[str, Any] = None):
         """Erstelle Home Assistant MQTT Discovery für Sensor - Automatische Device-Metadaten aus Decodern."""
         device_id = f"mioty_{sensor_eui}"
+        if decoded_payload is None:
+            decoded_payload = {}
         
         # 🔍 Device-Informationen aus zugewiesenem Decoder extrahieren
         device_info = self._get_device_info_from_decoder(sensor_eui, device_id)
@@ -755,9 +757,11 @@ class BSSCIAddon:
             hours = (seconds % 86400) // 3600
             return f"{days}d {hours}h"
     
-    def create_unified_sensor_discovery(self, sensor_eui: str, data: Dict[str, Any], decoded_payload: Dict[str, Any]):
+    def create_unified_sensor_discovery(self, sensor_eui: str, data: Dict[str, Any], decoded_payload: Dict[str, Any] = None):
         """Erstelle korrekte MQTT Discovery - ein Subtopic pro Messwert mit gemeinsamem State."""
         device_id = f"mioty_{sensor_eui}"
+        if decoded_payload is None:
+            decoded_payload = {}
         decoded_data = decoded_payload.get('data', {})
         
         # Device Information extrahieren
@@ -766,66 +770,90 @@ class BSSCIAddon:
         # State Topic für alle Daten als JSON (gemeinsam für alle Messwerte)
         state_topic = f"homeassistant/sensor/{device_id}/state"
         
-        # Sensor Mapping: Messwert → Home Assistant Konfiguration
-        sensor_configs = {
+        # Dynamische Sensor Configs basierend auf verfügbaren Daten
+        sensor_configs = {}
+        
+        # Standard Felder definieren (falls in decoded_data vorhanden)
+        standard_fields = {
             "temperature": {
                 "name": "Temperature",
                 "device_class": "temperature",
                 "unit_of_measurement": "°C",
-                "icon": "mdi:thermometer",
-                "value_template": "{{ value_json.temperature.value | default(value_json.temperature) }}"
+                "icon": "mdi:thermometer"
             },
             "humidity": {
                 "name": "Humidity",
                 "device_class": "humidity", 
                 "unit_of_measurement": "%",
-                "icon": "mdi:water-percent",
-                "value_template": "{{ value_json.humidity.value | default(value_json.humidity) }}"
+                "icon": "mdi:water-percent"
             },
             "battery_voltage": {
                 "name": "Battery Voltage",
                 "device_class": "voltage",
                 "unit_of_measurement": "V",
-                "icon": "mdi:battery",
-                "value_template": "{{ value_json.battery_voltage.value | default(value_json.battery_voltage) }}"
+                "icon": "mdi:battery"
             },
             "sensor_id": {
                 "name": "Sensor ID",
-                "icon": "mdi:identifier",
-                "value_template": "{{ value_json.sensor_id.value | default(value_json.sensor_id) }}"
+                "icon": "mdi:identifier"
             },
             "packet_type": {
                 "name": "Packet Type",
-                "icon": "mdi:package-variant",
-                "value_template": "{{ value_json.packet_type.value | default(value_json.packet_type) }}"
+                "icon": "mdi:package-variant"
             },
             "value1": {
                 "name": "Value 1",
-                "icon": "mdi:numeric-1-box",
-                "value_template": "{{ value_json.value1.value | default(value_json.value1) }}"
+                "icon": "mdi:numeric-1-box"
             },
             "value2": {
                 "name": "Value 2", 
-                "icon": "mdi:numeric-2-box",
-                "value_template": "{{ value_json.value2.value | default(value_json.value2) }}"
+                "icon": "mdi:numeric-2-box"
             },
             "raw_hex": {
                 "name": "Raw Data",
-                "icon": "mdi:code-array",
-                "value_template": "{{ value_json.raw_hex.value | default(value_json.raw_hex) }}"
+                "icon": "mdi:code-array"
             },
-            "rssi": {
-                "name": "RSSI",
-                "unit_of_measurement": "dBm",
-                "icon": "mdi:wifi-strength-2",
-                "value_template": "{{ value_json.rssi }}"
+            "base_id": {
+                "name": "Base ID",
+                "icon": "mdi:identifier"
             },
-            "snr": {
-                "name": "SNR",
-                "unit_of_measurement": "dB",
-                "icon": "mdi:signal-variant",
-                "value_template": "{{ value_json.snr }}"
-            }
+            "major_version": {
+                "name": "Major Version",
+                "icon": "mdi:tag-outline"
+            },
+            "minor_version": {
+                "name": "Minor Version",
+                "icon": "mdi:tag-outline"
+            },
+        }
+        
+        # Nur Configs für Felder erstellen, die auch wirklich existieren
+        for field_name, field_data in decoded_data.items():
+            if field_name in standard_fields:
+                config = standard_fields[field_name].copy()
+            else:
+                # Fallback für unbekannte Felder
+                config = {
+                    "name": field_name.replace('_', ' ').title(),
+                    "icon": "mdi:information-outline"
+                }
+            
+            # Value Template für komplexe Objekte und direkte Werte
+            config["value_template"] = f"{{{{ value_json.{field_name}.value | default(value_json.{field_name}) }}}}"
+            sensor_configs[field_name] = config
+        
+        # Immer RSSI und SNR hinzufügen
+        sensor_configs["rssi"] = {
+            "name": "RSSI",
+            "unit_of_measurement": "dBm",
+            "icon": "mdi:wifi-strength-2",
+            "value_template": "{{ value_json.rssi }}"
+        }
+        sensor_configs["snr"] = {
+            "name": "SNR",
+            "unit_of_measurement": "dB",
+            "icon": "mdi:signal-variant",
+            "value_template": "{{ value_json.snr }}"
         }
         
         success_count = 0
