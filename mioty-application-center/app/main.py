@@ -365,7 +365,7 @@ class BSSCIAddon:
                             decoder_display_name = decoder_info.get('name', f'mioty Sensor {sensor_eui}')
                             
                             device_info.update({
-                                "name": decoder_display_name,
+                                "name": f"{decoder_display_name} ({sensor_eui[-8:]})",  # EUI in Namen anzeigen
                                 "model": decoder_display_name,
                                 "manufacturer": "Sentinum"
                             })
