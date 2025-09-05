@@ -613,7 +613,6 @@ class BSSCIAddon:
             "unique_id": unique_id,
             "state_topic": f"homeassistant/sensor/{unique_id}/state",
             "json_attributes_topic": f"homeassistant/sensor/{unique_id}/attributes",
-            "device_class": "connectivity",
             "icon": "mdi:antenna",
             "device": device_info
         }
