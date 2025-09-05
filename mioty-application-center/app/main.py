@@ -264,7 +264,7 @@ class BSSCIAddon:
         # Home Assistant Discovery für Base Station
         if self.config['auto_discovery']:
             try:
-                self.create_basestation_discovery(bs_eui, data)
+                self.create_basestation_discovery_NEW_VERSION(bs_eui, data)
             except AttributeError:
                 logging.debug(f"Base Station Discovery für {bs_eui} übersprungen")
     
@@ -584,8 +584,8 @@ class BSSCIAddon:
             else:
                 logging.debug(f"⚠️ HA MQTT Client nicht verfügbar")
     
-    def create_basestation_discovery(self, bs_eui: str, status: Dict[str, Any]):
-        """Erstelle einheitliche Base Station MQTT Discovery mit neuer Topic-Struktur."""
+    def create_basestation_discovery_NEW_VERSION(self, bs_eui: str, status: Dict[str, Any]):
+        """Erstelle einheitliche Base Station MQTT Discovery - identisch zu Sensor Discovery."""
         device_id = f"mioty_bs_{bs_eui}"
         
         # 🔍 Device-Informationen für Base Station extrahieren
@@ -597,33 +597,86 @@ class BSSCIAddon:
             logging.warning(f"❌ BaseStation Discovery abgebrochen für {bs_eui}: Device-Informationen unvollständig")
             return
         
-        # State Topic für alle Base Station Daten als JSON
+        # State Topic für alle Base Station Daten als JSON (geteilt)
         state_topic = f"homeassistant/sensor/{device_id}/state"
         
-        # Einheitliche Discovery Config
-        discovery_config = {
-            "name": device_name,
-            "unique_id": device_id,
-            "state_topic": state_topic,
-            "value_template": "{{ value_json.state }}",
-            "json_attributes_topic": state_topic,
-            "icon": "mdi:antenna",
-            "device": device_info
-        }
+        # Individuelle Base Station Messwerte erstellen (nach HA Discovery Protokoll)
+        metrics = [
+            {
+                "name": "cpu_usage",
+                "display_name": "CPU Usage",
+                "device_class": None,
+                "unit": "%",
+                "icon": "mdi:cpu-64-bit",
+                "value_template": "{{ value_json.cpu_usage }}"
+            },
+            {
+                "name": "memory_usage",
+                "display_name": "Memory Usage",
+                "device_class": None,
+                "unit": "%",
+                "icon": "mdi:memory",
+                "value_template": "{{ value_json.memory_usage }}"
+            },
+            {
+                "name": "duty_cycle",
+                "display_name": "Duty Cycle",
+                "device_class": None,
+                "unit": "%",
+                "icon": "mdi:chart-line",
+                "value_template": "{{ value_json.duty_cycle }}"
+            },
+            {
+                "name": "uptime",
+                "display_name": "Uptime",
+                "device_class": "duration",
+                "unit": None,
+                "icon": "mdi:clock-time-eight-outline",
+                "value_template": "{{ value_json.uptime }}"
+            },
+            {
+                "name": "status",
+                "display_name": "Status",
+                "device_class": None,
+                "unit": None,
+                "icon": "mdi:antenna",
+                "value_template": "{{ value_json.state }}"
+            }
+        ]
         
-        discovery_topic = f"homeassistant/sensor/{device_id}/config"
         if self.mqtt_manager:
-            logging.info(f"🏢 Unified BaseStation Discovery: {bs_eui}")
-            logging.info(f"   📤 Topic: {discovery_topic}")
-            logging.info(f"   🏷️ Device: {device_name}")
-            success = self.mqtt_manager.publish_discovery(discovery_topic, discovery_config)
-            if success:
-                logging.info(f"✅ Unified BaseStation Discovery erfolgreich gesendet")
+            logging.info(f"🏢 Korrekte BaseStation Discovery: {bs_eui}")
+            
+            # Jeder Messwert bekommt sein eigenes Discovery Topic
+            for metric in metrics:
+                discovery_topic = f"homeassistant/sensor/{device_id}/{metric['name']}/config"
                 
-                # State Message mit allen Daten als JSON senden
-                self.send_unified_basestation_state(bs_eui, status)
-            else:
-                logging.warning(f"❌ BaseStation Discovery fehlgeschlagen (HA MQTT nicht verbunden)")
+                config = {
+                    "name": f"{device_name} {metric['display_name']}",
+                    "unique_id": f"{device_id}_{metric['name']}",
+                    "state_topic": state_topic,
+                    "value_template": metric['value_template'],
+                    "icon": metric['icon'],
+                    "device": device_info
+                }
+                
+                # Optional: Device Class und Unit hinzufügen
+                if metric['device_class']:
+                    config['device_class'] = metric['device_class']
+                if metric['unit']:
+                    config['unit_of_measurement'] = metric['unit']
+                
+                logging.info(f"🔧 Korrekte Discovery: {bs_eui} - {metric['display_name']} → {discovery_topic}")
+                success = self.mqtt_manager.publish_discovery(discovery_topic, config)
+                if success:
+                    logging.debug(f"✅ {metric['display_name']} Discovery erfolgreich")
+                else:
+                    logging.warning(f"❌ {metric['display_name']} Discovery fehlgeschlagen")
+            
+            logging.info(f"✅ Korrekte BaseStation Discovery abgeschlossen: {len(metrics)}/{len(metrics)} Messwerte für {bs_eui}")
+            
+            # State Message mit allen Daten als JSON senden
+            self.send_unified_basestation_state(bs_eui, status)
     
     def send_unified_basestation_state(self, bs_eui: str, status: Dict[str, Any]):
         """Sende alle Base Station Daten als JSON in einem einzigen state topic."""
