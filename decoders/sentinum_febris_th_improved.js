@@ -1,10 +1,11 @@
 /**
- * Sentinum Febris TH Environmental Sensor Decoder - VERBESSERTE VERSION 
- * 🔧 FIXES für v1.0.5.6.11:
- * ✅ Korrekte 2-Byte Humidity-Dekodierung (war: nur 1 Byte = falsche Werte!)
- * ✅ Automatische Taupunkt-Berechnung mit Magnus-Formel  
- * ✅ Bessere Fehlerbehandlung und Validierung
- * ✅ Kompatibel mit bestehendem System
+ * Sentinum Febris TH Environmental Sensor Decoder - Verbesserte Version
+ * Temperatur & Luftfeuchtigkeit Sensor mit korrekter Humidity-Skalierung
+ * 
+ * Fixes: 
+ * - Korrekte 2-Byte Humidity-Dekodierung (nicht nur 1 Byte)
+ * - Automatische Taupunkt-Berechnung mit Magnus-Formel
+ * - Bessere Fehlerbehandlung
  */
 
 function decodeUplink(input) {
@@ -39,7 +40,7 @@ function decodeUplink(input) {
     const temp_raw = (bytes[5] << 8) | bytes[6];
     data.internal_temperature = (temp_raw / 10.0) - 100.0;
 
-    // Bytes 7-8: Relative Humidity (0.01% RH) - 🔧 KORRIGIERT: 2 Bytes statt 1!
+    // Bytes 7-8: Relative Humidity (0.01% RH) - KORREKTE 2-BYTE DEKODIERUNG!
     data.humidity = ((bytes[7] << 8) | bytes[8]) / 100.0;
 
     // Bytes 9-10: External Temperature (falls verfügbar)
@@ -55,7 +56,7 @@ function decodeUplink(input) {
       data.alarm = bytes[14];
     }
 
-    // ✅ Automatische Taupunkt-Berechnung (Magnus-Formel)
+    // Automatische Taupunkt-Berechnung (Magnus-Formel)
     if (data.internal_temperature !== undefined && data.humidity !== undefined) {
       const temp = data.internal_temperature;
       const rh = data.humidity;
@@ -70,7 +71,7 @@ function decodeUplink(input) {
       }
     }
 
-    // Netzwerk Metadaten (für Kompatibilität)
+    // Netzwerk Metadaten
     data.networkBaseType = "lorawan";
     data.networkSubType = "tti";
 
@@ -89,7 +90,7 @@ function decodeUplink(input) {
   }
 }
 
-// Export für Node.js (Kompatibilität)
+// Export für Node.js
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { decodeUplink };
 }
