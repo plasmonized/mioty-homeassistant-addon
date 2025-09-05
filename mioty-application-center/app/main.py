@@ -781,6 +781,18 @@ class BSSCIAddon:
                 "unit_of_measurement": "°C",
                 "icon": "mdi:thermometer"
             },
+            "internal_temperature": {
+                "name": "Internal Temperature",
+                "device_class": "temperature",
+                "unit_of_measurement": "°C",
+                "icon": "mdi:thermometer"
+            },
+            "dew_point": {
+                "name": "Dew Point",
+                "device_class": "temperature",
+                "unit_of_measurement": "°C",
+                "icon": "mdi:water-thermometer"
+            },
             "humidity": {
                 "name": "Humidity",
                 "device_class": "humidity", 
