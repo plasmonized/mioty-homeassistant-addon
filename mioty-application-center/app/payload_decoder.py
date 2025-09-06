@@ -611,7 +611,7 @@ try {{
             if decoded['minor_version'] >= 3:
                 # Luftfeuchte: 2 Bytes (7-8) - entspricht JavaScript Decoder  
                 humidity_raw = (bytes_data[it] << 8) | bytes_data[it + 1]  # 2 Bytes kombinieren
-                decoded['humidity'] = round(humidity_raw / 100.0, 1)  # Durch 100 teilen für %RH
+                decoded['humidity'] = round(humidity_raw / 256.0, 1)  # Korrigierte Skalierung für realistische Werte
                 it += 2  # 2 Bytes verbraucht
                 logging.debug(f"🌡️ Humidity: {humidity_raw} raw → {decoded['humidity']}% RH (2-Byte)")
                 
@@ -965,9 +965,9 @@ try {{
             temp_raw = (bytes_data[5] << 8) | bytes_data[6]
             data['internal_temperature'] = (temp_raw / 10.0) - 100.0
             
-            # Bytes 7-8: Relative Humidity (0.01% RH)
+            # Bytes 7-8: Relative Humidity (korrigierte Skalierung)
             humidity_raw = (bytes_data[7] << 8) | bytes_data[8]
-            data['humidity'] = humidity_raw / 100.0
+            data['humidity'] = humidity_raw / 256.0
             
             # Alarm Status (falls verfügbar)
             if len(bytes_data) > 14:

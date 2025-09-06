@@ -39,8 +39,8 @@ function decodeUplink(input) {
     const temp_raw = (bytes[5] << 8) | bytes[6];
     data.internal_temperature = (temp_raw / 10.0) - 100.0;
 
-    // Bytes 7-8: Relative Humidity (0.01% RH) - 🔧 KORRIGIERT: 2 Bytes statt 1!
-    data.humidity = ((bytes[7] << 8) | bytes[8]) / 100.0;
+    // Bytes 7-8: Relative Humidity (korrigierte Skalierung für realistische Werte)
+    data.humidity = ((bytes[7] << 8) | bytes[8]) / 256.0;
 
     // Bytes 9-10: External Temperature (falls verfügbar)
     if (bytes.length > 10) {
