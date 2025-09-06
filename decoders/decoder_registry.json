@@ -19,6 +19,10 @@
     "fca84a030000127d": {
       "decoder_name": "febris_th",
       "assigned_at": 1757072293.8771033
+    },
+    "74731d0000000016": {
+      "decoder_name": "ifm-000173-20160824-IODD1.0.1-de",
+      "assigned_at": 1757179125.0
     }
   },
   "decoder_files": {
