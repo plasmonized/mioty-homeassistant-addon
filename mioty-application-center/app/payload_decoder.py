@@ -476,30 +476,57 @@ class PayloadDecoder:
                 with open(decoder_info['file_path'], 'r') as src:
                     decoder_content = src.read()
                 
-                # Erstelle Wrapper für Node.js Ausführung
+                # Erstelle universeller Wrapper für beide Decoder-Formate
                 wrapper_content = f"""
-const decoder = require('./decoder.js');
+// Lade Decoder-Datei
+const fs = require('fs');
+const decoderContent = fs.readFileSync('./decoder.js', 'utf8');
 
 // Input-Daten
 const payload = {json.dumps(payload_bytes)};
 const metadata = {json.dumps(metadata or {})};
 
 try {{
-    // Führe Dekodierung aus
+    // Führe Decoder-Code aus
+    eval(decoderContent);
+    
     let result;
-    if (typeof decoder.decode === 'function') {{
-        result = decoder.decode(payload, metadata);
-    }} else if (typeof decoder === 'function') {{
-        result = decoder(payload, metadata);
+    
+    // Universelles Interface: Auto-detect Decoder-Format
+    if (typeof Decoder === 'function') {{
+        // Juno/Apollon Format: Decoder(bytes, port)
+        result = Decoder(payload, 1);
+        console.log('🔧 Juno/Apollon Decoder Format erkannt');
+    }} else if (typeof decodeUplink === 'function') {{
+        // Febris Format: decodeUplink(input)
+        const decodedResult = decodeUplink({{bytes: payload, fPort: 1}});
+        result = decodedResult.data || decodedResult;
+        console.log('🔧 Febris decodeUplink Format erkannt');
     }} else {{
-        throw new Error('No decode function found');
+        throw new Error('Kein gültiger Decoder gefunden (weder Decoder noch decodeUplink)');
+    }}
+    
+    // Normalisiere Ausgabe-Format
+    const normalizedData = {{}};
+    for (const [key, value] of Object.entries(result || {{}})) {{
+        if (typeof value === 'object' && value !== null && 'value' in value) {{
+            // Bereits im richtigen Format
+            normalizedData[key] = value;
+        }} else {{
+            // Einfacher Wert - konvertiere zu Objekt-Format
+            normalizedData[key] = {{
+                value: value,
+                unit: '',
+                description: key.replace('_', ' ').replace(/([A-Z])/g, ' $1').trim()
+            }};
+        }}
     }}
     
     console.log(JSON.stringify({{
         decoded: true,
         decoder_type: 'javascript',
         decoder_name: '{decoder_info["name"]}',
-        data: result,
+        data: normalizedData,
         raw_data: payload
     }}));
 }} catch (error) {{
@@ -543,11 +570,26 @@ try {{
     
     def _simple_js_decode(self, js_content: str, payload_bytes: List[int], 
                          metadata: Dict[str, Any]) -> Dict[str, Any]:
-        """Verbesserte JavaScript Dekodierung mit Sentinum Engine Logik."""
-        logging.warning("Node.js nicht verfügbar, verwende verbesserte Sentinum Engine")
+        """Universeller JavaScript Decoder ohne Node.js - direkter Python-basierter Parser."""
+        logging.warning("Node.js nicht verfügbar, verwende Python-basierten JS-Decoder")
         
-        # Verwende professionelle Sentinum-Engine Logik
-        return self._sentinum_engine_decode(js_content, payload_bytes, metadata)
+        try:
+            # Auto-detect Decoder-Format basierend auf JS-Content
+            if 'function Decoder(' in js_content:
+                # Juno/Apollon Format erkannt
+                return self._execute_juno_decoder(js_content, payload_bytes, metadata)
+            elif 'function decodeUplink(' in js_content:
+                # Febris Format erkannt  
+                return self._execute_febris_decoder(js_content, payload_bytes, metadata)
+            else:
+                # Fallback zu Sentinum Engine
+                logging.warning("Unbekanntes JS-Format, verwende Sentinum Engine")
+                return self._sentinum_engine_decode(js_content, payload_bytes, metadata)
+                
+        except Exception as e:
+            logging.error(f"Python JS-Decoder Fehler: {e}")
+            # Letzte Rettung: Sentinum Engine
+            return self._sentinum_engine_decode(js_content, payload_bytes, metadata)
     
     def _decode_febris_python(self, payload_bytes: List[int], metadata: Dict[str, Any]) -> Dict[str, Any]:
         """Python-Implementierung des Febris TH Decoders."""
@@ -1288,6 +1330,38 @@ try {{
                 }
         
         return parsed_data
+    
+    def _execute_juno_decoder(self, js_content: str, payload_bytes: List[int], 
+                             metadata: Dict[str, Any]) -> Dict[str, Any]:
+        """Führe Juno Decoder (function Decoder format) direkt in Python aus."""
+        try:
+            # Verwende die Python-Implementation des Juno-Decoders
+            logging.info("🔧 Juno Decoder Format erkannt - verwende Python-Implementation")
+            return self._decode_juno_python(payload_bytes, metadata)
+            
+        except Exception as e:
+            logging.error(f"Juno Decoder Fehler: {e}")
+            return {
+                'decoded': False,
+                'reason': f'Juno decoder error: {str(e)}',
+                'raw_data': payload_bytes
+            }
+    
+    def _execute_febris_decoder(self, js_content: str, payload_bytes: List[int], 
+                               metadata: Dict[str, Any]) -> Dict[str, Any]:
+        """Führe Febris Decoder (function decodeUplink format) direkt in Python aus."""
+        try:
+            # Verwende die Python-Implementation des Febris-Decoders
+            logging.info("🔧 Febris decodeUplink Format erkannt - verwende Python-Implementation")
+            return self._decode_febris_python(payload_bytes, metadata)
+            
+        except Exception as e:
+            logging.error(f"Febris Decoder Fehler: {e}")
+            return {
+                'decoded': False,
+                'reason': f'Febris decoder error: {str(e)}',
+                'raw_data': payload_bytes
+            }
     
     def _extract_bits_from_bytes(self, data: List[int], bit_offset: int, bit_length: int) -> int:
         """Extrahiere spezifische Bits aus Byte-Array."""
