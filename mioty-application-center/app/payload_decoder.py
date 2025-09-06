@@ -347,7 +347,7 @@ class PayloadDecoder:
         return True
     
     def decode_payload(self, sensor_eui: str, payload_bytes: List[int], 
-                      metadata: Dict[str, Any] = None) -> Dict[str, Any]:
+                      metadata: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Dekodiere Payload für spezifischen Sensor."""
         logging.info(f"🔍 DECODE_PAYLOAD AUFGERUFEN für {sensor_eui}")
         logging.info(f"   📋 Verfügbare Decoder-Zuweisungen: {list(self.decoders.keys())}")
@@ -609,29 +609,11 @@ try {{
             it = 7
             
             if decoded['minor_version'] >= 3:
-                # Luftfeuchte: 2 Bytes (7-8) - KORRIGIERTE Dekodierung 
-                humidity_raw = (bytes_data[it] << 8) | bytes_data[it + 1]  # Big-Endian: MSB zuerst
-                
-                # DEBUG: Verschiedene Interpretationen testen
-                humidity_little_endian = (bytes_data[it + 1] << 8) | bytes_data[it]  # Little-Endian
-                humidity_single_byte = bytes_data[it]  # Nur 1 Byte
-                
-                # Wähle korrekte Interpretation basierend auf realistischen Werten (20-100%)
-                if 20 <= humidity_raw / 100.0 <= 100:
-                    decoded['humidity'] = round(humidity_raw / 100.0, 1)  # Big-Endian, ÷100
-                    logging.info(f"🌡️ Humidity (Big-Endian): {humidity_raw} → {decoded['humidity']}% RH")
-                elif 20 <= humidity_little_endian / 100.0 <= 100:
-                    decoded['humidity'] = round(humidity_little_endian / 100.0, 1)  # Little-Endian, ÷100  
-                    logging.info(f"🌡️ Humidity (Little-Endian): {humidity_little_endian} → {decoded['humidity']}% RH")
-                elif 20 <= humidity_single_byte <= 100:
-                    decoded['humidity'] = round(humidity_single_byte, 1)  # Direkt als %
-                    logging.info(f"🌡️ Humidity (1-Byte direkt): {humidity_single_byte} → {decoded['humidity']}% RH")
-                else:
-                    # Fallback: verwende Big-Endian mit Warnung
-                    decoded['humidity'] = round(humidity_raw / 100.0, 1)
-                    logging.warning(f"🌡️ Humidity UNREALISTISCH: Raw={humidity_raw}, Little={humidity_little_endian}, Single={humidity_single_byte} → {decoded['humidity']}% RH")
-                
+                # Luftfeuchte: 2 Bytes (7-8) - entspricht JavaScript Decoder  
+                humidity_raw = (bytes_data[it] << 8) | bytes_data[it + 1]  # 2 Bytes kombinieren
+                decoded['humidity'] = round(humidity_raw / 100.0, 1)  # Durch 100 teilen für %RH
                 it += 2  # 2 Bytes verbraucht
+                logging.debug(f"🌡️ Humidity: {humidity_raw} raw → {decoded['humidity']}% RH (2-Byte)")
                 
                 if decoded['product_version'] & 0x01:  # Co2 und Druck enthalten
                     decoded['pressure'] = (bytes_data[it] << 8) | bytes_data[it + 1]
@@ -983,25 +965,9 @@ try {{
             temp_raw = (bytes_data[5] << 8) | bytes_data[6]
             data['internal_temperature'] = (temp_raw / 10.0) - 100.0
             
-            # Bytes 7-8: Relative Humidity (0.01% RH) - KORRIGIERTE Interpretation
-            humidity_big_endian = (bytes_data[7] << 8) | bytes_data[8]  # Big-Endian
-            humidity_little_endian = (bytes_data[8] << 8) | bytes_data[7]  # Little-Endian
-            humidity_single = bytes_data[7]  # Nur 1 Byte
-            
-            # Auto-Korrektur: Wähle realistischste Interpretation (20-100% RH)
-            if 20 <= humidity_big_endian / 100.0 <= 100:
-                data['humidity'] = humidity_big_endian / 100.0
-                logging.info(f"🌡️ Sentinum Humidity (Big-Endian): {humidity_big_endian} → {data['humidity']}% RH")
-            elif 20 <= humidity_little_endian / 100.0 <= 100:
-                data['humidity'] = humidity_little_endian / 100.0
-                logging.info(f"🌡️ Sentinum Humidity (Little-Endian): {humidity_little_endian} → {data['humidity']}% RH")
-            elif 20 <= humidity_single <= 100:
-                data['humidity'] = float(humidity_single)
-                logging.info(f"🌡️ Sentinum Humidity (1-Byte): {humidity_single} → {data['humidity']}% RH")
-            else:
-                # Fallback: Original mit Warnung
-                data['humidity'] = humidity_big_endian / 100.0
-                logging.warning(f"🌡️ Sentinum Humidity UNREALISTISCH: Big={humidity_big_endian}, Little={humidity_little_endian}, Single={humidity_single} → {data['humidity']}% RH")
+            # Bytes 7-8: Relative Humidity (0.01% RH)
+            humidity_raw = (bytes_data[7] << 8) | bytes_data[8]
+            data['humidity'] = humidity_raw / 100.0
             
             # Alarm Status (falls verfügbar)
             if len(bytes_data) > 14:
