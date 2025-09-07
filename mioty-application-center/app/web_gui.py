@@ -640,6 +640,8 @@ class WebGUI:
                     model = data.get('model', '').strip()
                     device_name = data.get('device_name', '').strip()
                     
+                    logging.info(f"🔍 METADATEN DEBUG: Manufacturer='{manufacturer}', Model='{model}', DeviceName='{device_name}'")
+                    
                     if manufacturer or model or device_name:
                         # Metadaten lokal speichern
                         try:
@@ -663,10 +665,12 @@ class WebGUI:
                             with open(ha_metadata_file, 'w') as f:
                                 json.dump(ha_metadata, f, indent=2)
                             
-                            logging.info(f"✅ HA-Metadaten gespeichert für {eui}")
+                            logging.info(f"✅ HA-Metadaten gespeichert für {eui}: Manufacturer={manufacturer}, Model={model}, DeviceName={device_name}")
                             
                         except Exception as e:
                             logging.error(f"❌ Fehler beim Speichern der Metadaten: {e}")
+                    else:
+                        logging.info(f"ℹ️ Keine Metadaten zum Speichern für {eui} (alle Felder leer)")
                     
                     return jsonify({
                         "success": True, 
