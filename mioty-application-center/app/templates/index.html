@@ -872,7 +872,7 @@
 
                 console.log('🚀 Registriere Sensor:', data);
 
-                const response = await fetch(getCacheBusterURL('/api/sensor/register'), {
+                const response = await fetch(getCacheBusterURL('/api/sensor/add'), {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
