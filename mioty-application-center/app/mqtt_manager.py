@@ -205,9 +205,13 @@ class MQTTManager:
             # Parse Topic
             topic_parts = topic.split('/')
             
-            # BSSCI Topics verarbeiten
+            # BSSCI Topics mit BASE_TOPIC verarbeiten
             if len(topic_parts) >= 3 and topic_parts[0] == self.base_topic:
                 self._handle_bssci_message(topic_parts, payload)
+            
+            # Remote EP Commands ohne BASE_TOPIC (EP/{EUI}/cmd/)
+            elif len(topic_parts) >= 3 and topic_parts[0] == "EP":
+                self._handle_remote_ep_command(topic_parts, payload)
                 
         except Exception as e:
             logging.error(f"Fehler beim Verarbeiten der MQTT Nachricht: {e}")
@@ -221,6 +225,10 @@ class MQTTManager:
             f"{self.base_topic}/ep/+/cmd",      # Standard Commands
             f"EP/+/cmd/",                       # Remote EP Commands  
             f"{self.base_topic}/ep/+/dl",       # Downlink Messages
+            f"{self.base_topic}/ep/+/response", # Command Responses
+            f"{self.base_topic}/ep/+/status",   # Status Updates
+            f"{self.base_topic}/ep/+/warning",  # Warning Notifications
+            f"{self.base_topic}/ep/+/error",    # Error Notifications
         ]
         
         for topic in topics:
@@ -240,12 +248,38 @@ class MQTTManager:
                 message_type = topic_parts[3]
                 
                 if message_type == "ul" and self.data_callback:
-                    # Sensor-Daten
+                    # Sensor-Daten (Uplink)
+                    logging.info(f"📡 Sensor Uplink: {sensor_eui}")
                     self.data_callback(sensor_eui, data)
                     
                 elif message_type == "config" and self.config_callback:
                     # Sensor-Konfiguration
+                    logging.info(f"⚙️ Sensor Config: {sensor_eui}")
                     self.config_callback(sensor_eui, data)
+                
+                elif message_type == "cmd":
+                    # Standard Commands
+                    self._handle_sensor_command(sensor_eui, data)
+                
+                elif message_type == "dl":
+                    # Downlink Messages
+                    self._handle_downlink_message(sensor_eui, data)
+                
+                elif message_type == "response":
+                    # Command Responses
+                    self._handle_command_response(sensor_eui, data)
+                
+                elif message_type == "status":
+                    # Status Updates
+                    self._handle_status_update(sensor_eui, data)
+                
+                elif message_type == "warning":
+                    # Warning Notifications
+                    self._handle_warning_notification(sensor_eui, data)
+                
+                elif message_type == "error":
+                    # Error Notifications
+                    self._handle_error_notification(sensor_eui, data)
                     
             elif len(topic_parts) >= 3 and topic_parts[1] == "bs":
                 bs_eui = topic_parts[2]
@@ -363,7 +397,133 @@ class MQTTManager:
     def send_individual_sensor_discoveries(self, sensor_eui: str, decoded_data: Dict[str, Any], device_name: str = "mioty Sensor") -> bool:
         """DEAKTIVIERT: Individual Discovery System (40+ Topics pro Sensor) - ersetzt durch einheitliche Topic-Struktur."""
         logging.debug(f"Individual Discovery System deaktiviert für {sensor_eui} - einheitliche Struktur verwendet")
-        return True  # Erfolgreich "deaktiviert"
+        return True
+    
+    def _handle_remote_ep_command(self, topic_parts: list, payload: str):
+        """Verarbeite Remote EP Commands (EP/{EUI}/cmd/)."""
+        try:
+            if len(topic_parts) >= 3:
+                sensor_eui = topic_parts[1]
+                command = payload.strip()
+                
+                logging.info(f"🔧 Remote EP Command empfangen: {sensor_eui} → '{command}'")
+                
+                # Command Response senden
+                response_data = {
+                    "command": command,
+                    "status": "received",
+                    "sensor_eui": sensor_eui,
+                    "timestamp": self._get_timestamp()
+                }
+                
+                response_topic = f"{self.base_topic}/ep/{sensor_eui}/response"
+                self.publish_config(response_topic, response_data)
+                
+        except Exception as e:
+            logging.error(f"Fehler beim Verarbeiten des Remote EP Commands: {e}")
+    
+    def _handle_sensor_command(self, sensor_eui: str, data: Dict[str, Any]):
+        """Verarbeite Sensor Commands."""
+        try:
+            command = data.get("command", "")
+            logging.info(f"⚡ Sensor Command: {sensor_eui} → '{command}'")
+            
+            # Command-spezifische Verarbeitung
+            if command == "attach":
+                logging.info(f"📡 Attach Command für {sensor_eui}")
+            elif command == "detach":
+                logging.info(f"📤 Detach Command für {sensor_eui}")
+            elif command == "status":
+                logging.info(f"📊 Status Request für {sensor_eui}")
+            
+            # Response senden
+            response_data = {
+                "command": command,
+                "status": "processed",
+                "sensor_eui": sensor_eui,
+                "timestamp": self._get_timestamp()
+            }
+            
+            response_topic = f"{self.base_topic}/ep/{sensor_eui}/response"
+            self.publish_config(response_topic, response_data)
+            
+        except Exception as e:
+            logging.error(f"Fehler beim Verarbeiten des Sensor Commands: {e}")
+    
+    def _handle_downlink_message(self, sensor_eui: str, data: Dict[str, Any]):
+        """Verarbeite Downlink Messages."""
+        try:
+            logging.info(f"📥 Downlink Message empfangen: {sensor_eui}")
+            logging.debug(f"Downlink Data: {data}")
+            
+            # Downlink-Verarbeitung hier implementieren
+            # z.B. an Service Center weiterleiten
+            
+        except Exception as e:
+            logging.error(f"Fehler beim Verarbeiten der Downlink Message: {e}")
+    
+    def _handle_command_response(self, sensor_eui: str, data: Dict[str, Any]):
+        """Verarbeite Command Responses."""
+        try:
+            command = data.get("command", "unknown")
+            status = data.get("status", "unknown")
+            
+            logging.info(f"📝 Command Response: {sensor_eui} → {command}: {status}")
+            
+            # Response-Verarbeitung hier implementieren
+            
+        except Exception as e:
+            logging.error(f"Fehler beim Verarbeiten der Command Response: {e}")
+    
+    def _handle_status_update(self, sensor_eui: str, data: Dict[str, Any]):
+        """Verarbeite Status Updates."""
+        try:
+            action = data.get("action", "unknown")
+            logging.info(f"📊 Status Update: {sensor_eui} → {action}")
+            
+            if action == "auto_detached":
+                reason = data.get("reason", "unknown")
+                inactive_hours = data.get("inactive_hours", 0)
+                logging.warning(f"⚠️ Sensor auto-detached: {sensor_eui} ({reason}, {inactive_hours}h inactive)")
+            
+            # Status-Update-Verarbeitung hier implementieren
+            
+        except Exception as e:
+            logging.error(f"Fehler beim Verarbeiten des Status Updates: {e}")
+    
+    def _handle_warning_notification(self, sensor_eui: str, data: Dict[str, Any]):
+        """Verarbeite Warning Notifications."""
+        try:
+            action = data.get("action", "unknown")
+            logging.warning(f"⚠️ Warning: {sensor_eui} → {action}")
+            
+            if action == "inactivity_warning":
+                inactive_hours = data.get("inactive_hours", 0)
+                hours_until_detach = data.get("hours_until_detach", 0)
+                logging.warning(f"⏰ Inactivity Warning: {sensor_eui} ({inactive_hours}h inactive, {hours_until_detach}h until detach)")
+            
+            # Warning-Verarbeitung hier implementieren
+            
+        except Exception as e:
+            logging.error(f"Fehler beim Verarbeiten der Warning Notification: {e}")
+    
+    def _handle_error_notification(self, sensor_eui: str, data: Dict[str, Any]):
+        """Verarbeite Error Notifications."""
+        try:
+            error_type = data.get("error_type", "unknown")
+            error_message = data.get("message", "")
+            
+            logging.error(f"❌ Error Notification: {sensor_eui} → {error_type}: {error_message}")
+            
+            # Error-Verarbeitung hier implementieren
+            
+        except Exception as e:
+            logging.error(f"Fehler beim Verarbeiten der Error Notification: {e}")
+    
+    def _get_timestamp(self) -> float:
+        """Gibt aktuellen Timestamp zurück."""
+        import time
+        return time.time()  # Erfolgreich "deaktiviert"
         
         # ❌ KOMPLETT DEAKTIVIERT - ALLE ALTER CODE ENTFERNT
         # Individual Discovery System wurde durch einheitliche Topic-Struktur ersetzt
