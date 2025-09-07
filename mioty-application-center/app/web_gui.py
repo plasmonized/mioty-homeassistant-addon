@@ -325,6 +325,39 @@ class WebGUI:
             
             return jsonify(bs_list)
         
+        @self.app.route('/api/warnings')
+        def get_warnings():
+            """API: Hole alle aktiven Sensor-Warnungen."""
+            if not self.addon:
+                return jsonify({"error": "Add-on nicht verfügbar"}), 500
+            
+            try:
+                warnings = self.addon.get_sensor_warnings() if hasattr(self.addon, 'get_sensor_warnings') else {}
+                return jsonify(warnings)
+            except Exception as e:
+                logging.error(f"❌ Fehler beim Abrufen der Warnungen: {e}")
+                return jsonify({"error": "Fehler beim Abrufen der Warnungen"}), 500
+        
+        @self.app.route('/api/warnings/clear/<sensor_eui>', methods=['POST'])
+        def clear_warning(sensor_eui):
+            """API: Lösche spezifische Sensor-Warnung."""
+            if not self.addon:
+                return jsonify({"error": "Add-on nicht verfügbar"}), 500
+            
+            try:
+                if hasattr(self.addon, 'sensor_warnings') and sensor_eui in self.addon.sensor_warnings:
+                    del self.addon.sensor_warnings[sensor_eui]
+                    if sensor_eui in self.addon.sensors:
+                        self.addon.sensors[sensor_eui]['status'] = 'unknown'
+                        self.addon.sensors[sensor_eui]['warning'] = False
+                    logging.info(f"⚠️ Warnung für {sensor_eui} manuell gelöscht")
+                    return jsonify({"success": True, "message": f"Warnung für {sensor_eui} gelöscht"})
+                else:
+                    return jsonify({"error": "Warnung nicht gefunden"}), 404
+            except Exception as e:
+                logging.error(f"❌ Fehler beim Löschen der Warnung: {e}")
+                return jsonify({"error": "Fehler beim Löschen der Warnung"}), 500
+        
         @self.app.route('/api/status')
         def get_status():
             """API: System- und Verbindungsstatus."""

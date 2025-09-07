@@ -149,6 +149,9 @@ class BSSCIAddon:
             web_thread = threading.Thread(target=self.web_gui.run, daemon=True)
             web_thread.start()
             
+            # Warning System Background Thread starten
+            self._start_warning_monitor()
+            
             # Haupt-Loop
             self.running = True
             logging.info("Add-on erfolgreich gestartet")
@@ -173,8 +176,121 @@ class BSSCIAddon:
         finally:
             self.shutdown()
     
+    def _start_warning_monitor(self):
+        """Startet Background Thread für Sensor Warning System."""
+        def warning_monitor():
+            while self.running:
+                try:
+                    self._check_sensor_activity()
+                    time.sleep(60)  # Prüfe jede Minute
+                except Exception as e:
+                    logging.error(f"❌ Fehler im Warning Monitor: {e}")
+                    time.sleep(30)  # Kürzere Pause bei Fehlern
+        
+        warning_thread = threading.Thread(target=warning_monitor, daemon=True)
+        warning_thread.start()
+        logging.info("🔔 Sensor Warning Monitor gestartet")
+    
+    def _check_sensor_activity(self):
+        """Prüft Sensor-Aktivität und erstellt Warnungen."""
+        if not self.running:
+            return
+            
+        current_time = time.time()
+        
+        for eui, last_seen in list(self.sensor_last_seen.items()):
+            time_since_last = current_time - last_seen
+            
+            # Warnung erstellen wenn Sensor inaktiv
+            if time_since_last > self.warning_threshold:
+                if eui not in self.sensor_warnings:
+                    self.sensor_warnings[eui] = {
+                        'created_at': current_time,
+                        'last_seen': last_seen,
+                        'inactive_duration': time_since_last,
+                        'warning_type': 'inactivity'
+                    }
+                    
+                    # Update Sensor Status
+                    if eui in self.sensors:
+                        self.sensors[eui]['status'] = 'inactive'
+                        self.sensors[eui]['warning'] = True
+                    
+                    logging.warning(f"⚠️ SENSOR INACTIVITY WARNING: {eui} - {int(time_since_last/60)} Minuten inaktiv")
+                else:
+                    # Update existing warning
+                    self.sensor_warnings[eui]['inactive_duration'] = time_since_last
+    
+    def get_sensor_warnings(self) -> Dict[str, Any]:
+        """Gibt aktuelle Sensor-Warnungen zurück."""
+        warnings = {}
+        current_time = time.time()
+        
+        for eui, warning in self.sensor_warnings.items():
+            time_since_last = current_time - warning['last_seen']
+            warnings[eui] = {
+                'eui': eui,
+                'warning_type': warning['warning_type'],
+                'created_at': warning['created_at'],
+                'last_seen': warning['last_seen'],
+                'inactive_minutes': int(time_since_last / 60),
+                'inactive_hours': round(time_since_last / 3600, 1),
+                'sensor_name': self.sensors.get(eui, {}).get('name', eui)
+            }
+        
+        return warnings
+    
     def handle_sensor_data(self, sensor_eui: str, data: Dict[str, Any]):
         """Verarbeite eingehende Sensor-Daten."""
+        try:
+            current_timestamp = data.get('timestamp_ns', 0)
+            formatted_timestamp = self.format_timestamp(current_timestamp)
+            current_time = time.time()
+            
+            # Signal Quality berechnen
+            rssi = data.get('rssi', 0)
+            snr = data.get('snr', 0)
+            signal_quality = self.get_signal_quality(snr, rssi)
+            
+            logging.info(f"📊 Sensor-Daten empfangen: {sensor_eui}")
+            logging.debug(f"   RSSI: {rssi} dBm, SNR: {snr} dB")
+            logging.debug(f"   Timestamp: {formatted_timestamp}")
+            
+            # Activity Tracking aktualisieren
+            self.sensor_last_seen[sensor_eui] = current_time
+            if sensor_eui in self.sensor_warnings:
+                logging.info(f"✅ Sensor {sensor_eui} wieder aktiv - Warnung entfernt")
+                del self.sensor_warnings[sensor_eui]
+            
+            # Payload dekodieren
+            raw_payload = data.get('payload_hex', '')
+            decoded_payload = None
+            
+            if raw_payload and self.decoder_manager:
+                decoded_payload = self.decoder_manager.decode_payload(sensor_eui, raw_payload)
+            
+            # Sensor-Daten aktualisieren/hinzufügen
+            self.sensors[sensor_eui] = {
+                'eui': sensor_eui,
+                'last_update': formatted_timestamp,
+                'rssi': rssi,
+                'snr': snr,
+                'signal_quality': signal_quality,
+                'raw_payload': raw_payload,
+                'decoded_data': decoded_payload,
+                'timestamp': current_timestamp,
+                'last_seen': current_time,
+                'status': 'active'
+            }
+            
+            # Home Assistant Discovery/Update
+            self.create_unified_sensor_discovery(sensor_eui, data, decoded_payload)
+            
+        except Exception as e:
+            logging.error(f"Fehler beim Verarbeiten der Sensor-Daten für {sensor_eui}: {e}")
+    
+    def handle_sensor_data_old(self, sensor_eui: str, data: Dict[str, Any]):
+        """Alte handle_sensor_data Methode (Backup)."""
         raw_payload = data.get('data', 'N/A')
         logging.info(f"Sensor-Daten empfangen von {sensor_eui}")
         logging.info(f"Raw Payload: {raw_payload}")
