@@ -208,10 +208,6 @@ class MQTTManager:
             # BSSCI Topics mit BASE_TOPIC verarbeiten
             if len(topic_parts) >= 3 and topic_parts[0] == self.base_topic:
                 self._handle_bssci_message(topic_parts, payload)
-            
-            # Remote EP Commands ohne BASE_TOPIC (EP/{EUI}/cmd/)
-            elif len(topic_parts) >= 3 and topic_parts[0] == "EP":
-                self._handle_remote_ep_command(topic_parts, payload)
                 
         except Exception as e:
             logging.error(f"Fehler beim Verarbeiten der MQTT Nachricht: {e}")
@@ -222,8 +218,7 @@ class MQTTManager:
             f"{self.base_topic}/ep/+/ul",       # Sensor Daten (Uplink)
             f"{self.base_topic}/bs/+",          # Base Station Status
             f"{self.base_topic}/ep/+/config",   # Sensor Konfiguration
-            f"{self.base_topic}/ep/+/cmd",      # Standard Commands
-            f"EP/+/cmd/",                       # Remote EP Commands  
+            f"{self.base_topic}/ep/+/cmd",      # Sensor Commands
             f"{self.base_topic}/ep/+/dl",       # Downlink Messages
             f"{self.base_topic}/ep/+/response", # Command Responses
             f"{self.base_topic}/ep/+/status",   # Status Updates
@@ -347,14 +342,14 @@ class MQTTManager:
             return False
     
     def send_sensor_command(self, sensor_eui: str, command: str) -> bool:
-        """Sende Command an Sensor über EP/{EUI}/cmd/ Topic."""
+        """Sende Command an Sensor über {base_topic}/ep/{EUI}/cmd Topic."""
         if not self.connected:
             logging.error(f"MQTT nicht verbunden - Command {command} für {sensor_eui} übersprungen")
             return False
         
         try:
-            # Remote EP Command Topic (wie in Service Center Doku)
-            cmd_topic = f"EP/{sensor_eui}/cmd/"
+            # Service Center Command Topic mit Base Topic
+            cmd_topic = f"{self.base_topic}/ep/{sensor_eui}/cmd"
             
             result = self.client.publish(cmd_topic, command, retain=False)
             success = result.rc == mqtt.MQTT_ERR_SUCCESS
@@ -399,28 +394,6 @@ class MQTTManager:
         logging.debug(f"Individual Discovery System deaktiviert für {sensor_eui} - einheitliche Struktur verwendet")
         return True
     
-    def _handle_remote_ep_command(self, topic_parts: list, payload: str):
-        """Verarbeite Remote EP Commands (EP/{EUI}/cmd/)."""
-        try:
-            if len(topic_parts) >= 3:
-                sensor_eui = topic_parts[1]
-                command = payload.strip()
-                
-                logging.info(f"🔧 Remote EP Command empfangen: {sensor_eui} → '{command}'")
-                
-                # Command Response senden
-                response_data = {
-                    "command": command,
-                    "status": "received",
-                    "sensor_eui": sensor_eui,
-                    "timestamp": self._get_timestamp()
-                }
-                
-                response_topic = f"{self.base_topic}/ep/{sensor_eui}/response"
-                self.publish_config(response_topic, response_data)
-                
-        except Exception as e:
-            logging.error(f"Fehler beim Verarbeiten des Remote EP Commands: {e}")
     
     def _handle_sensor_command(self, sensor_eui: str, data: Dict[str, Any]):
         """Verarbeite Sensor Commands."""
