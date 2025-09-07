@@ -209,8 +209,8 @@ class MQTTManager:
             if len(topic_parts) >= 3 and topic_parts[0] == self.base_topic:
                 self._handle_bssci_message(topic_parts, payload)
             
-            # Remote EP Commands (EP/{EUI}/cmd/) verarbeiten
-            elif len(topic_parts) >= 3 and topic_parts[0] == "EP" and topic_parts[2] == "cmd":
+            # Remote EP Commands (bssci/ep/{EUI}/cmd) verarbeiten
+            elif len(topic_parts) >= 4 and topic_parts[0] == "bssci" and topic_parts[1] == "ep" and topic_parts[3] == "cmd":
                 self._handle_remote_ep_command(topic_parts, payload)
                 
         except Exception as e:
@@ -222,8 +222,7 @@ class MQTTManager:
             f"{self.base_topic}/ep/+/ul",       # Sensor Daten (Uplink)
             f"{self.base_topic}/bs/+",          # Base Station Status
             f"{self.base_topic}/ep/+/config",   # Sensor Konfiguration
-            f"{self.base_topic}/ep/+/cmd",      # Standard Commands
-            f"EP/+/cmd/",                       # Remote EP Commands (für Application Center)
+            f"{self.base_topic}/ep/+/cmd",      # EP Commands (Standard + Remote)
             f"{self.base_topic}/ep/+/dl",       # Downlink Messages
             f"{self.base_topic}/ep/+/response", # Command Responses
             f"{self.base_topic}/ep/+/status",   # Status Updates
@@ -401,10 +400,10 @@ class MQTTManager:
     
     
     def _handle_remote_ep_command(self, topic_parts: list, payload: str):
-        """Verarbeite Remote EP Commands (EP/{EUI}/cmd/)."""
+        """Verarbeite Remote EP Commands (bssci/ep/{EUI}/cmd)."""
         try:
-            if len(topic_parts) >= 2:
-                sensor_eui = topic_parts[1]
+            if len(topic_parts) >= 3:
+                sensor_eui = topic_parts[2]
                 command = payload.strip()
                 
                 logging.info(f"🔧 Remote EP Command empfangen: {sensor_eui} → '{command}'")
@@ -424,7 +423,7 @@ class MQTTManager:
                     "timestamp": self._get_timestamp()
                 }
                 
-                response_topic = f"EP/{sensor_eui}/response"
+                response_topic = f"{self.base_topic}/ep/{sensor_eui}/response"
                 self.publish_config(response_topic, response_data)
                 
         except Exception as e:

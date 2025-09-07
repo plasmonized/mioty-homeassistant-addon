@@ -1197,7 +1197,7 @@ class BSSCIAddon:
                 import time
                 time.sleep(0.5)  # Kurze Pause zwischen Config und Attach
                 
-                attach_topic = f"EP/{sensor_eui}/cmd/"
+                attach_topic = f"bssci/ep/{sensor_eui}/cmd"
                 attach_command = "attach"
                 
                 # Publish als raw string (nicht JSON)
