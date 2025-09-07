@@ -309,6 +309,31 @@ class MQTTManager:
             logging.error(f"Fehler beim Senden der Konfiguration: {e}")
             return False
     
+    def publish_sensor_registration(self, sensor_eui: str, registration_data: Dict[str, Any]) -> bool:
+        """Sende Sensor-Registrierung an BSSCI Service Center."""
+        if not self.connected:
+            logging.error(f"MQTT nicht verbunden - Registrierung für {sensor_eui} übersprungen")
+            return False
+        
+        try:
+            # Registrierungs-Topic für BSSCI Service Center
+            register_topic = f"{self.base_topic}/ep/{sensor_eui}/register"
+            payload = json.dumps(registration_data)
+            
+            result = self.client.publish(register_topic, payload, retain=True)
+            success = result.rc == mqtt.MQTT_ERR_SUCCESS
+            
+            if success:
+                logging.info(f"📡 BSSCI Sensor-Registrierung gesendet: {sensor_eui} → {register_topic}")
+            else:
+                logging.error(f"❌ BSSCI Sensor-Registrierung fehlgeschlagen für {sensor_eui}")
+                
+            return success
+            
+        except Exception as e:
+            logging.error(f"Fehler beim Senden der Sensor-Registrierung für {sensor_eui}: {e}")
+            return False
+    
     def send_individual_sensor_discoveries(self, sensor_eui: str, decoded_data: Dict[str, Any], device_name: str = "mioty Sensor") -> bool:
         """DEAKTIVIERT: Individual Discovery System (40+ Topics pro Sensor) - ersetzt durch einheitliche Topic-Struktur."""
         logging.debug(f"Individual Discovery System deaktiviert für {sensor_eui} - einheitliche Struktur verwendet")
