@@ -215,9 +215,10 @@ class MQTTManager:
     def _subscribe_topics(self):
         """Abonniere relevante MQTT Topics."""
         topics = [
-            f"{self.base_topic}/ep/+/ul",      # Sensor Daten
-            f"{self.base_topic}/bs/+",         # Base Station Status
-            f"{self.base_topic}/ep/+/config"   # Sensor Konfiguration
+            f"{self.base_topic}/ep/+/ul",       # Sensor Daten
+            f"{self.base_topic}/bs/+",          # Base Station Status
+            f"{self.base_topic}/ep/+/config",   # Sensor Konfiguration
+            f"{self.base_topic}/ep/+/register", # Sensor Registrierung (überwachung)
         ]
         
         for topic in topics:

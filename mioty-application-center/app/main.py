@@ -1024,17 +1024,50 @@ class BSSCIAddon:
     
     def add_sensor(self, sensor_eui: str, network_key: str, short_addr: str, bidirectional: bool = False) -> bool:
         """Füge einen neuen Sensor hinzu."""
+        if not self.mqtt_manager:
+            logging.error(f"❌ MQTT Manager nicht verfügbar - Sensor {sensor_eui} nicht hinzugefügt")
+            return False
+        
         config = {
             "nwKey": network_key,
             "shortAddr": short_addr,
             "bidi": bidirectional
         }
         
-        # Konfiguration über MQTT senden
+        # 1. Sensor-Registrierung an BSSCI Service Center senden
+        registration_data = {
+            "eui": sensor_eui.upper(),
+            "nwKey": network_key.upper(),
+            "shortAddr": short_addr.upper(),
+            "bidi": bidirectional,
+            "registered_at": self._get_current_timestamp(),
+            "source": "mioty_application_center"
+        }
+        
+        registration_success = self.mqtt_manager.publish_sensor_registration(sensor_eui, registration_data)
+        
+        # 2. Konfiguration über MQTT senden (bestehende Funktionalität)
         topic = f"{self.config['base_topic']}/ep/{sensor_eui}/config"
-        if self.mqtt_manager:
-            return self.mqtt_manager.publish_config(topic, config)
-        return False
+        config_success = self.mqtt_manager.publish_config(topic, config)
+        
+        # Ergebnis loggen
+        if registration_success and config_success:
+            logging.info(f"✅ Sensor {sensor_eui} erfolgreich registriert und konfiguriert")
+            return True
+        elif registration_success:
+            logging.warning(f"⚠️ Sensor {sensor_eui} registriert, aber Konfiguration fehlgeschlagen")
+            return False
+        elif config_success:
+            logging.warning(f"⚠️ Sensor {sensor_eui} konfiguriert, aber Registrierung fehlgeschlagen")
+            return False
+        else:
+            logging.error(f"❌ Sensor {sensor_eui} weder registriert noch konfiguriert")
+            return False
+    
+    def _get_current_timestamp(self) -> str:
+        """Gibt aktuellen Timestamp als ISO String zurück."""
+        from datetime import datetime, timezone
+        return datetime.now(timezone.utc).isoformat()
     
     def remove_sensor(self, sensor_eui: str) -> bool:
         """Entferne einen Sensor."""
