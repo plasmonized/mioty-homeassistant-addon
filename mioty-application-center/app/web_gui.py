@@ -617,6 +617,61 @@ class WebGUI:
             else:
                 return jsonify({"error": "Sensor konnte nicht entfernt werden"}), 500
         
+        # Service Center Command API-Endpunkte
+        @self.app.route('/api/sensor/command/attach', methods=['POST'])
+        def sensor_command_attach():
+            """API: Sensor Attach Command senden."""
+            if not self.addon:
+                return jsonify({"error": "Add-on nicht verfügbar"}), 500
+            
+            data = request.get_json()
+            
+            if 'sensor_eui' not in data:
+                return jsonify({"error": "sensor_eui ist erforderlich"}), 400
+            
+            result = self.addon.send_sensor_command(data['sensor_eui'], 'attach')
+            
+            if result:
+                return jsonify({"success": True, "message": f"Attach Command an {data['sensor_eui']} gesendet"})
+            else:
+                return jsonify({"error": "Attach Command konnte nicht gesendet werden"}), 500
+        
+        @self.app.route('/api/sensor/command/detach', methods=['POST'])
+        def sensor_command_detach():
+            """API: Sensor Detach Command senden."""
+            if not self.addon:
+                return jsonify({"error": "Add-on nicht verfügbar"}), 500
+            
+            data = request.get_json()
+            
+            if 'sensor_eui' not in data:
+                return jsonify({"error": "sensor_eui ist erforderlich"}), 400
+            
+            result = self.addon.send_sensor_command(data['sensor_eui'], 'detach')
+            
+            if result:
+                return jsonify({"success": True, "message": f"Detach Command an {data['sensor_eui']} gesendet"})
+            else:
+                return jsonify({"error": "Detach Command konnte nicht gesendet werden"}), 500
+        
+        @self.app.route('/api/sensor/command/status', methods=['POST'])
+        def sensor_command_status():
+            """API: Sensor Status Request senden."""
+            if not self.addon:
+                return jsonify({"error": "Add-on nicht verfügbar"}), 500
+            
+            data = request.get_json()
+            
+            if 'sensor_eui' not in data:
+                return jsonify({"error": "sensor_eui ist erforderlich"}), 400
+            
+            result = self.addon.send_sensor_command(data['sensor_eui'], 'status')
+            
+            if result:
+                return jsonify({"success": True, "message": f"Status Request an {data['sensor_eui']} gesendet"})
+            else:
+                return jsonify({"error": "Status Request konnte nicht gesendet werden"}), 500
+        
         # Service Center API-Endpunkte
         @self.app.route('/api/service-center/test-connection')
         def test_service_center_connection():
