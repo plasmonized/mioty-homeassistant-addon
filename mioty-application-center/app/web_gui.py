@@ -641,7 +641,32 @@ class WebGUI:
                     device_name = data.get('device_name', '').strip()
                     
                     if manufacturer or model or device_name:
-                        self._save_sensor_metadata_simple(eui, manufacturer, model, device_name)
+                        # Metadaten lokal speichern
+                        try:
+                            import json
+                            ha_metadata_file = '/data/ha_sensor_metadata.json' if os.path.exists('/data') else 'ha_sensor_metadata.json'
+                            ha_metadata = {}
+                            
+                            try:
+                                with open(ha_metadata_file, 'r') as f:
+                                    ha_metadata = json.load(f)
+                            except FileNotFoundError:
+                                pass
+                            
+                            ha_metadata[eui] = {
+                                'manufacturer': manufacturer or 'Unknown',
+                                'model': model or 'Unknown', 
+                                'name': f"{manufacturer or 'Unknown'} {model or 'Unknown'}",
+                                'device_name': device_name
+                            }
+                            
+                            with open(ha_metadata_file, 'w') as f:
+                                json.dump(ha_metadata, f, indent=2)
+                            
+                            logging.info(f"✅ HA-Metadaten gespeichert für {eui}")
+                            
+                        except Exception as e:
+                            logging.error(f"❌ Fehler beim Speichern der Metadaten: {e}")
                     
                     return jsonify({
                         "success": True, 
