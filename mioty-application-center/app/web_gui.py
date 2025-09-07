@@ -594,11 +594,17 @@ class WebGUI:
         @self.app.route('/api/sensor/add', methods=['POST'])
         def add_sensor():
             """API: Neuen Sensor hinzufügen via Service Center MQTT Workflow."""
+            logging.info("==================================================")
+            logging.info("🔍 POST /api/sensor/add")
+            logging.info("==================================================")
+            
             if not self.addon:
+                logging.error("❌ Add-on nicht verfügbar")
                 return jsonify({"error": "Add-on nicht verfügbar"}), 500
             
             try:
                 data = request.get_json()
+                logging.info(f"📥 Request Data: {data}")
                 
                 # Validierung der Pflichtfelder
                 required_fields = ['sensor_eui', 'network_key', 'short_addr']
