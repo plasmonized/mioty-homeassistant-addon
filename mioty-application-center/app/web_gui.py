@@ -511,11 +511,25 @@ class WebGUI:
                 logging.error(f"Fehler bei Sensor-Registrierung: {e}")
                 return jsonify({'error': str(e)}), 500
 
+        def _normalize_hex_input(value: str) -> str:
+            """Normalisiert Hex-Eingabe durch Entfernen von Trennzeichen."""
+            # Entferne alle Trennzeichen (Doppelpunkt, Minus, Leerzeichen)
+            return value.replace(':', '').replace('-', '').replace(' ', '').upper()
+        
         def _is_valid_hex(value, length):
-            """Validiert Hexadezimal-String mit spezifischer Länge."""
+            """Validiert Hexadezimal-String mit spezifischer Länge (mit flexibler Eingabe)."""
             import re
+            # Normalisiere Input
+            normalized = _normalize_hex_input(value)
             pattern = f'^[0-9A-Fa-f]{{{length}}}$'
-            return bool(re.match(pattern, value))
+            return bool(re.match(pattern, normalized))
+        
+        def _format_hex_input(value: str, separator: str = '', group_size: int = 2) -> str:
+            """Formatiert Hex-String mit optionalen Trennzeichen."""
+            normalized = _normalize_hex_input(value)
+            if separator and group_size > 0:
+                return separator.join([normalized[i:i+group_size] for i in range(0, len(normalized), group_size)])
+            return normalized
         
         def _save_sensor_metadata_simple(self, eui: str, manufacturer: str, model: str, device_name: str):
             """Speichere einfache Sensor-Metadaten."""
@@ -559,18 +573,23 @@ class WebGUI:
                     if field not in data or not data[field]:
                         return jsonify({"error": f"Feld '{field}' ist erforderlich"}), 400
                 
-                eui = data['sensor_eui'].strip().upper()
-                network_key = data['network_key'].strip().upper()
-                short_addr = data['short_addr'].strip().upper()
+                eui_raw = data['sensor_eui'].strip()
+                network_key_raw = data['network_key'].strip()
+                short_addr_raw = data['short_addr'].strip()
                 bidirectional = data.get('bidirectional', False)
                 
-                # Hex-Validierung
-                if not _is_valid_hex(eui, 16):
-                    return jsonify({'error': 'EUI muss 16 Hexadezimal-Zeichen enthalten'}), 400
-                if not _is_valid_hex(network_key, 32):
-                    return jsonify({'error': 'Network Key muss 32 Hexadezimal-Zeichen enthalten'}), 400
-                if not _is_valid_hex(short_addr, 4):
-                    return jsonify({'error': 'Short Address muss 4 Hexadezimal-Zeichen enthalten'}), 400
+                # Flexible Hex-Validierung (mit/ohne Trennzeichen)
+                if not _is_valid_hex(eui_raw, 16):
+                    return jsonify({'error': 'EUI muss 16 Hexadezimal-Zeichen enthalten (Format: FCA84A0300001234 oder FC:A8:4A:03:00:00:12:34)'}), 400
+                if not _is_valid_hex(network_key_raw, 32):
+                    return jsonify({'error': 'Network Key muss 32 Hexadezimal-Zeichen enthalten (Format: 28DDB218FAD568035A500060FC8662DC oder 28:DD:B2:18:FA:D5:68:03:5A:50:00:60:FC:86:62:DC)'}), 400
+                if not _is_valid_hex(short_addr_raw, 4):
+                    return jsonify({'error': 'Short Address muss 4 Hexadezimal-Zeichen enthalten (Format: 1234 oder 12:34)'}), 400
+                
+                # Normalisierte Werte für das System
+                eui = _normalize_hex_input(eui_raw)
+                network_key = _normalize_hex_input(network_key_raw) 
+                short_addr = _normalize_hex_input(short_addr_raw)
                 
                 logging.info(f"🚀 WEB GUI SERVICE CENTER REGISTRATION: {eui}")
                 

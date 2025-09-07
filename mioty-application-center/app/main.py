@@ -38,6 +38,11 @@ class BSSCIAddon:
         self.sensors = {}
         self.base_stations = {}
         
+        # Sensor Activity Tracking für Warnungen
+        self.sensor_last_seen = {}  # EUI -> timestamp
+        self.sensor_warnings = {}   # EUI -> warning info
+        self.warning_threshold = 3600  # 1 Stunde in Sekunden (konfigurierbar)
+        
         logging.info("BSSCI mioty Add-on initialisiert")
     
     def setup_logging(self):
