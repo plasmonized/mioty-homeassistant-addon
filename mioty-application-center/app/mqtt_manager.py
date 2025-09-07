@@ -221,8 +221,9 @@ class MQTTManager:
         topics = [
             f"{self.base_topic}/ep/+/ul",       # Sensor Daten (Uplink)
             f"{self.base_topic}/bs/+",          # Base Station Status
-            f"{self.base_topic}/ep/+/config",   # Sensor Konfiguration
-            f"{self.base_topic}/ep/+/cmd",      # EP Commands (Standard + Remote)
+            f"{self.base_topic}/ep/+/register", # 🎯 Legacy Sensor Registration (RECOMMENDED)
+            f"{self.base_topic}/ep/+/config",   # Alternative Sensor Konfiguration
+            f"{self.base_topic}/ep/+/cmd",      # 🎯 Unified Sensor Commands (attach, detach, status)
             f"{self.base_topic}/ep/+/dl",       # Downlink Messages
             f"{self.base_topic}/ep/+/response", # Command Responses
             f"{self.base_topic}/ep/+/status",   # Status Updates
@@ -250,6 +251,11 @@ class MQTTManager:
                     # Sensor-Daten (Uplink)
                     logging.info(f"📡 Sensor Uplink: {sensor_eui}")
                     self.data_callback(sensor_eui, data)
+                
+                elif message_type == "register":
+                    # Legacy Sensor Registration (RECOMMENDED)
+                    logging.info(f"🎯 Legacy Sensor Registration: {sensor_eui}")
+                    self._handle_sensor_registration(sensor_eui, data)
                     
                 elif message_type == "config" and self.config_callback:
                     # Sensor-Konfiguration
@@ -456,6 +462,35 @@ class MQTTManager:
             
         except Exception as e:
             logging.error(f"Fehler beim Verarbeiten des Sensor Commands: {e}")
+    
+    def _handle_sensor_registration(self, sensor_eui: str, data: Dict[str, Any]):
+        """Verarbeite Legacy Sensor Registration (RECOMMENDED METHOD)."""
+        try:
+            nw_key = data.get("nwKey", "")
+            short_addr = data.get("shortAddr", "")
+            bidirectional = data.get("bidi", False)
+            
+            logging.info(f"🎯 Legacy Registration Details:")
+            logging.info(f"   📍 Sensor EUI: {sensor_eui}")
+            logging.info(f"   🔑 Network Key: {nw_key}")
+            logging.info(f"   📨 Short Address: {short_addr}")
+            logging.info(f"   ↔️ Bidirectional: {bidirectional}")
+            
+            # Registration Response senden
+            response_data = {
+                "registration": "received",
+                "sensor_eui": sensor_eui,
+                "status": "processing",
+                "timestamp": self._get_timestamp()
+            }
+            
+            response_topic = f"{self.base_topic}/ep/{sensor_eui}/response"
+            self.publish_config(response_topic, response_data)
+            
+            logging.info(f"✅ Legacy Registration Response gesendet für {sensor_eui}")
+            
+        except Exception as e:
+            logging.error(f"Fehler beim Verarbeiten der Legacy Registration: {e}")
     
     def _handle_downlink_message(self, sensor_eui: str, data: Dict[str, Any]):
         """Verarbeite Downlink Messages."""

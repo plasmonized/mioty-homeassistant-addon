@@ -1179,31 +1179,19 @@ class BSSCIAddon:
             
             logging.info(f"🚀 SERVICE CENTER SENSOR REGISTRATION WORKFLOW START: {sensor_eui}")
             
-            # Step 1: Sensor Configuration senden (Service Center Format)
-            config = {
+            # Legacy Sensor Registration (RECOMMENDED METHOD)
+            registration_payload = {
                 "nwKey": network_key,
                 "shortAddr": short_addr,
                 "bidi": bidirectional
             }
             
-            config_topic = f"{self.config['base_topic']}/ep/{sensor_eui}/config"
-            config_success = self.mqtt_manager.publish_config(config_topic, config)
+            register_topic = f"{self.config['base_topic']}/ep/{sensor_eui}/register"
+            register_success = self.mqtt_manager.publish_config(register_topic, registration_payload)
             
-            if config_success:
-                logging.info(f"📤 STEP 1: Config Topic gesendet → {config_topic}")
-                logging.info(f"📋 Config Payload: {config}")
-                
-                # Step 2: Attach Command senden (Remote EP Pattern)
-                import time
-                time.sleep(0.5)  # Kurze Pause zwischen Config und Attach
-                
-                attach_topic = f"bssci/ep/{sensor_eui}/cmd"
-                attach_command = "attach"
-                
-                # Publish als raw string (nicht JSON)
-                self.mqtt_manager.client.publish(attach_topic, attach_command)
-                logging.info(f"📤 STEP 2: Attach Command gesendet → {attach_topic}")
-                logging.info(f"⚡ Attach Payload: '{attach_command}'")
+            if register_success:
+                logging.info(f"📤 LEGACY REGISTRATION: Register Topic gesendet → {register_topic}")
+                logging.info(f"📋 Registration Payload: {registration_payload}")
                 
                 # Lokale Sensor-Liste aktualisieren
                 self.sensors[sensor_eui] = {
