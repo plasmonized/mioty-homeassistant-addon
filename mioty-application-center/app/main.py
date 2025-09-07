@@ -1023,46 +1023,35 @@ class BSSCIAddon:
         pass
     
     def add_sensor(self, sensor_eui: str, network_key: str, short_addr: str, bidirectional: bool = False) -> bool:
-        """Füge einen neuen Sensor hinzu."""
+        """Füge einen neuen Sensor hinzu - nur über config Topic (kein register Topic mehr)."""
         if not self.mqtt_manager:
             logging.error(f"❌ MQTT Manager nicht verfügbar - Sensor {sensor_eui} nicht hinzugefügt")
             return False
         
         config = {
-            "nwKey": network_key,
-            "shortAddr": short_addr,
+            "nwKey": network_key.upper(),
+            "shortAddr": short_addr.upper(),
             "bidi": bidirectional
         }
         
-        # 1. Sensor-Registrierung an BSSCI Service Center senden
-        registration_data = {
-            "eui": sensor_eui.upper(),
-            "nwKey": network_key.upper(),
-            "shortAddr": short_addr.upper(),
-            "bidi": bidirectional,
-            "registered_at": self._get_current_timestamp(),
-            "source": "mioty_application_center"
-        }
-        
-        registration_success = self.mqtt_manager.publish_sensor_registration(sensor_eui, registration_data)
-        
-        # 2. Konfiguration über MQTT senden (bestehende Funktionalität)
+        # Sensor-Konfiguration über MQTT senden (Service Center Standard)
         topic = f"{self.config['base_topic']}/ep/{sensor_eui}/config"
         config_success = self.mqtt_manager.publish_config(topic, config)
         
-        # Ergebnis loggen
-        if registration_success and config_success:
-            logging.info(f"✅ Sensor {sensor_eui} erfolgreich registriert und konfiguriert")
+        if config_success:
+            logging.info(f"✅ Sensor {sensor_eui} erfolgreich konfiguriert über {topic}")
             return True
-        elif registration_success:
-            logging.warning(f"⚠️ Sensor {sensor_eui} registriert, aber Konfiguration fehlgeschlagen")
-            return False
-        elif config_success:
-            logging.warning(f"⚠️ Sensor {sensor_eui} konfiguriert, aber Registrierung fehlgeschlagen")
-            return False
         else:
-            logging.error(f"❌ Sensor {sensor_eui} weder registriert noch konfiguriert")
+            logging.error(f"❌ Sensor {sensor_eui} Konfiguration fehlgeschlagen")
             return False
+    
+    def send_sensor_command(self, sensor_eui: str, command: str) -> bool:
+        """Sende Command an Sensor (attach, detach, status)."""
+        if not self.mqtt_manager:
+            logging.error(f"❌ MQTT Manager nicht verfügbar")
+            return False
+            
+        return self.mqtt_manager.send_sensor_command(sensor_eui, command)
     
     def _get_current_timestamp(self) -> str:
         """Gibt aktuellen Timestamp als ISO String zurück."""

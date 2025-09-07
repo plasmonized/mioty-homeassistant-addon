@@ -215,10 +215,12 @@ class MQTTManager:
     def _subscribe_topics(self):
         """Abonniere relevante MQTT Topics."""
         topics = [
-            f"{self.base_topic}/ep/+/ul",       # Sensor Daten
+            f"{self.base_topic}/ep/+/ul",       # Sensor Daten (Uplink)
             f"{self.base_topic}/bs/+",          # Base Station Status
             f"{self.base_topic}/ep/+/config",   # Sensor Konfiguration
-            f"{self.base_topic}/ep/+/register", # Sensor Registrierung (überwachung)
+            f"{self.base_topic}/ep/+/cmd",      # Standard Commands
+            f"EP/+/cmd/",                       # Remote EP Commands  
+            f"{self.base_topic}/ep/+/dl",       # Downlink Messages
         ]
         
         for topic in topics:
@@ -310,29 +312,52 @@ class MQTTManager:
             logging.error(f"Fehler beim Senden der Konfiguration: {e}")
             return False
     
-    def publish_sensor_registration(self, sensor_eui: str, registration_data: Dict[str, Any]) -> bool:
-        """Sende Sensor-Registrierung an BSSCI Service Center."""
+    def send_sensor_command(self, sensor_eui: str, command: str) -> bool:
+        """Sende Command an Sensor über EP/{EUI}/cmd/ Topic."""
         if not self.connected:
-            logging.error(f"MQTT nicht verbunden - Registrierung für {sensor_eui} übersprungen")
+            logging.error(f"MQTT nicht verbunden - Command {command} für {sensor_eui} übersprungen")
             return False
         
         try:
-            # Registrierungs-Topic für BSSCI Service Center
-            register_topic = f"{self.base_topic}/ep/{sensor_eui}/register"
-            payload = json.dumps(registration_data)
+            # Remote EP Command Topic (wie in Service Center Doku)
+            cmd_topic = f"EP/{sensor_eui}/cmd/"
             
-            result = self.client.publish(register_topic, payload, retain=True)
+            result = self.client.publish(cmd_topic, command, retain=False)
             success = result.rc == mqtt.MQTT_ERR_SUCCESS
             
             if success:
-                logging.info(f"📡 BSSCI Sensor-Registrierung gesendet: {sensor_eui} → {register_topic}")
+                logging.info(f"📡 Sensor Command gesendet: {sensor_eui} → {cmd_topic} ('{command}')")
             else:
-                logging.error(f"❌ BSSCI Sensor-Registrierung fehlgeschlagen für {sensor_eui}")
+                logging.error(f"❌ Sensor Command fehlgeschlagen für {sensor_eui}: {command}")
                 
             return success
             
         except Exception as e:
-            logging.error(f"Fehler beim Senden der Sensor-Registrierung für {sensor_eui}: {e}")
+            logging.error(f"Fehler beim Senden des Sensor Commands für {sensor_eui}: {e}")
+            return False
+    
+    def publish_sensor_status(self, sensor_eui: str, status_data: Dict[str, Any]) -> bool:
+        """Sende Sensor Status Update."""
+        if not self.connected:
+            logging.error(f"MQTT nicht verbunden - Status für {sensor_eui} übersprungen")
+            return False
+        
+        try:
+            status_topic = f"{self.base_topic}/ep/{sensor_eui}/status"
+            payload = json.dumps(status_data)
+            
+            result = self.client.publish(status_topic, payload, retain=True)
+            success = result.rc == mqtt.MQTT_ERR_SUCCESS
+            
+            if success:
+                logging.info(f"📊 Sensor Status gesendet: {sensor_eui} → {status_topic}")
+            else:
+                logging.error(f"❌ Sensor Status fehlgeschlagen für {sensor_eui}")
+                
+            return success
+            
+        except Exception as e:
+            logging.error(f"Fehler beim Senden des Sensor Status für {sensor_eui}: {e}")
             return False
     
     def send_individual_sensor_discoveries(self, sensor_eui: str, decoded_data: Dict[str, Any], device_name: str = "mioty Sensor") -> bool:
