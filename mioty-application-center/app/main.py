@@ -240,6 +240,29 @@ class BSSCIAddon:
         
         return warnings
     
+    def get_signal_quality(self, snr: float, rssi: float) -> str:
+        """Berechnet Signalqualität basierend auf SNR und RSSI."""
+        if snr >= 10:
+            return "Excellent"
+        elif snr >= 5:
+            return "Good" 
+        elif snr >= 0:
+            return "Fair"
+        else:
+            return "Poor"
+    
+    def format_timestamp(self, timestamp_ns: int) -> str:
+        """Formatiert Timestamp von Nanosekunden zu lesbarem Format."""
+        if timestamp_ns == 0:
+            return "N/A"
+        try:
+            # Konvertiere von Nanosekunden zu Sekunden
+            timestamp_seconds = timestamp_ns / 1_000_000_000
+            dt = datetime.fromtimestamp(timestamp_seconds)
+            return dt.strftime("%Y-%m-%d %H:%M:%S")
+        except:
+            return "Invalid timestamp"
+    
     def handle_sensor_data(self, sensor_eui: str, data: Dict[str, Any]):
         """Verarbeite eingehende Sensor-Daten."""
         try:
