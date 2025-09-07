@@ -381,6 +381,11 @@ class WebGUI:
                 ha_mqtt_connected = self.addon.mqtt_manager.ha_connected
                 ha_mqtt_broker = f"{self.addon.mqtt_manager.ha_broker}:{self.addon.mqtt_manager.ha_port}"
             
+            # Debug-Logging für MQTT Status
+            logging.info(f"📊 STATUS API CALL:")
+            logging.info(f"   📡 mioty MQTT: {mqtt_connected} ({mqtt_broker})")
+            logging.info(f"   🏠 HA MQTT: {ha_mqtt_connected} ({ha_mqtt_broker})")
+            
             status = {
                 'mqtt_connected': mqtt_connected,
                 'mqtt_broker': mqtt_broker,
@@ -992,16 +997,27 @@ class WebGUI:
         @self.app.route('/api/decoders')
         def get_decoders():
             """API: Liste aller Decoder."""
+            logging.info("🔧 API CALL: /api/decoders")
+            
             if not self.addon or not hasattr(self.addon, 'decoder_manager'):
+                logging.error("❌ Decoder Manager nicht verfügbar")
                 return jsonify({"error": "Decoder Manager nicht verfügbar"}), 500
             
-            decoders = self.addon.decoder_manager.get_available_decoders()
-            assignments = self.addon.decoder_manager.get_sensor_assignments()
-            
-            return jsonify({
-                "decoders": decoders,
-                "assignments": assignments
-            })
+            try:
+                decoders = self.addon.decoder_manager.get_available_decoders()
+                assignments = self.addon.decoder_manager.get_sensor_assignments()
+                
+                logging.info(f"🔧 Decoder API Response:")
+                logging.info(f"   📋 Decoders: {len(decoders) if decoders else 0}")
+                logging.info(f"   🔗 Assignments: {len(assignments) if assignments else 0}")
+                
+                return jsonify({
+                    "decoders": decoders,
+                    "assignments": assignments
+                })
+            except Exception as e:
+                logging.error(f"❌ Fehler beim Laden der Decoder: {e}")
+                return jsonify({"error": f"Decoder-Fehler: {str(e)}"}), 500
         
         @self.app.route('/api/decoder/upload', methods=['POST'])
         def upload_decoder():
