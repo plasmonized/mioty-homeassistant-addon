@@ -266,6 +266,9 @@ class BSSCIAddon:
     def handle_sensor_data(self, sensor_eui: str, data: Dict[str, Any]):
         """Verarbeite eingehende Sensor-Daten."""
         try:
+            # Normalisiere Sensor EUI (Buchstaben zu Großbuchstaben)
+            sensor_eui = self.normalize_sensor_eui(sensor_eui)
+            
             current_timestamp = data.get('timestamp_ns', 0)
             formatted_timestamp = self.format_timestamp(current_timestamp)
             current_time = time.time()
@@ -274,6 +277,10 @@ class BSSCIAddon:
             rssi = data.get('rssi', 0)
             snr = data.get('snr', 0)
             signal_quality = self.get_signal_quality(snr, rssi)
+            
+            # Payload dekodieren
+            raw_payload = data.get('payload_hex', '')
+            decoded_payload = None
             
             logging.info(f"📊 ✅ SENSOR-DATEN EMPFANGEN: {sensor_eui}")
             logging.info(f"   📡 RSSI: {rssi} dBm, SNR: {snr} dB")
@@ -285,10 +292,6 @@ class BSSCIAddon:
             if sensor_eui in self.sensor_warnings:
                 logging.info(f"✅ Sensor {sensor_eui} wieder aktiv - Warnung entfernt")
                 del self.sensor_warnings[sensor_eui]
-            
-            # Payload dekodieren
-            raw_payload = data.get('payload_hex', '')
-            decoded_payload = None
             
             if raw_payload and self.decoder_manager:
                 decoded_payload = self.decoder_manager.decode_payload(sensor_eui, raw_payload)
@@ -594,6 +597,8 @@ class BSSCIAddon:
         
     def create_sensor_discovery(self, sensor_eui: str, data: Dict[str, Any], decoded_payload: Dict[str, Any] = None):
         """Erstelle Home Assistant MQTT Discovery für Sensor - Automatische Device-Metadaten aus Decodern."""
+        # Normalisiere Sensor EUI für MQTT Topics
+        sensor_eui = self.normalize_sensor_eui(sensor_eui)
         device_id = f"mioty_{sensor_eui}"
         if decoded_payload is None:
             decoded_payload = {}
@@ -912,8 +917,25 @@ class BSSCIAddon:
             hours = (seconds % 86400) // 3600
             return f"{days}d {hours}h"
     
+    def normalize_sensor_eui(self, sensor_eui: str) -> str:
+        """Normalisiere Sensor EUI: Wandle Buchstaben in Großbuchstaben um, lasse Zahlen unverändert."""
+        if not sensor_eui:
+            return sensor_eui
+        
+        # Konvertiere nur Buchstaben zu Großbuchstaben, Zahlen bleiben unverändert
+        normalized = ""
+        for char in sensor_eui:
+            if char.isalpha():
+                normalized += char.upper()
+            else:
+                normalized += char
+        
+        return normalized
+    
     def create_unified_sensor_discovery(self, sensor_eui: str, data: Dict[str, Any], decoded_payload: Dict[str, Any] = None):
         """Erstelle korrekte MQTT Discovery - ein Subtopic pro Messwert mit gemeinsamem State."""
+        # Normalisiere Sensor EUI für MQTT Topics
+        sensor_eui = self.normalize_sensor_eui(sensor_eui)
         device_id = f"mioty_{sensor_eui}"
         if decoded_payload is None:
             decoded_payload = {}

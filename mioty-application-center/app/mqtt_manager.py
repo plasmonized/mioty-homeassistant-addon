@@ -61,6 +61,21 @@ class MQTTManager:
         """Setze Callback für Base Station Status."""
         self.base_station_callback = callback
     
+    def _normalize_sensor_eui(self, sensor_eui: str) -> str:
+        """Normalisiere Sensor EUI: Wandle Buchstaben in Großbuchstaben um, lasse Zahlen unverändert."""
+        if not sensor_eui:
+            return sensor_eui
+        
+        # Konvertiere nur Buchstaben zu Großbuchstaben, Zahlen bleiben unverändert
+        normalized = ""
+        for char in sensor_eui:
+            if char.isalpha():
+                normalized += char.upper()
+            else:
+                normalized += char
+        
+        return normalized
+    
     def connect(self) -> bool:
         """Verbinde mit beiden MQTT Brokern."""
         success = True
@@ -582,6 +597,9 @@ class MQTTManager:
             return False
         
         try:
+            # Normalisiere Sensor EUI für MQTT Topics
+            sensor_eui = self._normalize_sensor_eui(sensor_eui)
+            
             # State Topic
             state_topic = f"homeassistant/sensor/{sensor_eui}/state"
             
