@@ -208,6 +208,10 @@ class MQTTManager:
             # BSSCI Topics mit BASE_TOPIC verarbeiten
             if len(topic_parts) >= 3 and topic_parts[0] == self.base_topic:
                 self._handle_bssci_message(topic_parts, payload)
+            
+            # Remote EP Commands (EP/{EUI}/cmd/) verarbeiten
+            elif len(topic_parts) >= 3 and topic_parts[0] == "EP" and topic_parts[2] == "cmd":
+                self._handle_remote_ep_command(topic_parts, payload)
                 
         except Exception as e:
             logging.error(f"Fehler beim Verarbeiten der MQTT Nachricht: {e}")
@@ -218,7 +222,8 @@ class MQTTManager:
             f"{self.base_topic}/ep/+/ul",       # Sensor Daten (Uplink)
             f"{self.base_topic}/bs/+",          # Base Station Status
             f"{self.base_topic}/ep/+/config",   # Sensor Konfiguration
-            f"{self.base_topic}/ep/+/cmd",      # Sensor Commands
+            f"{self.base_topic}/ep/+/cmd",      # Standard Commands
+            f"EP/+/cmd/",                       # Remote EP Commands (für Application Center)
             f"{self.base_topic}/ep/+/dl",       # Downlink Messages
             f"{self.base_topic}/ep/+/response", # Command Responses
             f"{self.base_topic}/ep/+/status",   # Status Updates
@@ -395,19 +400,50 @@ class MQTTManager:
         return True
     
     
+    def _handle_remote_ep_command(self, topic_parts: list, payload: str):
+        """Verarbeite Remote EP Commands (EP/{EUI}/cmd/)."""
+        try:
+            if len(topic_parts) >= 2:
+                sensor_eui = topic_parts[1]
+                command = payload.strip()
+                
+                logging.info(f"🔧 Remote EP Command empfangen: {sensor_eui} → '{command}'")
+                
+                # Command-spezifische Verarbeitung
+                if command == "attach":
+                    logging.info(f"📡 Remote Attach Command für {sensor_eui}")
+                elif command == "detach":
+                    logging.info(f"📤 Remote Detach Command für {sensor_eui}")
+                elif command == "status":
+                    logging.info(f"📊 Remote Status Request für {sensor_eui}")
+                
+                # Command Response senden
+                response_data = {
+                    "command": command,
+                    "status": "received",
+                    "sensor_eui": sensor_eui,
+                    "timestamp": self._get_timestamp()
+                }
+                
+                response_topic = f"{self.base_topic}/ep/{sensor_eui}/response"
+                self.publish_config(response_topic, response_data)
+                
+        except Exception as e:
+            logging.error(f"Fehler beim Verarbeiten des Remote EP Commands: {e}")
+    
     def _handle_sensor_command(self, sensor_eui: str, data: Dict[str, Any]):
-        """Verarbeite Sensor Commands."""
+        """Verarbeite Standard Sensor Commands."""
         try:
             command = data.get("command", "")
-            logging.info(f"⚡ Sensor Command: {sensor_eui} → '{command}'")
+            logging.info(f"⚡ Standard Sensor Command: {sensor_eui} → '{command}'")
             
             # Command-spezifische Verarbeitung
             if command == "attach":
-                logging.info(f"📡 Attach Command für {sensor_eui}")
+                logging.info(f"📡 Standard Attach Command für {sensor_eui}")
             elif command == "detach":
-                logging.info(f"📤 Detach Command für {sensor_eui}")
+                logging.info(f"📤 Standard Detach Command für {sensor_eui}")
             elif command == "status":
-                logging.info(f"📊 Status Request für {sensor_eui}")
+                logging.info(f"📊 Standard Status Request für {sensor_eui}")
             
             # Response senden
             response_data = {
