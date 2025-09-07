@@ -2399,8 +2399,8 @@ class WebGUI:
                             <strong>${haMqttText}</strong>
                         </div>
                         <div style="display: flex; align-items: center; margin-bottom: 10px;">
-                            <div style="width: 12px; height: 12px; background: ${status.mqtt_connected && status.ha_mqtt_connected ? '#28a745' : '#ffc107'}; border-radius: 50%; margin-right: 10px;"></div>
-                            <strong>MQTT Status: ${status.mqtt_connected && status.ha_mqtt_connected ? 'Alle Broker verbunden' : 'Konfiguration prüfen'}</strong>
+                            <div style="width: 12px; height: 12px; background: ${status.mqtt_connected && status.ha_mqtt_connected ? '#28a745' : '#dc3545'}; border-radius: 50%; margin-right: 10px;"></div>
+                            <strong>MQTT Status: ${status.mqtt_connected && status.ha_mqtt_connected ? '✅ Beide Broker verbunden' : '❌ Verbindungsfehler'}</strong>
                         </div>
                         <div style="display: flex; align-items: center;">
                             <div style="width: 12px; height: 12px; background: #17a2b8; border-radius: 50%; margin-right: 10px;"></div>

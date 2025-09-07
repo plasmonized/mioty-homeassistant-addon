@@ -234,9 +234,13 @@ class MQTTManager:
         for topic in topics:
             result = self.client.subscribe(topic)
             if result[0] == mqtt.MQTT_ERR_SUCCESS:
-                logging.info(f"📋 Topic abonniert: {topic}")
+                logging.info(f"📋 ✅ Topic abonniert: {topic}")
             else:
                 logging.error(f"❌ Topic-Abonnement fehlgeschlagen: {topic}")
+        
+        # Extra Logging für Sensor Uplink Monitoring
+        logging.info(f"🎯 WICHTIG: Warte auf Sensor Uplink Daten auf Topic: {self.base_topic}/ep/+/ul")
+        logging.info(f"📊 Falls SNR/RSSI fehlen, kommen keine Sensor-Daten an!")
     
     def _handle_bssci_message(self, topic_parts: list, payload: str):
         """Verarbeite BSSCI MQTT Nachrichten."""
@@ -249,7 +253,8 @@ class MQTTManager:
                 
                 if message_type == "ul" and self.data_callback:
                     # Sensor-Daten (Uplink)
-                    logging.info(f"📡 Sensor Uplink: {sensor_eui}")
+                    logging.info(f"📡 Sensor Uplink empfangen: {sensor_eui}")
+                    logging.info(f"   📊 RSSI: {data.get('rssi', 'N/A')} dBm, SNR: {data.get('snr', 'N/A')} dB")
                     self.data_callback(sensor_eui, data)
                 
                 elif message_type == "register":

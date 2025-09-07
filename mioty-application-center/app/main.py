@@ -275,9 +275,10 @@ class BSSCIAddon:
             snr = data.get('snr', 0)
             signal_quality = self.get_signal_quality(snr, rssi)
             
-            logging.info(f"📊 Sensor-Daten empfangen: {sensor_eui}")
-            logging.debug(f"   RSSI: {rssi} dBm, SNR: {snr} dB")
-            logging.debug(f"   Timestamp: {formatted_timestamp}")
+            logging.info(f"📊 ✅ SENSOR-DATEN EMPFANGEN: {sensor_eui}")
+            logging.info(f"   📡 RSSI: {rssi} dBm, SNR: {snr} dB")
+            logging.info(f"   ⏰ Timestamp: {formatted_timestamp}")
+            logging.info(f"   📦 Payload: {raw_payload}")
             
             # Activity Tracking aktualisieren
             self.sensor_last_seen[sensor_eui] = current_time
