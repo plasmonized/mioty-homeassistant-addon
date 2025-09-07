@@ -417,15 +417,14 @@ class MQTTManager:
                 elif command == "status":
                     logging.info(f"📊 Remote Status Request für {sensor_eui}")
                 
-                # Command Response senden
+                # Command Response senden (gemäß Service Center Doku: EP/{EUI}/response)
                 response_data = {
                     "command": command,
                     "status": "received",
-                    "sensor_eui": sensor_eui,
                     "timestamp": self._get_timestamp()
                 }
                 
-                response_topic = f"{self.base_topic}/ep/{sensor_eui}/response"
+                response_topic = f"EP/{sensor_eui}/response"
                 self.publish_config(response_topic, response_data)
                 
         except Exception as e:
