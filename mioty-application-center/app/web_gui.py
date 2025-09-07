@@ -516,33 +516,93 @@ class WebGUI:
             import re
             pattern = f'^[0-9A-Fa-f]{{{length}}}$'
             return bool(re.match(pattern, value))
+        
+        def _save_sensor_metadata_simple(self, eui: str, manufacturer: str, model: str, device_name: str):
+            """Speichere einfache Sensor-Metadaten."""
+            try:
+                ha_metadata_file = '/data/ha_sensor_metadata.json'
+                ha_metadata = {}
+                
+                try:
+                    with open(ha_metadata_file, 'r') as f:
+                        ha_metadata = json.load(f)
+                except FileNotFoundError:
+                    pass
+                
+                ha_metadata[eui] = {
+                    'manufacturer': manufacturer or 'Unknown',
+                    'model': model or 'Unknown', 
+                    'name': f"{manufacturer or 'Unknown'} {model or 'Unknown'}",
+                    'device_name': device_name
+                }
+                
+                with open(ha_metadata_file, 'w') as f:
+                    json.dump(ha_metadata, f, indent=2)
+                
+                logging.info(f"✅ HA-Metadaten gespeichert für {eui}")
+                
+            except Exception as e:
+                logging.error(f"❌ Fehler beim Speichern der Metadaten: {e}")
 
         @self.app.route('/api/sensor/add', methods=['POST'])
         def add_sensor():
-            """API: Neuen Sensor hinzufügen."""
+            """API: Neuen Sensor hinzufügen via Service Center MQTT Workflow."""
             if not self.addon:
                 return jsonify({"error": "Add-on nicht verfügbar"}), 500
             
-            data = request.get_json()
-            
-            # Validierung
-            required_fields = ['sensor_eui', 'network_key', 'short_addr']
-            for field in required_fields:
-                if field not in data or not data[field]:
-                    return jsonify({"error": f"Feld '{field}' ist erforderlich"}), 400
-            
-            # Sensor hinzufügen
-            result = self.addon.add_sensor(
-                sensor_eui=data['sensor_eui'],
-                network_key=data['network_key'],
-                short_addr=data['short_addr'],
-                bidirectional=data.get('bidirectional', False)
-            )
-            
-            if result:
-                return jsonify({"success": True, "message": "Sensor erfolgreich hinzugefügt"})
-            else:
-                return jsonify({"error": "Sensor konnte nicht hinzugefügt werden"}), 500
+            try:
+                data = request.get_json()
+                
+                # Validierung der Pflichtfelder
+                required_fields = ['sensor_eui', 'network_key', 'short_addr']
+                for field in required_fields:
+                    if field not in data or not data[field]:
+                        return jsonify({"error": f"Feld '{field}' ist erforderlich"}), 400
+                
+                eui = data['sensor_eui'].strip().upper()
+                network_key = data['network_key'].strip().upper()
+                short_addr = data['short_addr'].strip().upper()
+                bidirectional = data.get('bidirectional', False)
+                
+                # Hex-Validierung
+                if not _is_valid_hex(eui, 16):
+                    return jsonify({'error': 'EUI muss 16 Hexadezimal-Zeichen enthalten'}), 400
+                if not _is_valid_hex(network_key, 32):
+                    return jsonify({'error': 'Network Key muss 32 Hexadezimal-Zeichen enthalten'}), 400
+                if not _is_valid_hex(short_addr, 4):
+                    return jsonify({'error': 'Short Address muss 4 Hexadezimal-Zeichen enthalten'}), 400
+                
+                logging.info(f"🚀 WEB GUI SERVICE CENTER REGISTRATION: {eui}")
+                
+                # Service Center MQTT Workflow ausführen
+                result = self.addon.add_sensor(
+                    sensor_eui=eui,
+                    network_key=network_key,
+                    short_addr=short_addr,
+                    bidirectional=bidirectional
+                )
+                
+                if result:
+                    # Optional: Metadaten speichern falls vorhanden
+                    manufacturer = data.get('manufacturer', '').strip()
+                    model = data.get('model', '').strip()
+                    device_name = data.get('device_name', '').strip()
+                    
+                    if manufacturer or model or device_name:
+                        self._save_sensor_metadata_simple(eui, manufacturer, model, device_name)
+                    
+                    return jsonify({
+                        "success": True, 
+                        "message": "Sensor erfolgreich über Service Center MQTT registriert",
+                        "eui": eui,
+                        "workflow": "Service Center MQTT (Config + Attach)"
+                    })
+                else:
+                    return jsonify({"error": "Service Center MQTT Registration fehlgeschlagen"}), 500
+                    
+            except Exception as e:
+                logging.error(f"❌ Fehler bei Web GUI Sensor Registration: {e}")
+                return jsonify({"error": f"Registration fehlgeschlagen: {str(e)}"}), 500
         
         @self.app.route('/api/sensor/remove', methods=['POST'])
         def remove_sensor():
