@@ -1023,26 +1023,65 @@ class BSSCIAddon:
         pass
     
     def add_sensor(self, sensor_eui: str, network_key: str, short_addr: str, bidirectional: bool = False) -> bool:
-        """Füge einen neuen Sensor hinzu - nur über config Topic (kein register Topic mehr)."""
+        """Füge einen neuen Sensor hinzu - Service Center MQTT Workflow."""
         if not self.mqtt_manager:
             logging.error(f"❌ MQTT Manager nicht verfügbar - Sensor {sensor_eui} nicht hinzugefügt")
             return False
         
-        config = {
-            "nwKey": network_key.upper(),
-            "shortAddr": short_addr.upper(),
-            "bidi": bidirectional
-        }
-        
-        # Sensor-Konfiguration über MQTT senden (Service Center Standard)
-        topic = f"{self.config['base_topic']}/ep/{sensor_eui}/config"
-        config_success = self.mqtt_manager.publish_config(topic, config)
-        
-        if config_success:
-            logging.info(f"✅ Sensor {sensor_eui} erfolgreich konfiguriert über {topic}")
-            return True
-        else:
-            logging.error(f"❌ Sensor {sensor_eui} Konfiguration fehlgeschlagen")
+        try:
+            sensor_eui = sensor_eui.upper()
+            network_key = network_key.upper()
+            short_addr = short_addr.upper()
+            
+            logging.info(f"🚀 SERVICE CENTER SENSOR REGISTRATION WORKFLOW START: {sensor_eui}")
+            
+            # Step 1: Sensor Configuration senden (Service Center Format)
+            config = {
+                "nwKey": network_key,
+                "shortAddr": short_addr,
+                "bidi": bidirectional
+            }
+            
+            config_topic = f"{self.config['base_topic']}/ep/{sensor_eui}/config"
+            config_success = self.mqtt_manager.publish_config(config_topic, config)
+            
+            if config_success:
+                logging.info(f"📤 STEP 1: Config Topic gesendet → {config_topic}")
+                logging.info(f"📋 Config Payload: {config}")
+                
+                # Step 2: Attach Command senden (Remote EP Pattern)
+                import time
+                time.sleep(0.5)  # Kurze Pause zwischen Config und Attach
+                
+                attach_topic = f"EP/{sensor_eui}/cmd/"
+                attach_command = "attach"
+                
+                # Publish als raw string (nicht JSON)
+                self.mqtt_manager.client.publish(attach_topic, attach_command)
+                logging.info(f"📤 STEP 2: Attach Command gesendet → {attach_topic}")
+                logging.info(f"⚡ Attach Payload: '{attach_command}'")
+                
+                # Lokale Sensor-Liste aktualisieren
+                self.sensors[sensor_eui] = {
+                    'eui': sensor_eui,
+                    'sensor_type': 'Service Center Registered',
+                    'last_update': 'Just registered via Service Center',
+                    'snr': 'N/A',
+                    'rssi': 'N/A',
+                    'signal_quality': 'Unknown',
+                    'network_key': network_key,
+                    'short_addr': short_addr,
+                    'bidirectional': bidirectional
+                }
+                
+                logging.info(f"✅ SERVICE CENTER REGISTRATION COMPLETE: {sensor_eui}")
+                return True
+            else:
+                logging.error(f"❌ Sensor {sensor_eui} Konfiguration fehlgeschlagen")
+                return False
+                
+        except Exception as e:
+            logging.error(f"❌ Fehler beim Service Center Registration: {e}")
             return False
     
     def send_sensor_command(self, sensor_eui: str, command: str) -> bool:
