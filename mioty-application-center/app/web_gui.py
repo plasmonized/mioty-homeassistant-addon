@@ -445,61 +445,6 @@ class WebGUI:
                 logging.error(f"Fehler beim Speichern der BaseStation-Metadaten: {e}")
                 return jsonify({'error': str(e)}), 500
 
-        @self.app.route('/api/sensor/register', methods=['POST'])
-        def register_sensor():
-            """API: Sensor am Service Center registrieren und Metadaten speichern."""
-            try:
-                data = request.get_json()
-                
-                # Validierung der Pflichtfelder
-                required_fields = ['sensor_eui', 'network_key', 'short_addr']
-                for field in required_fields:
-                    if field not in data or not data[field]:
-                        return jsonify({'error': f'Feld "{field}" ist erforderlich'}), 400
-                
-                eui = data['sensor_eui'].strip()
-                network_key = data['network_key'].strip()
-                short_addr = data['short_addr'].strip()
-                bidirectional = data.get('bidirectional', False)
-                
-                # Hex-Validierung
-                if not _is_valid_hex(eui, 16):
-                    return jsonify({'error': 'EUI muss 16 Hexadezimal-Zeichen enthalten'}), 400
-                if not _is_valid_hex(network_key, 32):
-                    return jsonify({'error': 'Network Key muss 32 Hexadezimal-Zeichen enthalten'}), 400
-                if not _is_valid_hex(short_addr, 4):
-                    return jsonify({'error': 'Short Address muss 4 Hexadezimal-Zeichen enthalten'}), 400
-                
-                logging.info(f"🚀 SENSOR REGISTRATION: {eui} (Short: {short_addr}, Bidi: {bidirectional})")
-                
-                # 1. Service Center Registration (falls aktiviert)
-                service_center_success = False
-                if self.addon and hasattr(self.addon, 'service_center_client'):
-                    try:
-                        result = self.addon.service_center_client.add_sensor(
-                            eui=eui,
-                            network_key=network_key,
-                            short_addr=short_addr,
-                            bidirectional=bidirectional
-                        )
-                        service_center_success = result.get('success', False)
-                        logging.info(f"📡 Service Center Registrierung: {'✅ Erfolgreich' if service_center_success else '❌ Fehlgeschlagen'}")
-                    except Exception as e:
-                        logging.warning(f"⚠️ Service Center Registrierung fehlgeschlagen: {e}")
-                
-                # 2. Metadaten speichern (immer, auch wenn Service Center fehlschlägt)
-                metadata = {
-                    'eui': eui,
-                    'network_key': network_key,
-                    'short_addr': short_addr,
-                    'bidirectional': bidirectional,
-                    'service_center_registered': service_center_success
-                }
-                
-                # Home Assistant Metadaten hinzufügen
-                manufacturer = data.get('manufacturer', '').strip()
-                model = data.get('model', '').strip()
-                device_name = data.get('device_name', '').strip()
                 
                 if manufacturer or model:
                     metadata['manufacturer'] = manufacturer or 'Unknown'
