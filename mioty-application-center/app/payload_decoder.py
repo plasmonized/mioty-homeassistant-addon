@@ -626,13 +626,20 @@ try {{
                 it += 1  # 1 Byte verbraucht
                 logging.info(f"🌡️ DEBUG: Humidity (Byte {it-1}): {decoded['humidity']}% RH")
                 
-                if decoded['product_version'] & 0x01 or decoded['product_version'] & 0x02:  # Co2 und Druck enthalten (Bit 0 ODER Bit 1)
+                # Detaillierte Bedingungsprüfung
+                bit_0 = decoded['product_version'] & 0x01
+                bit_1 = decoded['product_version'] & 0x02
+                logging.info(f"🔥 CONDITION CHECK: product_ver={decoded['product_version']}, bit_0={bit_0}, bit_1={bit_1}")
+                
+                if bit_0 or bit_1:  # Co2 und Druck enthalten (Bit 0 ODER Bit 1)
+                    logging.info(f"✅ CO2/PRESSURE CONDITION TRUE - Reading bytes {it} to {it+3}")
                     decoded['pressure'] = (bytes_data[it] << 8) | bytes_data[it + 1]
                     it += 2
                     decoded['co2_ppm'] = (bytes_data[it] << 8) | bytes_data[it + 1]
                     it += 2
                     logging.info(f"🚨 DEBUG: Pressure: {decoded['pressure']} hPa, CO2: {decoded['co2_ppm']} ppm")
                 else:
+                    logging.info(f"❌ CO2/PRESSURE CONDITION FALSE - Skipping 4 bytes")
                     it += 4  # Werte überspringen
                 
                 decoded['alarm'] = bytes_data[it]
@@ -661,6 +668,7 @@ try {{
                         logging.debug(f"🌡️ Wall Humidity: {wall_humidity_raw}% RH (1-Byte direkt)")
                         
             # Konvertiere zu erwartetes Format
+            logging.info(f"🎯 FINAL DECODED VALUES: {list(decoded.keys())}")
             formatted_data = {}
             
             if 'battery_voltage' in decoded:
