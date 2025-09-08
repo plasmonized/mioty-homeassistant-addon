@@ -313,6 +313,14 @@ class BSSCIAddon:
             # Home Assistant Discovery/Update
             self.create_unified_sensor_discovery(sensor_eui, data, decoded_payload)
             
+            # Individual Discovery für dekodierte Messwerte
+            if decoded_payload and self.mqtt_manager:
+                decoded_data = decoded_payload.get('data', {}) if isinstance(decoded_payload, dict) else {}
+                if decoded_data:
+                    logging.info(f"🔧 Starte Individual Discovery für {sensor_eui} mit {len(decoded_data)} Messwerten")
+                    self.mqtt_manager.send_individual_sensor_discoveries(sensor_eui, decoded_data, f"mioty Sensor {sensor_eui}", snr, rssi)
+                    self.mqtt_manager.publish_individual_sensor_states(sensor_eui, decoded_data, snr, rssi)
+            
         except Exception as e:
             logging.error(f"Fehler beim Verarbeiten der Sensor-Daten für {sensor_eui}: {e}")
     

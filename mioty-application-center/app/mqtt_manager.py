@@ -419,10 +419,212 @@ class MQTTManager:
             logging.error(f"Fehler beim Senden des Sensor Status für {sensor_eui}: {e}")
             return False
     
-    def send_individual_sensor_discoveries(self, sensor_eui: str, decoded_data: Dict[str, Any], device_name: str = "mioty Sensor") -> bool:
-        """DEAKTIVIERT: Individual Discovery System (40+ Topics pro Sensor) - ersetzt durch einheitliche Topic-Struktur."""
-        logging.debug(f"Individual Discovery System deaktiviert für {sensor_eui} - einheitliche Struktur verwendet")
-        return True
+    def send_individual_sensor_discoveries(self, sensor_eui: str, decoded_data: Dict[str, Any], device_name: str = "mioty Sensor", snr: float = None, rssi: float = None) -> bool:
+        """Sende separate Home Assistant Discovery Messages für jeden Messwert."""
+        if not self.ha_connected or not self.ha_client:
+            logging.debug("HA MQTT nicht verfügbar - Individual Discovery übersprungen")
+            return False
+        
+        # Device Information für alle Sensoren
+        device_info = {
+            "identifiers": [sensor_eui],
+            "name": device_name,
+            "manufacturer": "Sentinum",
+            "model": "Febris TH",
+            "via_device": "bssci_mioty_application_center"
+        }
+        
+        # Sensor Mapping: Messwert → Home Assistant Konfiguration
+        sensor_configs = {
+            "internal_temperature": {
+                "name": "Temperature",
+                "device_class": "temperature",
+                "unit_of_measurement": "°C",
+                "icon": "mdi:thermometer"
+            },
+            "temperature": {
+                "name": "Temperature", 
+                "device_class": "temperature",
+                "unit_of_measurement": "°C",
+                "icon": "mdi:thermometer"
+            },
+            "humidity": {
+                "name": "Humidity",
+                "device_class": "humidity", 
+                "unit_of_measurement": "%",
+                "icon": "mdi:water-percent"
+            },
+            "battery_voltage": {
+                "name": "Battery Voltage",
+                "device_class": "voltage",
+                "unit_of_measurement": "V",
+                "icon": "mdi:battery"
+            },
+            "dew_point": {
+                "name": "Dew Point",
+                "device_class": "temperature",
+                "unit_of_measurement": "°C", 
+                "icon": "mdi:water-thermometer"
+            },
+            "pressure": {
+                "name": "Pressure",
+                "device_class": "atmospheric_pressure",
+                "unit_of_measurement": "hPa",
+                "icon": "mdi:gauge"
+            },
+            "co2_ppm": {
+                "name": "CO2",
+                "device_class": "carbon_dioxide",
+                "unit_of_measurement": "ppm",
+                "icon": "mdi:molecule-co2"
+            },
+            "co2": {
+                "name": "CO2",
+                "device_class": "carbon_dioxide",
+                "unit_of_measurement": "ppm",
+                "icon": "mdi:molecule-co2"
+            },
+            "alarm": {
+                "name": "Alarm Status",
+                "device_class": None,
+                "unit_of_measurement": "",
+                "icon": "mdi:alert-circle"
+            },
+            "up_cnt": {
+                "name": "Upload Counter",
+                "device_class": None,
+                "unit_of_measurement": "",
+                "icon": "mdi:counter"
+            },
+            "base_id": {
+                "name": "Base ID",
+                "device_class": None,
+                "unit_of_measurement": "",
+                "icon": "mdi:identifier"
+            },
+            "major_version": {
+                "name": "Major Version",
+                "device_class": None,
+                "unit_of_measurement": "",
+                "icon": "mdi:numeric"
+            },
+            "minor_version": {
+                "name": "Minor Version",
+                "device_class": None,
+                "unit_of_measurement": "",
+                "icon": "mdi:numeric"
+            },
+            "product_version": {
+                "name": "Product Version",
+                "device_class": None,
+                "unit_of_measurement": "",
+                "icon": "mdi:numeric"
+            }
+        }
+        
+        success_count = 0
+        total_count = 0
+        
+        try:
+            # Discovery für dekodierte Messwerte
+            if decoded_data:
+                for measurement_key, measurement_value in decoded_data.items():
+                    if measurement_key in sensor_configs:
+                        config_topic = f"homeassistant/sensor/mioty_{sensor_eui}/{measurement_key}/config"
+                        state_topic = f"homeassistant/sensor/mioty_{sensor_eui}/{measurement_key}/state"
+                        availability_topic = f"homeassistant/sensor/mioty_{sensor_eui}/{measurement_key}/availability"
+                        
+                        sensor_config = sensor_configs[measurement_key]
+                        discovery_payload = {
+                            "name": f"{device_name} {sensor_config['name']}",
+                            "unique_id": f"mioty_{sensor_eui}_{measurement_key}",
+                            "state_topic": state_topic,
+                            "availability_topic": availability_topic,
+                            "device": device_info,
+                            "icon": sensor_config["icon"]
+                        }
+                        
+                        if sensor_config["device_class"]:
+                            discovery_payload["device_class"] = sensor_config["device_class"]
+                        if sensor_config["unit_of_measurement"]:
+                            discovery_payload["unit_of_measurement"] = sensor_config["unit_of_measurement"]
+                        
+                        result = self.ha_client.publish(config_topic, json.dumps(discovery_payload), retain=True)
+                        if result.rc == mqtt.MQTT_ERR_SUCCESS:
+                            success_count += 1
+                            logging.info(f"🔧 Korrekte Discovery: {sensor_eui} - {sensor_config['name']} → {config_topic}")
+                        total_count += 1
+            
+            # Immer SNR Discovery erstellen
+            config_topic = f"homeassistant/sensor/mioty_{sensor_eui}/snr/config"
+            state_topic = f"homeassistant/sensor/mioty_{sensor_eui}/snr/state"
+            availability_topic = f"homeassistant/sensor/mioty_{sensor_eui}/snr/availability"
+            
+            discovery_payload = {
+                "name": f"{device_name} SNR",
+                "unique_id": f"mioty_{sensor_eui}_snr",
+                "state_topic": state_topic,
+                "availability_topic": availability_topic,
+                "device": device_info,
+                "device_class": "signal_strength",
+                "unit_of_measurement": "dB",
+                "icon": "mdi:signal"
+            }
+            
+            result = self.ha_client.publish(config_topic, json.dumps(discovery_payload), retain=True)
+            if result.rc == mqtt.MQTT_ERR_SUCCESS:
+                success_count += 1
+                logging.info(f"🔧 Korrekte Discovery: {sensor_eui} - SNR → {config_topic}")
+            total_count += 1
+            
+            # Immer RSSI Discovery erstellen
+            config_topic = f"homeassistant/sensor/mioty_{sensor_eui}/rssi/config"
+            state_topic = f"homeassistant/sensor/mioty_{sensor_eui}/rssi/state"
+            availability_topic = f"homeassistant/sensor/mioty_{sensor_eui}/rssi/availability"
+            
+            discovery_payload = {
+                "name": f"{device_name} RSSI",
+                "unique_id": f"mioty_{sensor_eui}_rssi",
+                "state_topic": state_topic,
+                "availability_topic": availability_topic,
+                "device": device_info,
+                "device_class": "signal_strength",
+                "unit_of_measurement": "dBm",
+                "icon": "mdi:wifi"
+            }
+            
+            result = self.ha_client.publish(config_topic, json.dumps(discovery_payload), retain=True)
+            if result.rc == mqtt.MQTT_ERR_SUCCESS:
+                success_count += 1
+                logging.info(f"🔧 Korrekte Discovery: {sensor_eui} - RSSI → {config_topic}")
+            total_count += 1
+            
+            # EUI Discovery erstellen
+            config_topic = f"homeassistant/sensor/mioty_{sensor_eui}/eui/config"
+            state_topic = f"homeassistant/sensor/mioty_{sensor_eui}/eui/state"
+            availability_topic = f"homeassistant/sensor/mioty_{sensor_eui}/eui/availability"
+            
+            discovery_payload = {
+                "name": f"{device_name} EUI (Serial Number)",
+                "unique_id": f"mioty_{sensor_eui}_eui",
+                "state_topic": state_topic,
+                "availability_topic": availability_topic,
+                "device": device_info,
+                "icon": "mdi:identifier"
+            }
+            
+            result = self.ha_client.publish(config_topic, json.dumps(discovery_payload), retain=True)
+            if result.rc == mqtt.MQTT_ERR_SUCCESS:
+                success_count += 1
+                logging.info(f"🔧 Korrekte Discovery: {sensor_eui} - EUI (Serial Number) → {config_topic}")
+            total_count += 1
+                
+        except Exception as e:
+            logging.error(f"Fehler beim Individual Discovery für {sensor_eui}: {e}")
+            return False
+                
+        logging.info(f"✅ Korrekte Discovery abgeschlossen: {success_count}/{total_count} Messwerte für {sensor_eui}")
+        return success_count > 0
     
     
     def _handle_remote_ep_command(self, topic_parts: list, payload: str):
