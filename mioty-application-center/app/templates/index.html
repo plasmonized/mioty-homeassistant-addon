@@ -349,20 +349,20 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label for="sensor_eui">EUI (16 Hex-Zeichen) *</label>
-                        <input type="text" id="sensor_eui" name="sensor_eui" maxlength="16" placeholder="z.B. fca84a090000000a" required>
-                        <small>16 Hexadezimale Zeichen (0-9, A-F)</small>
+                        <input type="text" id="sensor_eui" name="sensor_eui" maxlength="23" placeholder="z.B. fca84a090000000a oder FC:A8:4A:09:00:00:00:0A" required>
+                        <small>16 Hexadezimale Zeichen (0-9, A-F), mit oder ohne Trennzeichen</small>
                     </div>
                     <div class="form-group">
                         <label for="short_addr">Short Address (4 Hex-Zeichen) *</label>
-                        <input type="text" id="short_addr" name="short_addr" maxlength="4" placeholder="z.B. 0001" required>
-                        <small>4 Hexadezimale Zeichen</small>
+                        <input type="text" id="short_addr" name="short_addr" maxlength="5" placeholder="z.B. 0001 oder 00:01" required>
+                        <small>4 Hexadezimale Zeichen, mit oder ohne Trennzeichen</small>
                     </div>
                 </div>
 
                 <div class="form-group">
                     <label for="network_key">Network Key (32 Hex-Zeichen) *</label>
-                    <input type="text" id="network_key" name="network_key" maxlength="32" placeholder="z.B. 000102030405060708090a0b0c0d0e0f" required>
-                    <small>32 Hexadezimale Zeichen für die Netzwerkverschlüsselung</small>
+                    <input type="text" id="network_key" name="network_key" maxlength="47" placeholder="z.B. 000102030405060708090a0b0c0d0e0f oder 00:01:02:03:04:05:06:07:08:09:0A:0B:0C:0D:0E:0F" required>
+                    <small>32 Hexadezimale Zeichen für die Netzwerkverschlüsselung, mit oder ohne Trennzeichen</small>
                 </div>
 
                 <div class="form-group">
