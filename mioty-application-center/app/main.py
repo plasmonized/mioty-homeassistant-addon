@@ -313,13 +313,13 @@ class BSSCIAddon:
             # Home Assistant Discovery/Update
             self.create_unified_sensor_discovery(sensor_eui, data, decoded_payload)
             
-            # Individual Discovery für dekodierte Messwerte
-            if decoded_payload and self.mqtt_manager:
-                decoded_data = decoded_payload.get('data', {}) if isinstance(decoded_payload, dict) else {}
-                if decoded_data:
-                    logging.info(f"🔧 Starte Individual Discovery für {sensor_eui} mit {len(decoded_data)} Messwerten")
-                    self.mqtt_manager.send_individual_sensor_discoveries(sensor_eui, decoded_data, f"mioty Sensor {sensor_eui}", snr, rssi)
-                    self.mqtt_manager.publish_individual_sensor_states(sensor_eui, decoded_data, snr, rssi)
+            # Individual Discovery DEAKTIVIERT - Verursacht Topic-Chaos mit doppelten/dreifachen Sensoren!
+            # Das Individual Discovery System erstellt für jeden Messwert separate homeassistant/sensor Topics
+            # was zu der chaotischen Struktur führt wie in den Screenshots zu sehen
+            logging.debug(f"Individual Discovery für {sensor_eui} deaktiviert - verwende nur Unified Discovery")
+            
+            # Nur noch UNIFIED DISCOVERY - EIN sauberes Topic pro Sensor mit JSON State
+            # decoded_payload Daten werden bereits über die normale Discovery verarbeitet
             
         except Exception as e:
             logging.error(f"Fehler beim Verarbeiten der Sensor-Daten für {sensor_eui}: {e}")
@@ -1029,6 +1029,25 @@ class BSSCIAddon:
                 "name": "Minor Version",
                 "icon": "mdi:tag-outline"
             },
+            # Wichtige CO2/Umwelt-Sensoren
+            "co2": {
+                "name": "CO2",
+                "device_class": "carbon_dioxide",
+                "unit_of_measurement": "ppm",
+                "icon": "mdi:molecule-co2"
+            },
+            "co2_ppm": {
+                "name": "CO2",
+                "device_class": "carbon_dioxide",
+                "unit_of_measurement": "ppm",
+                "icon": "mdi:molecule-co2"
+            },
+            "pressure": {
+                "name": "Pressure",
+                "device_class": "atmospheric_pressure",
+                "unit_of_measurement": "hPa",
+                "icon": "mdi:gauge"
+            }
         }
         
         # Nur Configs für Felder erstellen, die auch wirklich existieren
