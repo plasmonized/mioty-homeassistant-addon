@@ -1115,8 +1115,8 @@ class BSSCIAddon:
         state_data = {
             "state": "online",  # Hauptstatus
             "sensor_eui": sensor_eui,
-            "snr": data.get('snr'),
-            "rssi": data.get('rssi'),
+            "snr": round(data.get('snr', 0), 2) if data.get('snr') is not None else None,
+            "rssi": round(data.get('rssi', 0), 2) if data.get('rssi') is not None else None,
             "base_station_eui": data.get('bs_eui'),
             "receive_time": self.format_timestamp(data.get('rxTime')),
             "message_counter": data.get('cnt'),
@@ -1124,14 +1124,22 @@ class BSSCIAddon:
             **decoded_data  # Alle dekodierten Messwerte hinzufügen
         }
         
+        # Bereinige None-Werte für bessere JSON-Darstellung
+        state_data = {k: v for k, v in state_data.items() if v is not None}
+        
         # State Message senden
         import json
         if self.mqtt_manager and self.mqtt_manager.ha_client:
             success = self.mqtt_manager.ha_client.publish(state_topic, json.dumps(state_data), retain=True)
-            if success:
-                logging.info(f"📊 Unified State: {sensor_eui} → alle Daten als JSON")
+            if success.rc == 0:  # MQTT_ERR_SUCCESS
+                logging.info(f"📊 ✅ Unified State erfolgreich gesendet: {sensor_eui}")
+                logging.info(f"   📡 SNR: {data.get('snr')} dB, RSSI: {data.get('rssi')} dBm")
+                logging.info(f"   📍 State Topic: {state_topic}")
+                logging.debug(f"   📦 State Data: {json.dumps(state_data, indent=2)}")
             else:
-                logging.warning(f"❌ Unified State fehlgeschlagen für {sensor_eui}")
+                logging.error(f"❌ Unified State MQTT Publish fehlgeschlagen für {sensor_eui} (Code: {success.rc})")
+        else:
+            logging.error(f"❌ HA MQTT Client nicht verfügbar für {sensor_eui}")
     
     def reload_settings(self):
         """Lade Einstellungen neu und wende sie auf laufendes System an."""
