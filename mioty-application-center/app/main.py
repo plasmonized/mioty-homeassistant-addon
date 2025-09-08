@@ -278,14 +278,34 @@ class BSSCIAddon:
             snr = data.get('snr', 0)
             signal_quality = self.get_signal_quality(snr, rssi)
             
-            # Payload dekodieren
-            raw_payload = data.get('payload_hex', '')
+            # Payload dekodieren - Prüfe verschiedene Formate
+            raw_payload = ""
+            payload_bytes = []
+            
+            # Format 1: "payload_hex" String (für Kompatibilität)
+            if 'payload_hex' in data and data['payload_hex']:
+                raw_payload = data['payload_hex']
+                payload_bytes = [int(raw_payload[i:i+2], 16) for i in range(0, len(raw_payload), 2)]
+                logging.info(f"   📦 Payload-Format: payload_hex")
+            
+            # Format 2: "data" Array (Standard BSSCI Format)  
+            elif 'data' in data and isinstance(data['data'], list):
+                payload_bytes = data['data']
+                raw_payload = ''.join(f'{b:02X}' for b in payload_bytes)
+                logging.info(f"   📦 Payload-Format: data array")
+            
+            # Format 3: "payload" als Array
+            elif 'payload' in data and isinstance(data['payload'], list):
+                payload_bytes = data['payload']
+                raw_payload = ''.join(f'{b:02X}' for b in payload_bytes)
+                logging.info(f"   📦 Payload-Format: payload array")
+            
             decoded_payload = None
             
             logging.info(f"📊 ✅ SENSOR-DATEN EMPFANGEN: {sensor_eui}")
             logging.info(f"   📡 RSSI: {rssi} dBm, SNR: {snr} dB")
             logging.info(f"   ⏰ Timestamp: {formatted_timestamp}")
-            logging.info(f"   📦 Payload: {raw_payload}")
+            logging.info(f"   📦 Payload: {raw_payload} ({len(payload_bytes)} bytes)")
             
             # Activity Tracking aktualisieren
             self.sensor_last_seen[sensor_eui] = current_time
@@ -293,8 +313,9 @@ class BSSCIAddon:
                 logging.info(f"✅ Sensor {sensor_eui} wieder aktiv - Warnung entfernt")
                 del self.sensor_warnings[sensor_eui]
             
-            if raw_payload and self.decoder_manager:
-                decoded_payload = self.decoder_manager.decode_payload(sensor_eui, raw_payload)
+            if payload_bytes and self.decoder_manager:
+                logging.info(f"🔧 Starte Payload-Dekodierung für {sensor_eui}")
+                decoded_payload = self.decoder_manager.decode_payload(sensor_eui, payload_bytes)
             
             # Sensor-Daten aktualisieren/hinzufügen
             self.sensors[sensor_eui] = {
