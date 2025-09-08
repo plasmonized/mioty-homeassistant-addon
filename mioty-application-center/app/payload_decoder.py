@@ -722,11 +722,47 @@ try {{
                     'description': 'Alarm'
                 }
                 
+            # ✅ CO2 UND PRESSURE HINZUFÜGEN (DAS WAR DAS PROBLEM!)
+            if 'co2_ppm' in decoded:
+                formatted_data['co2_ppm'] = {
+                    'value': decoded['co2_ppm'],
+                    'unit': 'ppm',
+                    'description': 'CO2 Concentration'
+                }
+                
+            if 'pressure' in decoded:
+                formatted_data['pressure'] = {
+                    'value': decoded['pressure'],
+                    'unit': 'hPa',
+                    'description': 'Atmospheric Pressure'
+                }
+                
             if 'dew_point' in decoded:
                 formatted_data['dew_point'] = {
                     'value': round(decoded['dew_point'], 1),
                     'unit': '°C',
                     'description': 'Dew Point'
+                }
+                
+            if 'wall_temperature' in decoded:
+                formatted_data['wall_temperature'] = {
+                    'value': round(decoded['wall_temperature'], 1),
+                    'unit': '°C',
+                    'description': 'Wall Temperature'
+                }
+                
+            if 'therm_temperature' in decoded:
+                formatted_data['therm_temperature'] = {
+                    'value': round(decoded['therm_temperature'], 1),
+                    'unit': '°C',
+                    'description': 'Thermal Temperature'
+                }
+                
+            if 'wall_humidity' in decoded:
+                formatted_data['wall_humidity'] = {
+                    'value': decoded['wall_humidity'],
+                    'unit': '%RH',
+                    'description': 'Wall Humidity'
                 }
             
             return {
