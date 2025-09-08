@@ -617,17 +617,17 @@ try {{
             it = 7
             
             if decoded['minor_version'] >= 3:
-                # Luftfeuchte: 2 Bytes (7-8) - entspricht JavaScript Decoder  
-                humidity_raw = (bytes_data[it] << 8) | bytes_data[it + 1]  # 2 Bytes kombinieren
-                decoded['humidity'] = round(humidity_raw / 256.0, 1)  # Korrigierte Skalierung für realistische Werte
-                it += 2  # 2 Bytes verbraucht
-                logging.debug(f"🌡️ Humidity: {humidity_raw} raw → {decoded['humidity']}% RH (2-Byte)")
+                # Luftfeuchte: 1 Byte (7) - entspricht exakt dem JavaScript Decoder  
+                decoded['humidity'] = bytes_data[it]  # Direkt 1 Byte verwenden wie im JS
+                it += 1  # 1 Byte verbraucht
+                logging.info(f"🌡️ DEBUG: Humidity (Byte {it-1}): {decoded['humidity']}% RH")
                 
                 if decoded['product_version'] & 0x01:  # Co2 und Druck enthalten
                     decoded['pressure'] = (bytes_data[it] << 8) | bytes_data[it + 1]
                     it += 2
                     decoded['co2_ppm'] = (bytes_data[it] << 8) | bytes_data[it + 1]
                     it += 2
+                    logging.info(f"🚨 DEBUG: Pressure: {decoded['pressure']} hPa, CO2: {decoded['co2_ppm']} ppm")
                 else:
                     it += 4  # Werte überspringen
                 
