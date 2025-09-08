@@ -397,6 +397,9 @@ class BSSCIAddon:
     
     def handle_base_station_data(self, bs_eui: str, data: Dict[str, Any]):
         """Verarbeite Base Station Status-Daten."""
+        # Normalisiere Base Station EUI (Buchstaben zu Großbuchstaben)
+        bs_eui = self.normalize_sensor_eui(bs_eui)
+        
         logging.info(f"🏢 HANDLE_BASE_STATION_DATA AUFGERUFEN für {bs_eui}")
         logging.info(f"Base Station Status empfangen von {bs_eui}")
         
@@ -740,6 +743,8 @@ class BSSCIAddon:
     
     def create_basestation_discovery(self, bs_eui: str, status: Dict[str, Any]):
         """Erstelle einheitliche Base Station MQTT Discovery - identisch zu Sensor Discovery."""
+        # Normalisiere Base Station EUI für MQTT Topics
+        bs_eui = self.normalize_sensor_eui(bs_eui)
         device_id = f"mioty_bs_{bs_eui}"
         
         # 🔍 Device-Informationen für Base Station extrahieren
@@ -842,6 +847,8 @@ class BSSCIAddon:
     
     def send_unified_basestation_state(self, bs_eui: str, status: Dict[str, Any]):
         """Sende alle Base Station Daten als JSON in einem einzigen state topic."""
+        # Normalisiere Base Station EUI für MQTT Topics
+        bs_eui = self.normalize_sensor_eui(bs_eui)
         device_id = f"mioty_bs_{bs_eui}"
         state_topic = f"homeassistant/sensor/{device_id}/state"
         
