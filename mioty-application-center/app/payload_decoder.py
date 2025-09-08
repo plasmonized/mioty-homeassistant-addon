@@ -605,6 +605,8 @@ try {{
             bytes_data = payload_bytes
             decoded = {}
             
+            logging.info(f"🚨 CRITICAL DEBUG: Payload length: {len(bytes_data)}, Data: {[hex(b) for b in bytes_data[:20]]}")
+            
             # Decode header
             decoded['base_id'] = bytes_data[0] >> 4
             decoded['major_version'] = bytes_data[0] & 0x0F
@@ -613,6 +615,8 @@ try {{
             decoded['up_cnt'] = bytes_data[2]
             decoded['battery_voltage'] = ((bytes_data[3] << 8) | bytes_data[4]) / 1000.0
             decoded['internal_temperature'] = ((bytes_data[5] << 8) | bytes_data[6]) / 10.0 - 100.0
+            
+            logging.info(f"🚨 HEADER DECODED: minor_ver={decoded['minor_version']}, product_ver={decoded['product_version']}")
             
             it = 7
             
