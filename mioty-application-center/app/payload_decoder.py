@@ -328,6 +328,10 @@ class PayloadDecoder:
     
     def assign_decoder(self, sensor_eui: str, decoder_name: str) -> bool:
         """Weise Decoder einem Sensor zu."""
+        # EUI automatisch zu Großbuchstaben normalisieren
+        sensor_eui = self._normalize_sensor_eui(sensor_eui)
+        logging.info(f"📋 Decoder-Zuweisung: {sensor_eui} → {decoder_name}")
+        
         if decoder_name not in self.decoder_files:
             logging.error(f"Decoder {decoder_name} nicht gefunden")
             return False
@@ -341,6 +345,10 @@ class PayloadDecoder:
     
     def remove_decoder_assignment(self, sensor_eui: str) -> bool:
         """Entferne Decoder-Zuweisung für Sensor."""
+        # EUI automatisch zu Großbuchstaben normalisieren
+        sensor_eui = self._normalize_sensor_eui(sensor_eui)
+        logging.info(f"❌ Decoder-Zuweisung entfernt: {sensor_eui}")
+        
         if sensor_eui in self.decoders:
             del self.decoders[sensor_eui]
             return self.save_decoders()
@@ -1448,6 +1456,21 @@ try {{
     def get_sensor_decoder_assignments(self) -> Dict[str, Any]:
         """Gib alle Sensor-Decoder Zuweisungen zurück."""
         return self.decoders.copy()
+    
+    def _normalize_sensor_eui(self, sensor_eui: str) -> str:
+        """Normalisiere Sensor EUI: Wandle Buchstaben in Großbuchstaben um, lasse Zahlen unverändert."""
+        if not sensor_eui:
+            return sensor_eui
+        
+        # Konvertiere nur Buchstaben zu Großbuchstaben, Zahlen bleiben unverändert
+        normalized = ''
+        for char in sensor_eui:
+            if char.isalpha():
+                normalized += char.upper()
+            else:
+                normalized += char
+        
+        return normalized
     
     def delete_decoder(self, decoder_name: str) -> bool:
         """Lösche Decoder-Datei und Zuweisungen."""

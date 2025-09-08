@@ -1058,8 +1058,10 @@ class WebGUI:
             if not data.get('sensor_eui') or not data.get('decoder_name'):
                 return jsonify({"error": "sensor_eui und decoder_name sind erforderlich"}), 400
             
+            # EUI automatisch zu Großbuchstaben normalisieren
+            normalized_eui = data['sensor_eui'].upper() if isinstance(data['sensor_eui'], str) else data['sensor_eui']
             success = self.addon.decoder_manager.assign_decoder_to_sensor(
-                data['sensor_eui'], data['decoder_name']
+                normalized_eui, data['decoder_name']
             )
             
             if success:
@@ -1078,7 +1080,9 @@ class WebGUI:
             if not data.get('sensor_eui'):
                 return jsonify({"error": "sensor_eui ist erforderlich"}), 400
             
-            success = self.addon.decoder_manager.remove_sensor_assignment(data['sensor_eui'])
+            # EUI automatisch zu Großbuchstaben normalisieren
+            normalized_eui = data['sensor_eui'].upper() if isinstance(data['sensor_eui'], str) else data['sensor_eui']
+            success = self.addon.decoder_manager.remove_sensor_assignment(normalized_eui)
             
             if success:
                 return jsonify({"success": True, "message": "Decoder-Zuweisung entfernt"})
