@@ -857,6 +857,7 @@ try {{
                     'unit': '°C',
                     'description': 'Temperature'
                 }
+            
                 
             if 'humidity' in decoded:
                 formatted_data['humidity'] = {
