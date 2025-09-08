@@ -16,5 +16,11 @@
     "model": "Febris",
     "name": "Sentinum Febris",
     "manual": true
+  },
+  "74731D0000000016": {
+    "manufacturer": "Sentinum",
+    "model": "Aion mioty Adapter",
+    "name": "Sentinum Aion mioty Adapter",
+    "manual": true
   }
 }

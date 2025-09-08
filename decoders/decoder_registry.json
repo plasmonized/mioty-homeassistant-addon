@@ -1,36 +1,28 @@
 {
   "sensor_decoders": {
-    "fca84a090000000a": {
-      "decoder_name": "juno_th",
-      "assigned_at": 1756968803.7671726
-    },
-    "fca84a030000127c": {
-      "decoder_name": "febris_th",
-      "assigned_at": 1756729897.2729912
-    },
-    "fca84a0300001276": {
-      "decoder_name": "febris_th",
-      "assigned_at": 1756734487.0
-    },
-    "fca84a030000127b": {
-      "decoder_name": "febris_th",
-      "assigned_at": 1757072246.6923048
-    },
-    "fca84a030000127d": {
-      "decoder_name": "febris_th",
-      "assigned_at": 1757072293.8771033
-    },
-    "74731d0000000016": {
-      "decoder_name": "ifm-000173-20160824-IODD1.0.1-de",
-      "assigned_at": 1757179125.0
-    },
     "FCA84A03000003BC": {
       "decoder_name": "febris_co2",
       "assigned_at": 1757239938.3587916
     },
     "FCA84A030000127C": {
       "decoder_name": "febris_th",
-      "assigned_at": 1757325377.2700546
+      "assigned_at": 1757334039.6976533
+    },
+    "FCA84A030000127D": {
+      "decoder_name": "febris_th",
+      "assigned_at": 1757334045.3847528
+    },
+    "74731D0000000016": {
+      "decoder_name": "ifm-000429-20180717-IODD1.1-de",
+      "assigned_at": 1757334055.9333057
+    },
+    "FCA84A030000127B": {
+      "decoder_name": "febris_th",
+      "assigned_at": 1757334071.0398707
+    },
+    "FCA84A0300001276": {
+      "decoder_name": "febris_th",
+      "assigned_at": 1757334079.0568056
     }
   },
   "decoder_files": {
