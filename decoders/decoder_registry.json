@@ -2,7 +2,7 @@
   "sensor_decoders": {
     "FCA84A03000003BC": {
       "decoder_name": "febris_co2",
-      "assigned_at": 1757239938.3587916
+      "assigned_at": 1757334135.6073573
     },
     "FCA84A030000127C": {
       "decoder_name": "febris_th",
@@ -23,6 +23,10 @@
     "FCA84A0300001276": {
       "decoder_name": "febris_th",
       "assigned_at": 1757334079.0568056
+    },
+    "FCA84A090000000A": {
+      "decoder_name": "juno_th",
+      "assigned_at": 1757334107.2230406
     }
   },
   "decoder_files": {
