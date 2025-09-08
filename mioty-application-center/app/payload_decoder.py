@@ -626,7 +626,7 @@ try {{
                 it += 1  # 1 Byte verbraucht
                 logging.info(f"🌡️ DEBUG: Humidity (Byte {it-1}): {decoded['humidity']}% RH")
                 
-                if decoded['product_version'] & 0x01:  # Co2 und Druck enthalten
+                if decoded['product_version'] & 0x01 or decoded['product_version'] & 0x02:  # Co2 und Druck enthalten (Bit 0 ODER Bit 1)
                     decoded['pressure'] = (bytes_data[it] << 8) | bytes_data[it + 1]
                     it += 2
                     decoded['co2_ppm'] = (bytes_data[it] << 8) | bytes_data[it + 1]
