@@ -27,6 +27,10 @@
     "FCA84A03000003BC": {
       "decoder_name": "febris_co2",
       "assigned_at": 1757239938.3587916
+    },
+    "FCA84A030000127C": {
+      "decoder_name": "febris_th",
+      "assigned_at": 1757325377.2700546
     }
   },
   "decoder_files": {
