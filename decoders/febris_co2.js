@@ -74,11 +74,10 @@ function decodeUplink(input) {
                 decoded.wall_temperature = bytes[it++] - 100;
                 decoded.therm_temperature = bytes[it++] - 100;
                 decoded.wall_humidity = bytes[it++];
-    
             }
-    
-    
         }
+        
+
     }
 
     return {
@@ -86,5 +85,4 @@ function decodeUplink(input) {
         warnings: [],
         errors: []
     };
-
 }
