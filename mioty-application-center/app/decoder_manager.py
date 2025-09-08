@@ -29,6 +29,10 @@ class DecoderManager:
         
         logging.info("Decoder Manager initialisiert")
     
+    def decode_payload(self, sensor_eui: str, payload_bytes: List[int], metadata: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """Delegiere Payload-Dekodierung an PayloadDecoder Engine."""
+        return self.payload_decoder.decode_payload(sensor_eui, payload_bytes, metadata)
+    
     def _create_sample_decoders(self):
         """Erstelle Beispiel-Decoder für Demo."""
         # mioty Blueprint Beispiel
