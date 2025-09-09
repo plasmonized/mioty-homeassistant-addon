@@ -23,6 +23,10 @@
     "FCA84A03000003BC": {
       "decoder_name": "febris_co2",
       "assigned_at": 1757344290.3661568
+    },
+    "FCA84A090000000A": {
+      "decoder_name": "juno_th",
+      "assigned_at": 1757397134.5127664
     }
   },
   "decoder_files": {
@@ -174,6 +178,15 @@
       "description": "Sentinum JavaScript Decoder",
       "supported_devices": [],
       "created_at": 1757344254.2031453
+    },
+    "juno_th": {
+      "type": "javascript",
+      "file_path": "decoders/juno_th.js",
+      "name": "juno_th",
+      "version": "1.0",
+      "description": "Sentinum JavaScript Decoder",
+      "supported_devices": [],
+      "created_at": 1757397128.9285707
     }
   }
 }
