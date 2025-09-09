@@ -484,65 +484,55 @@ class PayloadDecoder:
                 with open(decoder_info['file_path'], 'r') as src:
                     decoder_content = src.read()
                 
-                # Erstelle universeller Wrapper für beide Decoder-Formate
+                # REPARIERTER WRAPPER - Direkter Ansatz ohne eval()
                 wrapper_content = f"""
-// Lade Decoder-Datei
-const fs = require('fs');
-const decoderContent = fs.readFileSync('./decoder.js', 'utf8');
-
 // Input-Daten
 const payload = {json.dumps(payload_bytes)};
-const metadata = {json.dumps(metadata or {})};
 
 try {{
-    // Führe Decoder-Code aus
-    eval(decoderContent);
+    // Lade und führe Decoder direkt aus
+    const decoder = require('./decoder.js');
     
     let result;
+    let decoderType = 'unknown';
     
-    // Universelles Interface: Auto-detect Decoder-Format
-    if (typeof Decoder === 'function') {{
-        // Juno/Apollon Format: Decoder(bytes, port)
-        result = Decoder(payload, 1);
-        console.log('🔧 Juno/Apollon Decoder Format erkannt');
-    }} else if (typeof decodeUplink === 'function') {{
+    // Teste beide Decoder-Formate
+    if (typeof decoder.decodeUplink === 'function') {{
         // Febris Format: decodeUplink(input)
-        const decodedResult = decodeUplink({{bytes: payload, fPort: 1}});
+        const decodedResult = decoder.decodeUplink({{bytes: payload, fPort: 1}});
         result = decodedResult.data || decodedResult;
-        console.log('🔧 Febris decodeUplink Format erkannt');
+        decoderType = 'febris';
+    }} else if (typeof decoder.Decoder === 'function') {{
+        // Juno Format: Decoder(bytes, port)  
+        result = decoder.Decoder(payload, 1);
+        decoderType = 'juno';
+    }} else if (typeof decoder === 'function') {{
+        // Direkte Funktion
+        result = decoder(payload, 1);
+        decoderType = 'direct';
     }} else {{
-        throw new Error('Kein gültiger Decoder gefunden (weder Decoder noch decodeUplink)');
+        throw new Error('Decoder format not recognized');
     }}
     
-    // Normalisiere Ausgabe-Format
-    const normalizedData = {{}};
-    for (const [key, value] of Object.entries(result || {{}})) {{
-        if (typeof value === 'object' && value !== null && 'value' in value) {{
-            // Bereits im richtigen Format
-            normalizedData[key] = value;
-        }} else {{
-            // Einfacher Wert - konvertiere zu Objekt-Format
-            normalizedData[key] = {{
-                value: value,
-                unit: '',
-                description: key.replace('_', ' ').replace(/([A-Z])/g, ' $1').trim()
-            }};
-        }}
-    }}
-    
-    console.log(JSON.stringify({{
+    // Erfolgreiche Ausgabe
+    const output = {{
         decoded: true,
-        decoder_type: 'javascript',
+        decoder_type: 'javascript_' + decoderType,
         decoder_name: '{decoder_info["name"]}',
-        data: normalizedData,
+        data: result || {{}},
         raw_data: payload
-    }}));
+    }};
+    
+    console.log(JSON.stringify(output));
+    
 }} catch (error) {{
-    console.log(JSON.stringify({{
+    const errorOutput = {{
         decoded: false,
-        reason: 'JavaScript execution error: ' + error.message,
+        reason: 'Decoder error: ' + error.message,
         raw_data: payload
-    }}));
+    }};
+    
+    console.log(JSON.stringify(errorOutput));
 }}
 """
                 

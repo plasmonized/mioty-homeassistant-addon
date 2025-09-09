@@ -86,3 +86,6 @@ function decodeUplink(input) {
         errors: []
     };
 }
+
+// CommonJS Export für Node.js
+module.exports = { decodeUplink };
