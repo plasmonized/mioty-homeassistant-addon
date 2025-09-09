@@ -555,8 +555,12 @@ try {{
                     )
                     
                     if result.returncode == 0:
-                        return json.loads(result.stdout)
+                        logging.info(f"🎯 Node.js SUCCESS - stdout: {result.stdout[:200]}...")
+                        decoded_result = json.loads(result.stdout)
+                        logging.info(f"🎯 JavaScript DECODED: {list(decoded_result.get('data', {}).keys())}")
+                        return decoded_result
                     else:
+                        logging.error(f"🚨 Node.js FAILED - stderr: {result.stderr}")
                         raise Exception(f"Node.js execution failed: {result.stderr}")
                         
                 except FileNotFoundError:

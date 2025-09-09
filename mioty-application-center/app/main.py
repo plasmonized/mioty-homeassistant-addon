@@ -315,7 +315,33 @@ class BSSCIAddon:
             
             if payload_bytes and self.decoder_manager:
                 logging.info(f"🔧 Starte Payload-Dekodierung für {sensor_eui}")
-                decoded_payload = self.decoder_manager.decode_payload(sensor_eui, payload_bytes)
+                
+                # Erstelle korrekte Metadaten für Decoder
+                metadata = {
+                    'snr': snr,
+                    'rssi': rssi,
+                    'timestamp': current_timestamp,
+                    'base_station': data.get('bs_eui', 'Unknown')
+                }
+                
+                # KORRIGIERT: Verwende decode_sensor_payload mit Metadaten
+                decoded_result = self.decoder_manager.decode_sensor_payload(sensor_eui, payload_bytes, metadata)
+                
+                if decoded_result and decoded_result.get('decoded'):
+                    decoded_payload = decoded_result
+                    logging.info(f"✅ JavaScript-Dekodierung erfolgreich für {sensor_eui}")
+                    logging.info(f"🎯 Decoder: {decoded_result.get('decoder_name', 'Unknown')}")
+                    
+                    # Debugging: Zeige dekodierte Werte
+                    decoded_data = decoded_result.get('data', {})
+                    if decoded_data:
+                        logging.info(f"🎯 Dekodierte Werte: {list(decoded_data.keys())}")
+                        for key, value in list(decoded_data.items())[:5]:  # Erste 5 Werte zeigen
+                            logging.info(f"   🔧 {key}: {value}")
+                    else:
+                        logging.warning(f"🚨 LEER: decoded_data ist leer!")
+                else:
+                    logging.warning(f"❌ JavaScript-Dekodierung fehlgeschlagen: {decoded_result.get('reason', 'Unknown') if decoded_result else 'No result'}")
             
             # Sensor-Daten aktualisieren/hinzufügen
             self.sensors[sensor_eui] = {
