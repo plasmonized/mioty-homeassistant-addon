@@ -741,14 +741,41 @@
             };
         }
         
+        // Status und Dashboard-Infos laden
+        async function loadStatus() {
+            try {
+                const response = await fetch(getCacheBusterURL('/api/status'));
+                const status = await response.json();
+                
+                // Decoder Count setzen
+                document.getElementById('decoder-count').textContent = status.decoder_count || 0;
+                
+                // MQTT Status setzen
+                const mqttStatusElement = document.getElementById('mqtt-status');
+                if (status.mqtt_connected && status.ha_mqtt_connected) {
+                    mqttStatusElement.textContent = '✅';
+                    mqttStatusElement.style.color = '#28a745';
+                } else {
+                    mqttStatusElement.textContent = '⚠️';
+                    mqttStatusElement.style.color = '#ffc107';
+                }
+            } catch (error) {
+                console.error('Fehler beim Laden des Status:', error);
+                document.getElementById('decoder-count').textContent = '?';
+                document.getElementById('mqtt-status').textContent = '❌';
+            }
+        }
+
         // Auto-refresh mit verbessertem Error-Handling
         function startAutoRefresh() {
             loadSensors();
             loadBaseStations();
+            loadStatus();
             
             setInterval(() => {
                 loadSensors();
                 loadBaseStations();
+                loadStatus();
             }, 30000);
         }
         

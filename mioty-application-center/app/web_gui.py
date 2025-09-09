@@ -386,13 +386,19 @@ class WebGUI:
             logging.info(f"   📡 mioty MQTT: {mqtt_connected} ({mqtt_broker})")
             logging.info(f"   🏠 HA MQTT: {ha_mqtt_connected} ({ha_mqtt_broker})")
             
+            # Decoder Count berechnen
+            decoder_count = 0
+            if hasattr(self.addon, 'decoder_manager') and self.addon.decoder_manager:
+                decoder_count = len(self.addon.decoder_manager.get_available_decoders())
+            
             status = {
                 'mqtt_connected': mqtt_connected,
                 'mqtt_broker': mqtt_broker,
                 'ha_mqtt_connected': ha_mqtt_connected,
                 'ha_mqtt_broker': ha_mqtt_broker,
                 'sensor_count': len(self.addon.sensors) if hasattr(self.addon, 'sensors') else 0,
-                'basestation_count': len(self.addon.base_stations) if hasattr(self.addon, 'base_stations') else 0
+                'basestation_count': len(self.addon.base_stations) if hasattr(self.addon, 'base_stations') else 0,
+                'decoder_count': decoder_count
             }
             
             return jsonify(status)
