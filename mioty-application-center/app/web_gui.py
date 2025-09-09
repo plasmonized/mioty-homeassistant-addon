@@ -258,12 +258,21 @@ class WebGUI:
                         'sw_version': device_info.get('sw_version', '1.0')
                     }
 
+                # SNR und RSSI aus der korrekten Datenstruktur extrahieren
+                # Die Werte können direkt im data Objekt oder im data['data'] Objekt sein
+                snr = data.get('snr') or data.get('data', {}).get('snr')
+                rssi = data.get('rssi') or data.get('data', {}).get('rssi')
+                
+                # Formatiere SNR und RSSI für die Anzeige
+                snr_display = f"{snr:.1f} dB" if snr is not None else 'N/A'
+                rssi_display = f"{rssi:.1f} dBm" if rssi is not None else 'N/A'
+
                 sensor_info = {
                     'eui': eui,
                     'sensor_type': 'mioty IoT Sensor',
                     'last_update': self._format_timestamp(data.get('last_seen', 0)),
-                    'snr': data.get('data', {}).get('snr', 'N/A'),
-                    'rssi': data.get('data', {}).get('rssi', 'N/A'),
+                    'snr': snr_display,
+                    'rssi': rssi_display,
                     'signal_quality': data.get('signal_quality', 'Unknown'),
                     'needs_metadata': needs_metadata,
                     'metadata': metadata
