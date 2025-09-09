@@ -5,7 +5,7 @@ FROM $BUILD_FROM
 # Environment variables
 ENV LANG=C.UTF-8
 
-# Install Python and dependencies
+# Install Python, Node.js and dependencies
 RUN apk add --no-cache \
     python3 \
     python3-dev \
@@ -14,7 +14,9 @@ RUN apk add --no-cache \
     musl-dev \
     linux-headers \
     curl \
-    jq
+    jq \
+    nodejs \
+    npm
 
 # Copy Python requirements
 COPY requirements.txt /tmp/
@@ -25,8 +27,9 @@ COPY app/ /opt/
 COPY run.sh /
 RUN chmod a+x /run.sh
 
-# KRITISCH: Force cache bust für Docker-Image (version 1.0.5.6.23)
-RUN echo "Template update: 1.0.5.6.23 - $(date)" > /opt/version.txt
+# KRITISCH: Force cache bust für Docker-Image (version 1.0.5.6.24)
+RUN echo "Template update: 1.0.5.6.24 - $(date)" > /opt/version.txt
+RUN echo "Node.js support added for JavaScript decoder execution" >> /opt/version.txt
 
 # DEBUGGING: Template-Dateien auflisten
 RUN echo "=== TEMPLATE FILES IN CONTAINER ===" && \
@@ -43,7 +46,7 @@ LABEL \
     io.hass.description="mioty Application Center für die Verwaltung von mioty IoT Sensoren" \
     io.hass.arch="armhf|aarch64|amd64|armv7|i386" \
     io.hass.type="addon" \
-    io.hass.version="1.0.5.6.23"
+    io.hass.version="1.0.5.6.24"
 
 # Run
 CMD ["/run.sh"]

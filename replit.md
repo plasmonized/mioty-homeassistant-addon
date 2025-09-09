@@ -2,7 +2,7 @@
 
 The BSSCI mioty Home Assistant Integration bridges mioty IoT sensors with Home Assistant via MQTT, implementing the BSSCI protocol v1.0.0.0. Its purpose is to enable real-time sensor data collection, base station monitoring, and device management within the Home Assistant ecosystem. Key capabilities include automatic sensor discovery, bidirectional communication, and a German-localized user interface, aiming for seamless integration of mioty IoT networks into smart home environments.
 
-**Version: 1.0.5.6.23** - UI polishing complete: Fixed dashboard statistics, removed broken elements, implemented real-time RSSI/SNR display, and restored clean professional interface.
+**Version: 1.0.5.6.24** - CRITICAL FIX: Added Node.js support to Docker container for proper JavaScript decoder execution. This resolves the discrepancy between sandbox and production versions where Python fallback was used instead of full JavaScript decoders.
 
 # User Preferences
 
