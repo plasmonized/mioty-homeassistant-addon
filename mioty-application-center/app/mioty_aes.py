@@ -14,17 +14,17 @@ Unterstützt:
 - Payload format (Section 3.6)
 
 Autor: mioty Application Center
-Version: 1.0.5.6.24
+Version: 1.0.5.6.25
 Basis: mioty Application Layer Specification v1.1.0
+Nutzt PyCryptodome für bessere Kompatibilität mit Replit/NixOS.
 """
 
 import logging
 import binascii
 import struct
 from typing import Optional, Dict, Any, Union, List, Tuple
-from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-from cryptography.hazmat.primitives import hashes, hmac
-from cryptography.hazmat.backends import default_backend
+from Cryptodome.Cipher import AES
+from Cryptodome.Hash import SHA256, HMAC
 
 
 class MiotyAESDecryption:
@@ -199,15 +199,9 @@ class MiotyAESDecryption:
             # Create counter block (4 bytes counter + 12 bytes padding = 16 bytes)
             counter_block = struct.pack('>I', application_counter) + b'\x00' * 12
             
-            # AES-ECB verschlüsselung für Session Key Derivation
-            from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-            cipher = Cipher(
-                algorithms.AES(application_key),
-                modes.ECB(),
-                backend=default_backend()
-            )
-            encryptor = cipher.encryptor()
-            session_key = encryptor.update(counter_block) + encryptor.finalize()
+            # AES-ECB verschlüsselung für Session Key Derivation mit PyCryptodome
+            cipher = AES.new(application_key, AES.MODE_ECB)
+            session_key = cipher.encrypt(counter_block)
             
             self.logger.debug(f"🔑 Session Key generiert für Counter {application_counter}")
             return session_key[:self.AES_KEY_SIZE]  # Nur erste 16 bytes verwenden
@@ -221,11 +215,17 @@ class MiotyAESDecryption:
         AES-GCM Entschlüsselung gemäß mioty Specification Section 3.3.
         """
         try:
-            # AES-GCM Instanz erstellen
-            aesgcm = AESGCM(session_key)
+            # AES-GCM Instanz mit PyCryptodome erstellen
+            cipher = AES.new(session_key, AES.MODE_GCM, nonce=nonce)
             
-            # Entschlüsselung und Authentifizierung
-            plaintext = aesgcm.decrypt(nonce, ciphertext_with_tag, additional_data)
+            # Separate ciphertext and authentication tag (last 16 bytes)
+            if len(ciphertext_with_tag) < 16:
+                raise ValueError("Ciphertext too short for authentication tag")
+            ciphertext = ciphertext_with_tag[:-16]
+            auth_tag = ciphertext_with_tag[-16:]
+            
+            # Entschlüsselung und Authentifizierung mit PyCryptodome
+            plaintext = cipher.decrypt_and_verify(ciphertext, auth_tag)
             
             return {
                 'success': True,
@@ -344,9 +344,10 @@ class MiotyAESDecryption:
             # Application Counter als Additional Data
             counter_bytes = struct.pack('>I', application_counter)
             
-            # AES-GCM Verschlüsselung
-            aesgcm = AESGCM(session_key)
-            ciphertext_with_tag = aesgcm.encrypt(nonce, plaintext_bytes, counter_bytes)
+            # AES-GCM Verschlüsselung mit PyCryptodome
+            cipher = AES.new(session_key, AES.MODE_GCM, nonce=nonce)
+            ciphertext, auth_tag = cipher.encrypt_and_digest(plaintext_bytes)
+            ciphertext_with_tag = ciphertext + auth_tag
             
             # Erstelle mioty Payload Format
             encrypted_payload = counter_bytes + nonce + ciphertext_with_tag

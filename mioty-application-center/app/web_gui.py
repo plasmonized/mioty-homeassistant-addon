@@ -41,10 +41,10 @@ class WebGUI:
         self.app.jinja_env.cache = {}
         
         # SICHERHEIT: CORS nur für Home Assistant Ingress (nicht für alle Origins!)
+        # Fixed: Removed deprecated origin_allow_regex, using origins list instead
         CORS(self.app, 
              origins=['https://homeassistant.local:8123', 'http://homeassistant.local:8123', 
-                     'http://supervisor', 'http://localhost:8123'],
-             origin_allow_regex=r'https://.*\.ui\.nabu\.casa',
+                     'http://supervisor', 'http://localhost:8123', 'https://*.ui.nabu.casa'],
              supports_credentials=True)
         
         # Erweiterte HTTP-Protokollierung aktivieren

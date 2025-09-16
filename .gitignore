@@ -71,4 +71,9 @@ coverage.xml
 *secrets*
 *.key
 *.pem
-*.cert
+*.cert# Security - Never commit keys
+secure_keys/
+*/secure_keys/
+**/*secure_keys/
+*.key
+master.key

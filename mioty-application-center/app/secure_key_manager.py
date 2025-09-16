@@ -15,12 +15,19 @@ import json
 import logging
 import hashlib
 import time
+import subprocess
 from typing import Dict, Any, Optional, Union
 from pathlib import Path
-from cryptography.fernet import Fernet
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from Cryptodome.Cipher import AES
+from Cryptodome.Protocol.KDF import PBKDF2
+from Cryptodome.Hash import SHA256
+from Cryptodome.Random import get_random_bytes
 import base64
+
+
+class SecurityError(Exception):
+    """Critical security error - master keys in insecure locations."""
+    pass
 
 
 class SecureKeyManager:
@@ -29,66 +36,227 @@ class SecureKeyManager:
     
     Features:
     - Environment-based master key derivation
-    - Fernet symmetric encryption (AES 128 in CBC mode)
+    - PyCryptodome AES-GCM authenticated encryption
     - Atomic file operations
     - Key rotation support
     - Audit logging
+    - VCS-tracking protection (CRITICAL SECURITY)
+    - Fail-fast startup for security compliance
+    
+    SECURITY: This class enforces that master keys are NEVER stored in 
+    VCS-tracked directories or project paths. Only secure system directories
+    like /data are allowed for master key storage.
     """
     
     def __init__(self, storage_dir: str = "/data/secure"):
-        """Initialize secure key manager."""
+        """Initialize secure key manager with strict security validation."""
         self.logger = logging.getLogger(__name__)
-        self.storage_dir = Path(storage_dir)
-        self.storage_dir.mkdir(parents=True, exist_ok=True)
         
-        # Secure files
-        self.keys_file = self.storage_dir / "encrypted_keys.dat"
-        self.counters_file = self.storage_dir / "app_counters.dat"
-        self.audit_file = self.storage_dir / "key_audit.log"
+        # SECURITY: If environment variable is set, we don't need file storage
+        if os.getenv('MIOTY_MASTER_KEY'):
+            self.logger.info("🔐 Using environment-provided master key - no file storage needed")
+            self.storage_dir = None  # No file storage needed
+        else:
+            # SECURITY: Validate storage directory is secure and outside VCS tracking
+            secure_dir = self._validate_secure_storage_directory(storage_dir)
+            if not secure_dir:
+                raise SecurityError(
+                    "❌ CRITICAL SECURITY ERROR: Cannot establish secure storage directory. "
+                    "Master keys cannot be stored in VCS-tracked or project directories. "
+                    "Ensure /data directory is writable or set MIOTY_MASTER_KEY environment variable."
+                )
+            self.storage_dir = secure_dir
+        if self.storage_dir:
+            self.logger.info(f"🔐 Secure storage directory validated: {self.storage_dir}")
+            
+            # Secure files
+            self.keys_file = self.storage_dir / "encrypted_keys.dat"
+            self.counters_file = self.storage_dir / "app_counters.dat"
+            self.audit_file = self.storage_dir / "key_audit.log"
+        else:
+            # Environment-only mode - use temporary directory for non-key data
+            import tempfile
+            temp_dir = Path(tempfile.gettempdir()) / "mioty_app_temp"
+            temp_dir.mkdir(exist_ok=True)
+            self.keys_file = temp_dir / "encrypted_keys.dat"
+            self.counters_file = temp_dir / "app_counters.dat"
+            self.audit_file = temp_dir / "key_audit.log"
         
-        # Initialize encryption
-        self.fernet = self._init_encryption()
+        # Initialize encryption key
+        self.encryption_key = self._init_encryption()
         
         # Application counter tracking (in memory for performance)
         self.app_counters = self._load_app_counters()
         
         self.logger.info("🔐 Secure Key Manager initialisiert")
     
-    def _init_encryption(self) -> Fernet:
-        """Initialize Fernet encryption with environment-based key."""
+    def _validate_secure_storage_directory(self, storage_dir: str) -> Optional[Path]:
+        """
+        Validate storage directory is secure and outside VCS tracking.
+        
+        SECURITY: This method enforces that master keys are never stored in:
+        - Project/codebase directories
+        - VCS-tracked paths
+        - Any directory that could be committed to version control
+        
+        Args:
+            storage_dir: Requested storage directory path
+            
+        Returns:
+            Validated Path object or None if insecure
+        """
         try:
-            # Get master password from environment
+            target_dir = Path(storage_dir).resolve()
+            
+            # SECURITY CHECK 1: Refuse any path in current working directory tree
+            cwd = Path.cwd().resolve()
+            try:
+                target_dir.relative_to(cwd)
+                self.logger.error(
+                    f"❌ SECURITY VIOLATION: Storage directory {target_dir} is inside project directory {cwd}. "
+                    "Master keys CANNOT be stored in project/codebase directories!"
+                )
+                return None
+            except ValueError:
+                # Good - target_dir is not under cwd
+                pass
+            
+            # SECURITY CHECK 2: Detect VCS tracking
+            if self._is_vcs_tracked_path(target_dir):
+                self.logger.error(
+                    f"❌ SECURITY VIOLATION: Storage directory {target_dir} is in VCS-tracked path. "
+                    "Master keys CANNOT be stored in version-controlled directories!"
+                )
+                return None
+            
+            # SECURITY CHECK 3: Ensure directory is writable and secure
+            try:
+                target_dir.mkdir(parents=True, exist_ok=True)
+                
+                # Test write permissions
+                test_file = target_dir / ".security_test"
+                test_file.write_text("security_validation_test")
+                test_file.unlink()
+                
+                # Set secure permissions on directory (owner only)
+                target_dir.chmod(0o700)
+                
+                self.logger.info(f"✓ Security validation passed for {target_dir}")
+                return target_dir
+                
+            except (OSError, PermissionError) as e:
+                self.logger.error(f"❌ Storage directory {target_dir} is not writable: {e}")
+                return None
+                
+        except Exception as e:
+            self.logger.error(f"❌ Security validation failed: {e}")
+            return None
+    
+    def _is_vcs_tracked_path(self, path: Path) -> bool:
+        """
+        Check if path is under version control tracking.
+        
+        Returns:
+            True if path is VCS-tracked (dangerous for keys)
+        """
+        try:
+            current_path = path.resolve()
+            
+            # Check for git repository
+            while current_path != current_path.parent:
+                if (current_path / ".git").exists():
+                    self.logger.warning(f"⚠️ VCS detected: Git repository at {current_path}")
+                    return True
+                
+                # Check for other VCS systems
+                vcs_dirs = [".svn", ".hg", ".bzr", "CVS"]
+                if any((current_path / vcs_dir).exists() for vcs_dir in vcs_dirs):
+                    self.logger.warning(f"⚠️ VCS detected at {current_path}")
+                    return True
+                
+                current_path = current_path.parent
+            
+            return False
+            
+        except Exception as e:
+            # If we can't determine VCS status, err on the side of security
+            self.logger.warning(f"Cannot determine VCS status for {path}: {e} - assuming unsafe")
+            return True
+
+    def _init_encryption(self) -> bytes:
+        """Initialize encryption key with secure master key handling."""
+        try:
+            # SECURITY: Always prefer environment variable for master key
             master_password = os.getenv('MIOTY_MASTER_KEY')
             if not master_password:
-                # SICHERHEIT: Generiere oder lade einen sicheren Master Key
+                # SECURITY: Environment-only mode - no file storage
+                if not self.storage_dir:
+                    raise SecurityError(
+                        "❌ CRITICAL: No master key available. "
+                        "Set MIOTY_MASTER_KEY environment variable or ensure /data directory is writable."
+                    )
+                
+                # SECURITY: Only load from validated secure storage directory
                 master_key_file = self.storage_dir / "master.key"
+                
+                # SECURITY: Double-check the master key file location is safe
+                if self._is_vcs_tracked_path(master_key_file.parent):
+                    raise SecurityError(
+                        f"❌ CRITICAL: Master key file {master_key_file} would be in VCS-tracked directory! "
+                        "This is a severe security violation."
+                    )
+                
                 if master_key_file.exists():
-                    # Lade existierenden Master Key
-                    with open(master_key_file, 'rb') as f:
-                        master_password = f.read().decode('utf-8')
-                    self.logger.info("🔐 Master Key aus sicherer Datei geladen")
+                    # Load existing master key from secure location
+                    try:
+                        with open(master_key_file, 'rb') as f:
+                            master_password = f.read().decode('utf-8')
+                        self.logger.info("🔐 Master Key loaded from secure storage")
+                        
+                        # Verify file permissions are secure
+                        file_mode = master_key_file.stat().st_mode & 0o777
+                        if file_mode != 0o600:
+                            self.logger.warning(f"⚠️ Fixing insecure master key permissions: {oct(file_mode)} -> 0o600")
+                            master_key_file.chmod(0o600)
+                            
+                    except Exception as e:
+                        raise SecurityError(f"❌ Cannot read master key from secure storage: {e}")
                 else:
-                    # Generiere neuen sicheren Master Key
+                    # Generate new secure master key
                     import secrets
-                    master_password = secrets.token_urlsafe(64)  # 512-bit sicherer Key
-                    with open(master_key_file, 'wb') as f:
-                        f.write(master_password.encode('utf-8'))
-                    # Sichere Dateiberechtigungen setzen (nur Owner lesen/schreiben)
-                    master_key_file.chmod(0o600)
-                    self.logger.info("🔐 Neuer sicherer Master Key generiert und gespeichert")
+                    master_password = secrets.token_urlsafe(64)  # 512-bit secure key
+                    
+                    try:
+                        # Atomic write with secure permissions
+                        temp_file = master_key_file.with_suffix('.tmp')
+                        with open(temp_file, 'wb') as f:
+                            f.write(master_password.encode('utf-8'))
+                        
+                        # Set secure permissions before moving
+                        temp_file.chmod(0o600)
+                        temp_file.replace(master_key_file)
+                        
+                        self.logger.info("🔐 New secure master key generated and stored")
+                        self._audit_log("MASTER_KEY_GENERATED: New secure master key created")
+                        
+                    except Exception as e:
+                        raise SecurityError(f"❌ Cannot create master key in secure storage: {e}")
+            else:
+                self.logger.info("🔐 Using master key from environment variable")
+                self._audit_log("MASTER_KEY_ENV: Using environment-provided master key")
             
-            # Derive encryption key using PBKDF2
+            # Derive encryption key using PBKDF2 with PyCryptodome
             salt = b'mioty-application-center-2024'  # Fixed salt for deterministic key
-            kdf = PBKDF2HMAC(
-                algorithm=hashes.SHA256(),
-                length=32,
-                salt=salt,
-                iterations=100000,
+            key = PBKDF2(
+                master_password,  # PBKDF2 expects string, not bytes
+                salt,
+                32,  # AES-256 key length
+                count=100000,
+                hmac_hash_module=SHA256
             )
-            key = base64.urlsafe_b64encode(kdf.derive(master_password.encode()))
             
-            self.logger.info("🔑 Verschlüsselungsschlüssel erfolgreich abgeleitet")
-            return Fernet(key)
+            self.logger.info("🔑 AES-GCM Verschlüsselungsschlüssel erfolgreich abgeleitet")
+            return key
             
         except Exception as e:
             self.logger.error(f"❌ Fehler bei Verschlüsselungsinitialisierung: {e}")
@@ -119,8 +287,13 @@ class SecureKeyManager:
                 'last_used': None
             }
             
-            # Encrypt the key data
-            encrypted_data = self.fernet.encrypt(json.dumps(key_data).encode())
+            # Encrypt the key data using AES-GCM
+            plaintext = json.dumps(key_data).encode()
+            cipher = AES.new(self.encryption_key, AES.MODE_GCM)
+            ciphertext, auth_tag = cipher.encrypt_and_digest(plaintext)
+            
+            # Store nonce + auth_tag + ciphertext as base64
+            encrypted_data = bytes(cipher.nonce) + bytes(auth_tag) + bytes(ciphertext)
             encrypted_keys[sensor_eui] = base64.b64encode(encrypted_data).decode()
             
             # Atomic save
@@ -153,14 +326,29 @@ class SecureKeyManager:
             if sensor_eui not in encrypted_keys:
                 return None
             
-            # Decrypt key data
+            # Decrypt key data using AES-GCM
             encrypted_data = base64.b64decode(encrypted_keys[sensor_eui])
-            decrypted_data = self.fernet.decrypt(encrypted_data)
+            
+            # Extract nonce, auth_tag, and ciphertext
+            nonce = encrypted_data[:16]  # AES-GCM nonce is 16 bytes
+            auth_tag = encrypted_data[16:32]  # Auth tag is 16 bytes
+            ciphertext = encrypted_data[32:]  # Rest is ciphertext
+            
+            # Decrypt and verify authenticity
+            cipher = AES.new(self.encryption_key, AES.MODE_GCM, nonce=nonce)
+            decrypted_data = cipher.decrypt_and_verify(ciphertext, auth_tag)
             key_data = json.loads(decrypted_data.decode())
             
             # Update last used timestamp
             key_data['last_used'] = time.time()
-            encrypted_data = self.fernet.encrypt(json.dumps(key_data).encode())
+            
+            # Re-encrypt with updated timestamp
+            plaintext = json.dumps(key_data).encode()
+            cipher = AES.new(self.encryption_key, AES.MODE_GCM)
+            ciphertext, auth_tag = cipher.encrypt_and_digest(plaintext)
+            
+            # Store updated encrypted data
+            encrypted_data = bytes(cipher.nonce) + bytes(auth_tag) + bytes(ciphertext)
             encrypted_keys[sensor_eui] = base64.b64encode(encrypted_data).decode()
             self._save_encrypted_keys(encrypted_keys)
             
@@ -308,8 +496,17 @@ class SecureKeyManager:
             
             for sensor_eui, encrypted_data in encrypted_keys.items():
                 try:
-                    # Decrypt only metadata
-                    decrypted_data = self.fernet.decrypt(base64.b64decode(encrypted_data))
+                    # Decrypt only metadata using AES-GCM
+                    encrypted_bytes = base64.b64decode(encrypted_data)
+                    
+                    # Extract nonce, auth_tag, and ciphertext
+                    nonce = encrypted_bytes[:16]
+                    auth_tag = encrypted_bytes[16:32]
+                    ciphertext = encrypted_bytes[32:]
+                    
+                    # Decrypt and verify
+                    cipher = AES.new(self.encryption_key, AES.MODE_GCM, nonce=nonce)
+                    decrypted_data = cipher.decrypt_and_verify(ciphertext, auth_tag)
                     key_data = json.loads(decrypted_data.decode())
                     
                     # Return metadata WITHOUT the actual key

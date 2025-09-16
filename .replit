@@ -22,18 +22,23 @@ args = "BSSCI Add-on"
 name = "BSSCI Add-on"
 author = "agent"
 
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "cd /home/runner/workspace && python3 demo_run.py"
-waitForPort = 5000
-
 [workflows.workflow.metadata]
 outputType = "webview"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python3 demo_run.py"
+waitForPort = 5000
 
 [[ports]]
 localPort = 5000
 externalPort = 80
 
 [[ports]]
-localPort = 43455
+localPort = 39911
+externalPort = 3000
+
+[[ports]]
+localPort = 41705
 externalPort = 3001
+exposeLocalhost = true

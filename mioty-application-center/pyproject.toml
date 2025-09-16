@@ -6,4 +6,5 @@ requires-python = ">=3.11"
 dependencies = [
     "paho-mqtt>=1.6.0",
     "voluptuous>=0.15.2",
+    "pycryptodomex>=3.20",
 ]

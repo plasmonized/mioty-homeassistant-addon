@@ -14,19 +14,28 @@ import xml.etree.ElementTree as ET
 from typing import Dict, List, Any, Optional, Union
 from pathlib import Path
 
-# AES Decryption and Secure Key Management Import
+# AES Decryption Import (PyCryptodome-based)
 try:
     from aes_decryption import AESDecryption
     from mioty_aes import MiotyAESDecryption
-    from secure_key_manager import SecureKeyManager
     AES_AVAILABLE = True
-    logging.info("✅ AES-Entschlüsselung und Secure Key Manager verfügbar")
+    logging.info("✅ AES-Entschlüsselung mit PyCryptodome verfügbar")
 except ImportError as e:
     AESDecryption = None
     MiotyAESDecryption = None
-    SecureKeyManager = None
     AES_AVAILABLE = False
     logging.warning(f"❌ AES-Entschlüsselung nicht verfügbar - Import Fehler: {e}")
+
+# Secure Key Manager Import (separate due to cryptography dependency)
+try:
+    from secure_key_manager import SecureKeyManager
+    SECURE_KEY_MANAGER_AVAILABLE = True
+    logging.info("✅ Secure Key Manager verfügbar")
+except ImportError as e:
+    SecureKeyManager = None
+    SECURE_KEY_MANAGER_AVAILABLE = False
+    logging.warning(f"⚠️ Secure Key Manager nicht verfügbar (cryptography dependency): {e}")
+    logging.info("   ℹ️ AES-Entschlüsselung funktioniert trotzdem mit PyCryptodome")
 
 
 class PayloadDecoder:
@@ -48,7 +57,7 @@ class PayloadDecoder:
         # AES Decryption Engine and Secure Key Manager
         self.aes_decoder = AESDecryption() if AES_AVAILABLE and AESDecryption is not None else None
         self.mioty_aes_decoder = MiotyAESDecryption() if AES_AVAILABLE and MiotyAESDecryption is not None else None
-        self.secure_key_manager = SecureKeyManager() if AES_AVAILABLE and SecureKeyManager is not None else None
+        self.secure_key_manager = SecureKeyManager() if SECURE_KEY_MANAGER_AVAILABLE and SecureKeyManager is not None else None
         
         self.load_decoders()
         

@@ -7,9 +7,17 @@ Für Demonstration auf Replit (ohne bashio)
 import os
 import sys
 import logging
+import secrets
 
 # Add mioty-application-center app directory to Python path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'mioty-application-center', 'app'))
+
+# 🔐 REPLIT DEV SECURITY: Ephemeral master key für demo/development
+if not os.getenv('MIOTY_MASTER_KEY') and not os.access('/data', os.W_OK):
+    ephemeral_key = secrets.token_urlsafe(64)
+    os.environ['MIOTY_MASTER_KEY'] = ephemeral_key
+    print(f"⚠️  DEV MODE: Using ephemeral master key (not persistent across restarts)")
+    print(f"✅ Production: Requires /data directory or MIOTY_MASTER_KEY environment variable")
 
 # Set demo environment variables
 # Update these with your real MQTT broker credentials

@@ -4,17 +4,17 @@ AES Application Payload Decryption Module for mioty Sensors
 
 Unterstützt AES-GCM und AES-CBC Entschlüsselung für mioty-Sensoren mit application keys.
 Kompatibel mit verschiedenen Key-Formaten und Payload-Größen.
+Nutzt PyCryptodome für bessere Kompatibilität mit Replit/NixOS.
 
 Autor: mioty Application Center
-Version: 1.0.5.6.24
+Version: 1.0.5.6.25
 """
 
 import logging
 import binascii
 from typing import Optional, Dict, Any, Union, List
-from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-from cryptography.hazmat.backends import default_backend
+from Cryptodome.Cipher import AES
+from Cryptodome.Util.Padding import unpad
 
 
 class AESDecryption:
@@ -26,12 +26,15 @@ class AESDecryption:
     - AES-CBC (traditionell, benötigt separate Authentifizierung)
     - Verschiedene Key-Größen: 128, 192, 256 Bit
     - Hexadezimale und binäre Key-Formate
+    
+    Nutzt PyCryptodome für bessere Kompatibilität ohne cffi-backend Issues.
     """
     
     def __init__(self):
         self.logger = logging.getLogger(__name__)
         self.supported_modes = ['GCM', 'CBC']
         self.supported_key_sizes = [16, 24, 32]  # 128, 192, 256 bit
+        self.gcm_tag_size = 16  # Standard GCM tag size in bytes
     
     def decrypt_payload(self, encrypted_payload: Union[str, bytes, List[int]], 
                        application_key: str, 
@@ -90,26 +93,34 @@ class AESDecryption:
     
     def _decrypt_gcm(self, payload_bytes: bytes, key_bytes: bytes, 
                      nonce: Optional[Union[str, bytes]] = None) -> Dict[str, Any]:
-        """AES-GCM Entschlüsselung (authenticated encryption)."""
+        """AES-GCM Entschlüsselung (authenticated encryption) mit PyCryptodome."""
         try:
             # Für GCM: Nonce ist normalerweise in den ersten 12 Bytes
             if nonce is None:
-                if len(payload_bytes) < 12:
-                    raise ValueError("Payload zu kurz für GCM (mindestens 12 Bytes für Nonce)")
+                if len(payload_bytes) < 12 + self.gcm_tag_size:
+                    raise ValueError(f"Payload zu kurz für GCM (mindestens {12 + self.gcm_tag_size} Bytes für Nonce+Tag)")
                 nonce_bytes = payload_bytes[:12]
-                ciphertext = payload_bytes[12:]
+                # Rest des Payloads enthält ciphertext + tag
+                rest_payload = payload_bytes[12:]
             else:
                 nonce_bytes = self._normalize_bytes(nonce)
-                ciphertext = payload_bytes
+                rest_payload = payload_bytes
             
             if len(nonce_bytes) != 12:
                 raise ValueError("GCM Nonce muss 12 Bytes lang sein")
             
-            # AES-GCM Instanz erstellen
-            aesgcm = AESGCM(key_bytes)
+            # Für GCM: die letzten 16 Bytes sind der authentication tag
+            if len(rest_payload) < self.gcm_tag_size:
+                raise ValueError(f"Payload zu kurz für GCM tag ({self.gcm_tag_size} Bytes erforderlich)")
+                
+            ciphertext = rest_payload[:-self.gcm_tag_size]
+            tag = rest_payload[-self.gcm_tag_size:]
+            
+            # AES-GCM Cipher mit PyCryptodome erstellen
+            cipher = AES.new(key_bytes, AES.MODE_GCM, nonce=nonce_bytes)
             
             # Entschlüsselung und Authentifizierung
-            plaintext = aesgcm.decrypt(nonce_bytes, ciphertext, None)
+            plaintext = cipher.decrypt_and_verify(ciphertext, tag)
             
             self.logger.info(f"✅ AES-GCM Entschlüsselung erfolgreich: {len(plaintext)} bytes")
             
@@ -121,6 +132,14 @@ class AESDecryption:
                 'key_size': len(key_bytes) * 8
             }
             
+        except ValueError as e:
+            # Authentication failure oder format errors
+            self.logger.error(f"AES-GCM authentication/format error: {e}")
+            return {
+                'success': False,
+                'error_message': f'AES-GCM authentication failed: {str(e)}',
+                'decrypted_payload': None
+            }
         except Exception as e:
             self.logger.error(f"AES-GCM decryption failed: {e}")
             return {
@@ -131,7 +150,7 @@ class AESDecryption:
     
     def _decrypt_cbc(self, payload_bytes: bytes, key_bytes: bytes, 
                      iv: Optional[Union[str, bytes]] = None) -> Dict[str, Any]:
-        """AES-CBC Entschlüsselung (traditionell)."""
+        """AES-CBC Entschlüsselung (traditionell) mit PyCryptodome."""
         try:
             # Für CBC: IV ist normalerweise in den ersten 16 Bytes
             if iv is None:
@@ -150,19 +169,20 @@ class AESDecryption:
             if len(ciphertext) % 16 != 0:
                 raise ValueError("CBC ciphertext Länge muss ein Vielfaches von 16 sein")
             
-            # AES-CBC Cipher erstellen
-            cipher = Cipher(
-                algorithms.AES(key_bytes),
-                modes.CBC(iv_bytes),
-                backend=default_backend()
-            )
-            decryptor = cipher.decryptor()
+            # AES-CBC Cipher mit PyCryptodome erstellen
+            cipher = AES.new(key_bytes, AES.MODE_CBC, iv_bytes)
             
             # Entschlüsselung
-            plaintext = decryptor.update(ciphertext) + decryptor.finalize()
+            plaintext = cipher.decrypt(ciphertext)
             
-            # PKCS7 Padding entfernen
-            plaintext = self._remove_pkcs7_padding(plaintext)
+            # PKCS7 Padding entfernen (versuche zuerst mit PyCryptodome unpad)
+            try:
+                plaintext = unpad(plaintext, AES.block_size)
+                self.logger.info("PKCS7 Padding mit PyCryptodome unpad entfernt")
+            except ValueError:
+                # Fallback auf manuelle Padding-Entfernung
+                plaintext = self._remove_pkcs7_padding(plaintext)
+                self.logger.info("PKCS7 Padding manuell entfernt")
             
             self.logger.info(f"✅ AES-CBC Entschlüsselung erfolgreich: {len(plaintext)} bytes")
             
@@ -234,7 +254,7 @@ class AESDecryption:
             raise ValueError("Data must be string or bytes")
     
     def _remove_pkcs7_padding(self, data: bytes) -> bytes:
-        """Entfernt PKCS7 Padding von entschlüsselten Daten."""
+        """Entfernt PKCS7 Padding von entschlüsselten Daten (Fallback-Implementierung)."""
         if not data:
             return data
         
