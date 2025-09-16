@@ -357,6 +357,12 @@
                 </div>
 
                 <div class="form-group">
+                    <label for="application_key">🔐 Application Key (32 Hex-Zeichen, optional)</label>
+                    <input type="text" id="application_key" name="application_key" maxlength="47" placeholder="z.B. ABCDABCDABCDABCDABCDABCDABCDABCD (nur für verschlüsselte Sensoren)">
+                    <small>Optionaler 32-Zeichen Hex-Schlüssel für AES-verschlüsselte Sensor-Payloads</small>
+                </div>
+
+                <div class="form-group">
                     <label for="bidirectional">Bidirektionale Kommunikation</label>
                     <select id="bidirectional" name="bidirectional">
                         <option value="false">Nein - Nur Uplink</option>
@@ -810,6 +816,7 @@
             const eui = document.getElementById('sensor_eui').value.trim();
             const networkKey = document.getElementById('network_key').value.trim();
             const shortAddr = document.getElementById('short_addr').value.trim();
+            const applicationKey = document.getElementById('application_key').value.trim();
 
             // EUI Validation (16 hex characters)
             if (!eui) {
@@ -835,6 +842,12 @@
                 isValid = false;
             } else if (!isValidHex(shortAddr, 4)) {
                 showFieldError('short_addr', 'Short Address muss genau 4 Hexadezimal-Zeichen enthalten');
+                isValid = false;
+            }
+
+            // Application Key Validation (32 hex characters, optional)
+            if (applicationKey && !isValidHex(applicationKey, 32)) {
+                showFieldError('application_key', 'Application Key muss genau 32 Hexadezimal-Zeichen enthalten oder leer sein');
                 isValid = false;
             }
 
@@ -927,6 +940,10 @@
         });
 
         document.getElementById('short_addr').addEventListener('input', function(e) {
+            e.target.value = e.target.value.toUpperCase().replace(/[^0-9A-F]/g, '');
+        });
+
+        document.getElementById('application_key').addEventListener('input', function(e) {
             e.target.value = e.target.value.toUpperCase().replace(/[^0-9A-F]/g, '');
         });
 
