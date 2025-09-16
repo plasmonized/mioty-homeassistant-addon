@@ -1,10 +1,10 @@
-modules = ["python-3.11", "nodejs-20"]
+modules = ["python-3.11", "nodejs-20", "python3"]
 [agent]
 expertMode = true
 
 [nix]
 channel = "stable-25_05"
-packages = ["borgbackup", "cargo", "libiconv", "libxcrypt", "openssl", "pkg-config", "rustc"]
+packages = ["borgbackup", "cargo", "libffi", "libiconv", "libxcrypt", "openssl", "pkg-config", "rustc"]
 
 [workflows]
 runButton = "Project"
@@ -35,5 +35,5 @@ localPort = 5000
 externalPort = 80
 
 [[ports]]
-localPort = 44665
+localPort = 44717
 externalPort = 3000

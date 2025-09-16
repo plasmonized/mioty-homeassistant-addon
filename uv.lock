@@ -135,6 +135,7 @@ name = "repl-nix-workspace"
 version = "0.2.1"
 source = { virtual = "." }
 dependencies = [
+    { name = "cffi" },
     { name = "cryptography" },
     { name = "paho-mqtt" },
     { name = "voluptuous" },
@@ -142,6 +143,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "cffi", specifier = ">=2.0.0" },
     { name = "cryptography", specifier = ">=45.0.7" },
     { name = "paho-mqtt", specifier = ">=1.6.0" },
     { name = "voluptuous", specifier = ">=0.15.2" },

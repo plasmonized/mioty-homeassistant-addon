@@ -16,17 +16,17 @@ from pathlib import Path
 
 # AES Decryption and Secure Key Management Import
 try:
-    from .aes_decryption import AESDecryption
-    from .mioty_aes import MiotyAESDecryption
-    from .secure_key_manager import SecureKeyManager
+    from aes_decryption import AESDecryption
+    from mioty_aes import MiotyAESDecryption
+    from secure_key_manager import SecureKeyManager
     AES_AVAILABLE = True
     logging.info("✅ AES-Entschlüsselung und Secure Key Manager verfügbar")
-except ImportError:
+except ImportError as e:
     AESDecryption = None
     MiotyAESDecryption = None
     SecureKeyManager = None
     AES_AVAILABLE = False
-    logging.warning("❌ AES-Entschlüsselung nicht verfügbar - cryptography library fehlt")
+    logging.warning(f"❌ AES-Entschlüsselung nicht verfügbar - Import Fehler: {e}")
 
 
 class PayloadDecoder:

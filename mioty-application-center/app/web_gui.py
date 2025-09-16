@@ -186,8 +186,12 @@ class WebGUI:
             index_exists = False
             try:
                 import os
-                index_file = os.path.join(template_path, 'index.html')
-                index_exists = os.path.exists(index_file)
+                if template_path:
+                    index_file = os.path.join(template_path, 'index.html')
+                    index_exists = os.path.exists(index_file)
+                else:
+                    index_file = "Template path not set"
+                    index_exists = False
                 logging.info(f"🔍 TEMPLATE DEBUGGING:")
                 logging.info(f"   Template Folder: {template_path}")
                 logging.info(f"   Index.html exists: {index_exists}")
@@ -832,7 +836,7 @@ class WebGUI:
             )
             
             # Optional: Auch lokale Sensor-Metadaten speichern wenn Service Center erfolgreich
-            if result.get('success') and self.settings.get_settings().get('service_center_auto_register', True):
+            if result.get('success') and self.settings.get_all_settings().get('service_center_auto_register', True):
                 try:
                     # Manuelle Metadaten für lokales System speichern
                     if self.addon and hasattr(self.addon, 'add_sensor'):
@@ -1152,6 +1156,167 @@ class WebGUI:
             else:
                 return jsonify({"error": "Fehler beim Löschen des Decoders"}), 500
         
+        # ===========================================
+        # APPLICATION KEY MANAGEMENT API ENDPOINTS
+        # ===========================================
+        
+        @self.app.route('/api/sensor/<sensor_eui>/application-key', methods=['POST'])
+        def assign_application_key(sensor_eui: str):
+            """API: Application Key einem Sensor zuweisen."""
+            if not self.addon or not hasattr(self.addon, 'decoder_manager'):
+                return jsonify({"error": "Decoder Manager nicht verfügbar"}), 500
+            
+            data = request.get_json()
+            application_key = data.get('application_key', '').strip()
+            encryption_mode = data.get('encryption_mode', 'GCM').upper()
+            
+            # Validierung
+            if not application_key:
+                return jsonify({"error": "application_key ist erforderlich"}), 400
+            
+            # Normalisiere Hex-String
+            try:
+                normalized_key = application_key.replace(' ', '').replace(':', '').replace('-', '').upper()
+                if len(normalized_key) != 32:  # 128-bit = 32 hex chars
+                    return jsonify({"error": "Application Key muss 32 Hex-Zeichen (128-bit) lang sein"}), 400
+                
+                # Validiere Hex-Format
+                int(normalized_key, 16)
+            except ValueError:
+                return jsonify({"error": "Application Key muss ein gültiger Hex-String sein"}), 400
+            
+            if encryption_mode not in ['GCM', 'CBC']:
+                return jsonify({"error": "encryption_mode muss 'GCM' oder 'CBC' sein"}), 400
+            
+            # Normalisiere EUI
+            normalized_eui = sensor_eui.upper().replace(':', '').replace('-', '')
+            
+            try:
+                # Payload Decoder Interface verwenden
+                if hasattr(self.addon.decoder_manager, 'payload_decoder'):
+                    success = self.addon.decoder_manager.assign_application_key(
+                        normalized_eui, 
+                        normalized_key, 
+                        encryption_mode
+                    )
+                    
+                    if success:
+                        logging.info(f"🔐 Application Key zugewiesen für Sensor {normalized_eui} (Mode: {encryption_mode})")
+                        return jsonify({
+                            "success": True,
+                            "message": f"Application Key erfolgreich zugewiesen (Mode: {encryption_mode})",
+                            "sensor_eui": normalized_eui,
+                            "encryption_mode": encryption_mode
+                        })
+                    else:
+                        return jsonify({"error": "Fehler beim Speichern des Application Keys"}), 500
+                else:
+                    return jsonify({"error": "AES Decryption nicht verfügbar"}), 500
+                    
+            except Exception as e:
+                logging.error(f"❌ Fehler bei Application Key Zuweisung: {e}")
+                return jsonify({"error": f"Application Key Fehler: {str(e)}"}), 500
+        
+        @self.app.route('/api/sensor/<sensor_eui>/application-key', methods=['DELETE'])
+        def remove_application_key(sensor_eui: str):
+            """API: Application Key von einem Sensor entfernen."""
+            if not self.addon or not hasattr(self.addon, 'decoder_manager'):
+                return jsonify({"error": "Decoder Manager nicht verfügbar"}), 500
+            
+            # Normalisiere EUI
+            normalized_eui = sensor_eui.upper().replace(':', '').replace('-', '')
+            
+            try:
+                if hasattr(self.addon.decoder_manager, 'payload_decoder'):
+                    success = self.addon.decoder_manager.remove_application_key(normalized_eui)
+                    
+                    if success:
+                        logging.info(f"🔓 Application Key entfernt für Sensor {normalized_eui}")
+                        return jsonify({
+                            "success": True,
+                            "message": "Application Key erfolgreich entfernt",
+                            "sensor_eui": normalized_eui
+                        })
+                    else:
+                        return jsonify({"error": "Fehler beim Entfernen des Application Keys"}), 500
+                else:
+                    return jsonify({"error": "AES Decryption nicht verfügbar"}), 500
+                    
+            except Exception as e:
+                logging.error(f"❌ Fehler beim Entfernen des Application Keys: {e}")
+                return jsonify({"error": f"Application Key Fehler: {str(e)}"}), 500
+        
+        @self.app.route('/api/sensor/<sensor_eui>/test-decryption', methods=['POST'])
+        def test_aes_decryption(sensor_eui: str):
+            """API: AES Entschlüsselung mit Test-Payload testen."""
+            if not self.addon or not hasattr(self.addon, 'decoder_manager'):
+                return jsonify({"error": "Decoder Manager nicht verfügbar"}), 500
+            
+            data = request.get_json()
+            test_payload = data.get('test_payload', '').strip()
+            
+            if not test_payload:
+                return jsonify({"error": "test_payload ist erforderlich"}), 400
+            
+            # Normalisiere EUI und Payload
+            normalized_eui = sensor_eui.upper().replace(':', '').replace('-', '')
+            
+            try:
+                # Konvertiere Hex-String zu Byte-Array
+                hex_str = test_payload.replace(' ', '').replace(':', '').replace('-', '').replace('0x', '')
+                payload_bytes = [int(hex_str[i:i+2], 16) for i in range(0, len(hex_str), 2)]
+                
+                if hasattr(self.addon.decoder_manager, 'payload_decoder'):
+                    result = self.addon.decoder_manager.test_aes_decryption(
+                        normalized_eui, 
+                        payload_bytes
+                    )
+                    
+                    return jsonify({
+                        "sensor_eui": normalized_eui,
+                        "original_payload": test_payload,
+                        "decryption_result": result
+                    })
+                else:
+                    return jsonify({"error": "AES Decryption nicht verfügbar"}), 500
+                    
+            except ValueError as e:
+                return jsonify({"error": f"Ungültiges Payload-Format: {str(e)}"}), 400
+            except Exception as e:
+                logging.error(f"❌ Fehler bei AES Decryption Test: {e}")
+                return jsonify({"error": f"AES Test Fehler: {str(e)}"}), 500
+        
+        @self.app.route('/api/sensor/<sensor_eui>/encryption-status', methods=['GET'])
+        def get_encryption_status(sensor_eui: str):
+            """API: Verschlüsselungsstatus eines Sensors abrufen."""
+            if not self.addon or not hasattr(self.addon, 'decoder_manager'):
+                return jsonify({"error": "Decoder Manager nicht verfügbar"}), 500
+            
+            # Normalisiere EUI
+            normalized_eui = sensor_eui.upper().replace(':', '').replace('-', '')
+            
+            try:
+                if hasattr(self.addon.decoder_manager, 'payload_decoder'):
+                    status = self.addon.decoder_manager.get_encryption_status(normalized_eui)
+                    
+                    return jsonify({
+                        "sensor_eui": normalized_eui,
+                        "has_application_key": status.get('has_key', False),
+                        "encryption_mode": status.get('mode', None),
+                        "key_secure_storage": status.get('secure_storage', False)
+                    })
+                else:
+                    return jsonify({
+                        "sensor_eui": normalized_eui,
+                        "has_application_key": False,
+                        "encryption_mode": None,
+                        "error": "AES Decryption nicht verfügbar"
+                    })
+                    
+            except Exception as e:
+                logging.error(f"❌ Fehler bei Encryption Status: {e}")
+                return jsonify({"error": f"Status Fehler: {str(e)}"}), 500
+        
         @self.app.route('/api/iolink/assign', methods=['POST'])
         def assign_iodd_to_iolink():
             """API: IODD einem IO-Link Adapter zuweisen basierend auf Vendor/Device ID."""
@@ -1437,6 +1602,95 @@ class WebGUI:
             font-family: monospace;
         }
         
+        /* ===========================================
+           APPLICATION KEY MANAGEMENT STYLES
+           =========================================== */
+        .encryption-status {
+            display: inline-flex;
+            align-items: center;
+            margin-left: 10px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+        
+        .encryption-status.encrypted {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .encryption-status.unencrypted {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+        
+        .key-management {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .key-management h4 {
+            color: #495057;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .key-input-group {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+            margin-bottom: 10px;
+        }
+        
+        .key-input-group input {
+            flex: 1;
+        }
+        
+        .key-input-group select {
+            width: 100px;
+        }
+        
+        .encryption-controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .test-decryption {
+            background: #e3f2fd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 10px;
+            border: 1px solid #bbdefb;
+        }
+        
+        .test-result {
+            background: #f5f5f5;
+            border-radius: 6px;
+            padding: 10px;
+            margin-top: 10px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        
+        .test-result.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .test-result.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
         .alert {
             padding: 15px;
             border-radius: 8px;
@@ -1655,10 +1909,18 @@ class WebGUI:
         function createSensorCard(eui, data) {
             const lastSeen = data.last_seen ? new Date(data.last_seen * 1000).toLocaleString() : 'Nie';
             
+            // Verschlüsselungsstatus anzeigen
+            let encryptionStatus = '';
+            if (data.has_application_key) {
+                encryptionStatus = `<span class="encryption-status encrypted">🔐 ${data.encryption_mode || 'AES'}</span>`;
+            } else {
+                encryptionStatus = `<span class="encryption-status unencrypted">🔓 Unverschlüsselt</span>`;
+            }
+            
             return `
                 <div class="sensor-card">
                     <div class="sensor-header">
-                        <div class="sensor-eui">${eui}</div>
+                        <div class="sensor-eui">${eui}${encryptionStatus}</div>
                         <div class="sensor-status">
                             <div class="status-indicator"></div>
                             <span>Online</span>
@@ -1684,6 +1946,42 @@ class WebGUI:
                         <div class="detail-item">
                             <div class="detail-label">Zuletzt gesehen</div>
                             <div class="detail-value">${lastSeen}</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Application Key Management -->
+                    <div class="key-management">
+                        <h4>🔐 Application Key Management</h4>
+                        
+                        <div class="key-input-group">
+                            <input type="text" 
+                                   id="appKey_${eui}" 
+                                   placeholder="Application Key (32 Hex-Zeichen)" 
+                                   pattern="[0-9a-fA-F]{32}"
+                                   title="128-bit AES Key in Hex Format">
+                            <select id="appKeyMode_${eui}">
+                                <option value="GCM">AES-GCM</option>
+                                <option value="CBC">AES-CBC</option>
+                            </select>
+                        </div>
+                        
+                        <div class="encryption-controls">
+                            <button class="btn btn-small" onclick="assignApplicationKey('${eui}')">🔑 Key zuweisen</button>
+                            <button class="btn btn-small btn-secondary" onclick="removeApplicationKey('${eui}')">🔓 Key entfernen</button>
+                            <button class="btn btn-small" onclick="showDecryptionTest('${eui}')">🧪 Test</button>
+                        </div>
+                        
+                        <div id="testDecryption_${eui}" class="test-decryption" style="display: none;">
+                            <h5>AES Entschlüsselung testen</h5>
+                            <div class="form-group">
+                                <label>Verschlüsseltes Test-Payload (Hex):</label>
+                                <input type="text" 
+                                       id="testPayload_${eui}" 
+                                       placeholder="01A203B4C5D6E7F8..."
+                                       title="Verschlüsseltes Payload in Hex">
+                            </div>
+                            <button class="btn btn-small" onclick="testAESDecryption('${eui}')">Entschlüsseln</button>
+                            <div id="testResult_${eui}" class="test-result" style="display: none;"></div>
                         </div>
                     </div>
                     
@@ -1808,6 +2106,159 @@ class WebGUI:
             }
         }
         
+        // ===========================================
+        // APPLICATION KEY MANAGEMENT FUNKTIONEN
+        // ===========================================
+        
+        // Application Key einem Sensor zuweisen
+        async function assignApplicationKey(sensorEui) {
+            const keyInput = document.getElementById(`appKey_${sensorEui}`);
+            const modeSelect = document.getElementById(`appKeyMode_${sensorEui}`);
+            
+            const applicationKey = keyInput.value.trim();
+            const encryptionMode = modeSelect.value;
+            
+            if (!applicationKey) {
+                showAlert('Application Key ist erforderlich', 'error');
+                return;
+            }
+            
+            // Validierung: 32 Hex-Zeichen
+            const hexPattern = /^[0-9a-fA-F]{32}$/;
+            const normalizedKey = applicationKey.replace(/[:\\-\\s]/g, '');
+            if (!hexPattern.test(normalizedKey)) {
+                showAlert('Application Key muss 32 Hex-Zeichen (128-bit) lang sein', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${BASE_URL}/api/sensor/${sensorEui}/application-key`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        application_key: normalizedKey,
+                        encryption_mode: encryptionMode
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    showAlert(`Application Key erfolgreich zugewiesen (${encryptionMode})`, 'success');
+                    keyInput.value = ''; // Clear input nach Erfolg
+                    loadSensors(); // Sensor-Liste neu laden für aktualisierte Icons
+                } else {
+                    showAlert(result.error || 'Fehler beim Zuweisen des Application Keys', 'error');
+                }
+            } catch (error) {
+                console.error('Application Key Assignment Fehler:', error);
+                showAlert('Netzwerkfehler beim Zuweisen des Application Keys', 'error');
+            }
+        }
+        
+        // Application Key von einem Sensor entfernen
+        async function removeApplicationKey(sensorEui) {
+            if (!confirm(`Application Key für Sensor ${sensorEui} wirklich entfernen?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${BASE_URL}/api/sensor/${sensorEui}/application-key`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    showAlert('Application Key erfolgreich entfernt', 'success');
+                    loadSensors(); // Sensor-Liste neu laden für aktualisierte Icons
+                } else {
+                    showAlert(result.error || 'Fehler beim Entfernen des Application Keys', 'error');
+                }
+            } catch (error) {
+                console.error('Application Key Removal Fehler:', error);
+                showAlert('Netzwerkfehler beim Entfernen des Application Keys', 'error');
+            }
+        }
+        
+        // Decryption Test Interface anzeigen/verstecken
+        function showDecryptionTest(sensorEui) {
+            const testDiv = document.getElementById(`testDecryption_${sensorEui}`);
+            const isVisible = testDiv.style.display !== 'none';
+            testDiv.style.display = isVisible ? 'none' : 'block';
+            
+            if (!isVisible) {
+                // Beispiel-Payload setzen
+                const testInput = document.getElementById(`testPayload_${sensorEui}`);
+                if (!testInput.value) {
+                    testInput.value = '01A203B4C5D6E7F8091A2B3C4D5E6F70';
+                }
+            }
+        }
+        
+        // AES Entschlüsselung testen
+        async function testAESDecryption(sensorEui) {
+            const testInput = document.getElementById(`testPayload_${sensorEui}`);
+            const resultDiv = document.getElementById(`testResult_${sensorEui}`);
+            
+            const testPayload = testInput.value.trim();
+            
+            if (!testPayload) {
+                showAlert('Test-Payload ist erforderlich', 'error');
+                return;
+            }
+            
+            // Payload validierung
+            const hexPattern = /^[0-9a-fA-F\\s:\\-]+$/;
+            if (!hexPattern.test(testPayload)) {
+                showAlert('Test-Payload muss ein gültiger Hex-String sein', 'error');
+                return;
+            }
+            
+            try {
+                resultDiv.textContent = '🔄 Entschlüsselung läuft...';
+                resultDiv.className = 'test-result';
+                resultDiv.style.display = 'block';
+                
+                const response = await fetch(`${BASE_URL}/api/sensor/${sensorEui}/test-decryption`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        test_payload: testPayload
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    if (result.decryption_result && result.decryption_result.success) {
+                        const decryptedData = result.decryption_result.decrypted_payload;
+                        const mode = result.decryption_result.mode || 'AES';
+                        
+                        resultDiv.className = 'test-result success';
+                        resultDiv.textContent = `✅ Entschlüsselung erfolgreich (${mode}):\n\n` +
+                                              `Original: ${result.original_payload}\n` +
+                                              `Entschlüsselt: [${decryptedData.join(', ')}]\n` +
+                                              `Hex: ${decryptedData.map(b => b.toString(16).padStart(2, '0')).join(' ').toUpperCase()}`;
+                    } else {
+                        resultDiv.className = 'test-result error';
+                        resultDiv.textContent = `❌ Entschlüsselung fehlgeschlagen:\n${result.decryption_result?.error_message || 'Unbekannter Fehler'}`;
+                    }
+                } else {
+                    resultDiv.className = 'test-result error';
+                    resultDiv.textContent = `❌ Test-Fehler: ${result.error || 'Unbekannter Fehler'}`;
+                }
+            } catch (error) {
+                console.error('AES Decryption Test Fehler:', error);
+                resultDiv.className = 'test-result error';
+                resultDiv.textContent = `❌ Netzwerkfehler: ${error.message}`;
+            }
+        }
+        
         // Daten regelmäßig aktualisieren
         function startAutoRefresh() {
             loadSensors();
@@ -1831,7 +2282,7 @@ class WebGUI:
     # Service Center API Integration
     def _get_service_center_client(self):
         """Erstelle Service Center Client basierend auf Settings."""
-        settings = self.settings.get_settings()
+        settings = self.settings.get_all_settings()
         service_center_url = settings.get('service_center_url', '').strip()
         
         if not service_center_url or not settings.get('service_center_enabled', False):
