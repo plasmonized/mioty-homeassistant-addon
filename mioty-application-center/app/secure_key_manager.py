@@ -60,11 +60,22 @@ class SecureKeyManager:
             # Get master password from environment
             master_password = os.getenv('MIOTY_MASTER_KEY')
             if not master_password:
-                # Generate deterministic key from system info if no env var
-                import socket
-                hostname = socket.gethostname()
-                master_password = f"mioty-{hostname}-default-key-2024"
-                self.logger.warning("⚠️ Kein MIOTY_MASTER_KEY gefunden - verwende Standard-Ableitung")
+                # SICHERHEIT: Generiere oder lade einen sicheren Master Key
+                master_key_file = self.storage_dir / "master.key"
+                if master_key_file.exists():
+                    # Lade existierenden Master Key
+                    with open(master_key_file, 'rb') as f:
+                        master_password = f.read().decode('utf-8')
+                    self.logger.info("🔐 Master Key aus sicherer Datei geladen")
+                else:
+                    # Generiere neuen sicheren Master Key
+                    import secrets
+                    master_password = secrets.token_urlsafe(64)  # 512-bit sicherer Key
+                    with open(master_key_file, 'wb') as f:
+                        f.write(master_password.encode('utf-8'))
+                    # Sichere Dateiberechtigungen setzen (nur Owner lesen/schreiben)
+                    master_key_file.chmod(0o600)
+                    self.logger.info("🔐 Neuer sicherer Master Key generiert und gespeichert")
             
             # Derive encryption key using PBKDF2
             salt = b'mioty-application-center-2024'  # Fixed salt for deterministic key

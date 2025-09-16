@@ -40,7 +40,12 @@ class WebGUI:
         self.app.jinja_env.auto_reload = True
         self.app.jinja_env.cache = {}
         
-        CORS(self.app)
+        # SICHERHEIT: CORS nur für Home Assistant Ingress (nicht für alle Origins!)
+        CORS(self.app, 
+             origins=['https://homeassistant.local:8123', 'http://homeassistant.local:8123', 
+                     'http://supervisor', 'http://localhost:8123'],
+             origin_allow_regex=r'https://.*\.ui\.nabu\.casa',
+             supports_credentials=True)
         
         # Erweiterte HTTP-Protokollierung aktivieren
         self.setup_logging()
@@ -267,9 +272,21 @@ class WebGUI:
                 snr = data.get('snr') or data.get('data', {}).get('snr')
                 rssi = data.get('rssi') or data.get('data', {}).get('rssi')
                 
-                # Formatiere SNR und RSSI für die Anzeige
-                snr_display = f"{snr:.1f} dB" if snr is not None else 'N/A'
-                rssi_display = f"{rssi:.1f} dBm" if rssi is not None else 'N/A'
+                # Formatiere SNR und RSSI für die Anzeige mit sicherer Typkonvertierung
+                def safe_format_float(value, unit):
+                    """Sichere Formatierung von Zahlenwerten mit Fehlerbehandlung."""
+                    if value is None:
+                        return 'N/A'
+                    try:
+                        # Versuche Konvertierung zu Float
+                        num_value = float(value)
+                        return f"{num_value:.1f} {unit}"
+                    except (ValueError, TypeError):
+                        # Falls Konvertierung fehlschlägt, gebe ursprünglichen Wert zurück
+                        return str(value)
+                
+                snr_display = safe_format_float(snr, "dB")
+                rssi_display = safe_format_float(rssi, "dBm")
 
                 sensor_info = {
                     'eui': eui,
