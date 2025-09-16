@@ -233,9 +233,24 @@ module.exports = { decode };
         """Gib Sensor-Decoder Zuweisungen zurück."""
         return self.payload_decoder.get_sensor_decoder_assignments()
     
-    def assign_decoder_to_sensor(self, sensor_eui: str, decoder_name: str) -> bool:
-        """Weise Decoder einem Sensor zu."""
-        return self.payload_decoder.assign_decoder(sensor_eui, decoder_name)
+    def assign_decoder_to_sensor(self, sensor_eui: str, decoder_name: str, 
+                                application_key: Optional[str] = None,
+                                encryption_mode: str = 'GCM') -> bool:
+        """Weise Decoder einem Sensor zu (mit optionalem application key)."""
+        return self.payload_decoder.assign_decoder(sensor_eui, decoder_name, application_key, encryption_mode)
+    
+    def assign_application_key(self, sensor_eui: str, application_key: str, 
+                             encryption_mode: str = 'GCM') -> bool:
+        """Weise application key einem Sensor zu."""
+        return self.payload_decoder.assign_application_key(sensor_eui, application_key, encryption_mode)
+    
+    def remove_application_key(self, sensor_eui: str) -> bool:
+        """Entferne application key von Sensor."""
+        return self.payload_decoder.remove_application_key(sensor_eui)
+    
+    def test_application_key(self, sensor_eui: str, test_payload: str) -> Dict[str, Any]:
+        """Teste application key mit Testdaten."""
+        return self.payload_decoder.test_application_key(sensor_eui, test_payload)
     
     def remove_sensor_assignment(self, sensor_eui: str) -> bool:
         """Entferne Decoder-Zuweisung von Sensor."""
@@ -246,7 +261,7 @@ module.exports = { decode };
         return self.payload_decoder.delete_decoder(decoder_name)
     
     def decode_sensor_payload(self, sensor_eui: str, payload_bytes: List[int], 
-                             metadata: Dict[str, Any] = None) -> Dict[str, Any]:
+                             metadata: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Dekodiere Sensor-Payload."""
         return self.payload_decoder.decode_payload(sensor_eui, payload_bytes, metadata)
     

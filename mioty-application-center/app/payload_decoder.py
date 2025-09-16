@@ -14,6 +14,20 @@ import xml.etree.ElementTree as ET
 from typing import Dict, List, Any, Optional, Union
 from pathlib import Path
 
+# AES Decryption and Secure Key Management Import
+try:
+    from .aes_decryption import AESDecryption
+    from .mioty_aes import MiotyAESDecryption
+    from .secure_key_manager import SecureKeyManager
+    AES_AVAILABLE = True
+    logging.info("✅ AES-Entschlüsselung und Secure Key Manager verfügbar")
+except ImportError:
+    AESDecryption = None
+    MiotyAESDecryption = None
+    SecureKeyManager = None
+    AES_AVAILABLE = False
+    logging.warning("❌ AES-Entschlüsselung nicht verfügbar - cryptography library fehlt")
+
 
 class PayloadDecoder:
     """Payload Decoder Engine für verschiedene Decoder-Formate."""
@@ -31,7 +45,61 @@ class PayloadDecoder:
         self.sensor_data_cache = {}  # sensor_eui -> sensor_data
         self.iolink_assignments = {}  # sensor_eui -> iolink_assignment_info
         
+        # AES Decryption Engine and Secure Key Manager
+        self.aes_decoder = AESDecryption() if AES_AVAILABLE and AESDecryption is not None else None
+        self.mioty_aes_decoder = MiotyAESDecryption() if AES_AVAILABLE and MiotyAESDecryption is not None else None
+        self.secure_key_manager = SecureKeyManager() if AES_AVAILABLE and SecureKeyManager is not None else None
+        
         self.load_decoders()
+        
+        # Automatische Migration von plaintext keys zu sicherer Speicherung
+        self._migrate_plaintext_keys()
+    
+    def _migrate_plaintext_keys(self):
+        """Migriere bestehende plaintext application keys zu sicherer Speicherung."""
+        try:
+            if not self.secure_key_manager:
+                return
+            
+            migration_needed = False
+            plaintext_keys = {}
+            
+            # Prüfe alle Decoder-Zuweisungen auf plaintext application keys
+            for sensor_eui, assignment in self.decoders.items():
+                if 'application_key' in assignment:
+                    migration_needed = True
+                    plaintext_keys[sensor_eui] = {
+                        'application_key': assignment['application_key'],
+                        'encryption_mode': assignment.get('encryption_mode', 'GCM')
+                    }
+            
+            if migration_needed:
+                logging.info(f"🔄 Starte Migration von {len(plaintext_keys)} plaintext application keys...")
+                
+                # Migriere zu sicherer Speicherung
+                success = self.secure_key_manager.migrate_from_plaintext(plaintext_keys)
+                
+                if success:
+                    # Aktualisiere Decoder-Zuweisungen
+                    for sensor_eui in plaintext_keys.keys():
+                        if sensor_eui in self.decoders:
+                            assignment = self.decoders[sensor_eui]
+                            # Entferne plaintext key aus assignment
+                            assignment.pop('application_key', None)
+                            # Markiere als sicher gespeichert
+                            assignment['has_application_key'] = True
+                    
+                    # Speichere aktualisierte Registry (ohne plaintext keys)
+                    self.save_decoders()
+                    logging.info("✅ Migration zu sicherer Key-Speicherung abgeschlossen")
+                else:
+                    logging.error("❌ Migration fehlgeschlagen - plaintext keys beibehalten")
+            else:
+                logging.info("ℹ️ Keine plaintext keys gefunden - keine Migration erforderlich")
+                
+        except Exception as e:
+            logging.error(f"❌ Fehler bei Key-Migration: {e}")
+        
         logging.info("Payload Decoder Engine initialisiert")
     
     def load_decoders(self):
@@ -52,12 +120,21 @@ class PayloadDecoder:
             logging.error(f"Fehler beim Laden der Decoder: {e}")
     
     def save_decoders(self):
-        """Speichere Decoder-Registry."""
+        """Speichere Decoder-Registry (OHNE application keys - diese werden sicher gespeichert)."""
         try:
+            # Entferne application keys vor dem Speichern - diese werden vom SecureKeyManager verwaltet
+            safe_decoders = {}
+            for sensor_eui, decoder_info in self.decoders.items():
+                safe_decoder_info = decoder_info.copy()
+                # Entferne sensitive Daten aus der Registry
+                safe_decoder_info.pop('application_key', None)
+                safe_decoder_info.pop('encryption_mode', None)
+                safe_decoders[sensor_eui] = safe_decoder_info
+            
             registry_file = self.decoder_dir / "decoder_registry.json"
             with open(registry_file, 'w') as f:
                 json.dump({
-                    'sensor_decoders': self.decoders,
+                    'sensor_decoders': safe_decoders,
                     'decoder_files': self.decoder_files
                 }, f, indent=2)
             return True
@@ -326,8 +403,10 @@ class PayloadDecoder:
             logging.error(f"Fehler beim Hochladen des Decoders {filename}: {e}")
             return False
     
-    def assign_decoder(self, sensor_eui: str, decoder_name: str) -> bool:
-        """Weise Decoder einem Sensor zu."""
+    def assign_decoder(self, sensor_eui: str, decoder_name: str, 
+                      application_key: Optional[str] = None,
+                      encryption_mode: str = 'GCM') -> bool:
+        """Weise Decoder einem Sensor zu (mit optionalem application key)."""
         # EUI automatisch zu Großbuchstaben normalisieren
         sensor_eui = self._normalize_sensor_eui(sensor_eui)
         logging.info(f"📋 Decoder-Zuweisung: {sensor_eui} → {decoder_name}")
@@ -336,11 +415,40 @@ class PayloadDecoder:
             logging.error(f"Decoder {decoder_name} nicht gefunden")
             return False
         
-        self.decoders[sensor_eui] = {
+        # Basis-Zuweisung (OHNE application key in plaintext)
+        assignment = {
             'decoder_name': decoder_name,
-            'assigned_at': time.time()
+            'assigned_at': time.time(),
+            'has_application_key': False
         }
         
+        # Application Key sicher speichern falls vorhanden
+        if application_key and self.secure_key_manager:
+            # Validiere application key mit mioty-spezifischer Validation
+            if self.mioty_aes_decoder:
+                validation = self.mioty_aes_decoder.validate_mioty_application_key(application_key)
+            else:
+                validation = self.aes_decoder.validate_application_key(application_key)
+            
+            if validation['is_valid']:
+                # Speichere key sicher verschlüsselt
+                success = self.secure_key_manager.store_application_key(
+                    sensor_eui, application_key, encryption_mode
+                )
+                if success:
+                    assignment['has_application_key'] = True
+                    assignment['encryption_mode'] = encryption_mode
+                    logging.info(f"🔐 Application Key für {sensor_eui} sicher gespeichert ({validation['key_size']}-bit, {encryption_mode})")
+                else:
+                    logging.error(f"❌ Fehler beim sicheren Speichern des application key")
+                    return False
+            else:
+                logging.error(f"❌ Ungültiger application key: {validation['error_message']}")
+                return False
+        elif application_key and not self.secure_key_manager:
+            logging.warning("❌ Application key ignoriert - Secure Key Manager nicht verfügbar")
+        
+        self.decoders[sensor_eui] = assignment
         return self.save_decoders()
     
     def remove_decoder_assignment(self, sensor_eui: str) -> bool:
@@ -356,56 +464,159 @@ class PayloadDecoder:
     
     def decode_payload(self, sensor_eui: str, payload_bytes: List[int], 
                       metadata: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        """Dekodiere Payload für spezifischen Sensor."""
+        """Dekodiere Payload für spezifischen Sensor (mit sicherer AES-Entschlüsselung)."""
         logging.info(f"🔍 DECODE_PAYLOAD AUFGERUFEN für {sensor_eui}")
         logging.info(f"   📋 Verfügbare Decoder-Zuweisungen: {list(self.decoders.keys())}")
         logging.info(f"   📋 Verfügbare Decoder-Dateien: {list(self.decoder_files.keys())}")
         
+        # Check if sensor has decoder assignment
         if sensor_eui not in self.decoders:
             logging.warning(f"❌ Kein Decoder für {sensor_eui} zugewiesen - versuche generische Dekodierung")
             # Fallback: Generische Sentinum Dekodierung versuchen
             return self._decode_generic_sentinum(payload_bytes, metadata or {}, "mioty")
         
-        logging.info(f"✅ Decoder für {sensor_eui} gefunden: {self.decoders[sensor_eui]}")
-        
-        if sensor_eui not in self.decoders:
-            return {
-                'decoded': False,
-                'reason': 'No decoder assigned',
-                'raw_data': payload_bytes
-            }
-        
         decoder_assignment = self.decoders[sensor_eui]
         decoder_name = decoder_assignment['decoder_name']
         
+        logging.info(f"✅ Decoder für {sensor_eui} gefunden: {decoder_name}")
+        
+        # Original payload für debugging (keine sensitive Daten loggen)
+        original_payload = payload_bytes.copy()
+        decrypted_payload = payload_bytes
+        encryption_info = None
+        
+        # Secure AES-Entschlüsselung falls application key vorhanden
+        if decoder_assignment.get('has_application_key', False) and self.secure_key_manager:
+            logging.info(f"🔐 Sichere mioty AES-Entschlüsselung für {sensor_eui} gestartet...")
+            
+            # Sicher verschlüsselten application key abrufen
+            key_data = self.secure_key_manager.retrieve_application_key(sensor_eui)
+            if not key_data:
+                logging.error(f"❌ Application key für {sensor_eui} nicht abrufbar")
+                return {
+                    'decoded': False,
+                    'reason': 'Application key retrieval failed',
+                    'raw_data': original_payload,
+                    'encryption_info': {
+                        'was_encrypted': True,
+                        'decryption_failed': True,
+                        'error': 'Key retrieval failed'
+                    }
+                }
+            
+            application_key = key_data['application_key']
+            encryption_mode = key_data.get('encryption_mode', 'GCM')
+            
+            # Aktuelle application counter für replay protection
+            current_counter = self.secure_key_manager.get_application_counter(sensor_eui)
+            
+            # MIOTY-SPECIFIC DECRYPTION PATH ENFORCEMENT
+            decrypt_result = None
+            if self.mioty_aes_decoder:
+                # Bevorzuge mioty-spezifische Entschlüsselung für application keys
+                logging.info(f"🛡️ Verwende mioty-spezifische Entschlüsselung")
+                decrypt_result = self.mioty_aes_decoder.decrypt_mioty_payload(
+                    payload_bytes,
+                    application_key,
+                    current_counter
+                )
+            elif self.aes_decoder:
+                # Fallback zu generischer AES
+                logging.warning(f"⚠️ Fallback zu generischer AES - mioty-spezifische Entschlüsselung nicht verfügbar")
+                decrypt_result = self.aes_decoder.decrypt_payload(
+                    payload_bytes,
+                    application_key,
+                    encryption_mode
+                )
+            
+            if decrypt_result and decrypt_result['success']:
+                decrypted_payload = decrypt_result['decrypted_payload']
+                
+                # APPLICATION COUNTER TRACKING mit Replay Protection
+                new_counter = decrypt_result.get('application_counter')
+                if new_counter is not None:
+                    # Validiere und aktualisiere counter
+                    if self.secure_key_manager.update_application_counter(sensor_eui, new_counter):
+                        logging.info(f"✅ Application counter aktualisiert: {sensor_eui} -> {new_counter}")
+                    else:
+                        logging.error(f"🚫 REPLAY ATTACK DETECTED für {sensor_eui}: counter {new_counter}")
+                        return {
+                            'decoded': False,
+                            'reason': f'Replay attack detected: counter {new_counter}',
+                            'raw_data': original_payload,
+                            'encryption_info': {
+                                'was_encrypted': True,
+                                'decryption_failed': True,
+                                'error': 'Replay attack detected',
+                                'replay_counter': new_counter
+                            }
+                        }
+                
+                encryption_info = {
+                    'was_encrypted': True,
+                    'mode': decrypt_result.get('mode', 'mioty-AES'),
+                    'key_size': decrypt_result.get('key_size', 128),
+                    'mioty_spec': decrypt_result.get('mioty_spec')
+                }
+                logging.info(f"✅ Sichere AES-Entschlüsselung erfolgreich: {len(decrypted_payload)} bytes entschlüsselt")
+                logging.info(f"   🔧 Modus: {encryption_info['mode']}, Spec: {encryption_info.get('mioty_spec', 'Generic')}")
+            else:
+                error_msg = decrypt_result.get('error_message', 'Unknown error') if decrypt_result else 'No decoder available'
+                logging.error(f"❌ AES-Entschlüsselung fehlgeschlagen: {error_msg}")
+                return {
+                    'decoded': False,
+                    'reason': f'AES decryption failed: {error_msg}',
+                    'raw_data': original_payload,
+                    'encryption_info': {
+                        'was_encrypted': True,
+                        'decryption_failed': True,
+                        'error': error_msg
+                    }
+                }
+        elif decoder_assignment.get('has_application_key', False) and not self.secure_key_manager:
+            logging.warning(f"⚠️ Application key für {sensor_eui} vorhanden, aber Secure Key Manager nicht verfügbar")
+        
+        # Normale Payload-Dekodierung mit entschlüsselten Daten
         if decoder_name not in self.decoder_files:
             return {
                 'decoded': False,
                 'reason': 'Decoder file not found',
-                'raw_data': payload_bytes
+                'raw_data': original_payload,
+                'encryption_info': encryption_info
             }
         
         decoder_info = self.decoder_files[decoder_name]
         
         try:
+            # Dekodiere mit entschlüsselten payload_bytes
             if decoder_info['type'] == 'blueprint':
-                return self._decode_with_blueprint(decoder_info, payload_bytes, metadata)
+                result = self._decode_with_blueprint(decoder_info, decrypted_payload, metadata or {})
             elif decoder_info['type'] == 'javascript':
-                return self._decode_with_javascript(decoder_info, payload_bytes, metadata)
+                result = self._decode_with_javascript(decoder_info, decrypted_payload, metadata or {})
             elif decoder_info['type'] == 'iodd':
-                return self._decode_with_iodd(decoder_info, payload_bytes, metadata)
+                result = self._decode_with_iodd(decoder_info, decrypted_payload, metadata or {})
             else:
                 return {
                     'decoded': False,
                     'reason': f'Unsupported decoder type: {decoder_info["type"]}',
-                    'raw_data': payload_bytes
+                    'raw_data': original_payload,
+                    'encryption_info': encryption_info
                 }
+            
+            # Füge Verschlüsselungsinfo zu Ergebnis hinzu
+            if encryption_info:
+                result['encryption_info'] = encryption_info
+                result['original_encrypted_payload'] = original_payload
+            
+            return result
+            
         except Exception as e:
             logging.error(f"Fehler beim Dekodieren für Sensor {sensor_eui}: {e}")
             return {
                 'decoded': False,
                 'reason': f'Decoding error: {str(e)}',
-                'raw_data': payload_bytes
+                'raw_data': original_payload,
+                'encryption_info': encryption_info
             }
     
     def _decode_with_blueprint(self, decoder_info: Dict[str, Any], 
@@ -1490,7 +1701,17 @@ try {{
     
     def get_sensor_decoder_assignments(self) -> Dict[str, Any]:
         """Gib alle Sensor-Decoder Zuweisungen zurück."""
-        return self.decoders.copy()
+        # Zähle Sensoren mit application keys
+        encrypted_sensors = sum(1 for assignment in self.decoders.values() 
+                              if 'application_key' in assignment)
+        
+        return {
+            'assignments': self.decoders.copy(),
+            'total_sensors': len(self.decoders),
+            'encrypted_sensors': encrypted_sensors,
+            'decoders_available': list(self.decoder_files.keys()),
+            'aes_decryption_available': AES_AVAILABLE
+        }
     
     def _normalize_sensor_eui(self, sensor_eui: str) -> str:
         """Normalisiere Sensor EUI: Wandle Buchstaben in Großbuchstaben um, lasse Zahlen unverändert."""
@@ -1532,6 +1753,79 @@ try {{
         except Exception as e:
             logging.error(f"Fehler beim Löschen des Decoders {decoder_name}: {e}")
             return False
+    
+    def assign_application_key(self, sensor_eui: str, application_key: str, 
+                             encryption_mode: str = 'GCM') -> bool:
+        """Weise application key einem existierenden Sensor zu."""
+        sensor_eui = self._normalize_sensor_eui(sensor_eui)
+        
+        if sensor_eui not in self.decoders:
+            logging.error(f"Sensor {sensor_eui} hat keine Decoder-Zuweisung")
+            return False
+        
+        if not self.aes_decoder:
+            logging.error("AES-Entschlüsselung nicht verfügbar")
+            return False
+        
+        # Validiere application key
+        validation = self.aes_decoder.validate_application_key(application_key)
+        if not validation['is_valid']:
+            logging.error(f"Ungültiger application key: {validation['error_message']}")
+            return False
+        
+        # Füge application key zu bestehender Zuweisung hinzu
+        self.decoders[sensor_eui]['application_key'] = application_key
+        self.decoders[sensor_eui]['encryption_mode'] = encryption_mode
+        self.decoders[sensor_eui]['key_assigned_at'] = time.time()
+        
+        logging.info(f"🔐 Application Key für {sensor_eui} aktualisiert ({validation['key_size']}-bit, {encryption_mode})")
+        return self.save_decoders()
+    
+    def remove_application_key(self, sensor_eui: str) -> bool:
+        """Entferne application key von Sensor (behält Decoder-Zuweisung)."""
+        sensor_eui = self._normalize_sensor_eui(sensor_eui)
+        
+        if sensor_eui not in self.decoders:
+            return True  # Nichts zu tun
+        
+        assignment = self.decoders[sensor_eui]
+        
+        # Entferne encryption-bezogene Felder
+        for key in ['application_key', 'encryption_mode', 'key_assigned_at']:
+            assignment.pop(key, None)
+        
+        logging.info(f"🔓 Application Key für {sensor_eui} entfernt")
+        return self.save_decoders()
+    
+    def test_application_key(self, sensor_eui: str, test_payload: str) -> Dict[str, Any]:
+        """Teste application key mit Testdaten."""
+        sensor_eui = self._normalize_sensor_eui(sensor_eui)
+        
+        if sensor_eui not in self.decoders:
+            return {
+                'success': False,
+                'error_message': 'Sensor nicht gefunden'
+            }
+        
+        assignment = self.decoders[sensor_eui]
+        if 'application_key' not in assignment:
+            return {
+                'success': False,
+                'error_message': 'Kein application key zugewiesen'
+            }
+        
+        if not self.aes_decoder:
+            return {
+                'success': False,
+                'error_message': 'AES-Entschlüsselung nicht verfügbar'
+            }
+        
+        # Teste Entschlüsselung
+        return self.aes_decoder.test_decryption(
+            test_payload,
+            assignment['application_key'],
+            None  # Erwartetes Ergebnis optional
+        )
 
 
 # Für Module Import

@@ -118,8 +118,7 @@ class AESDecryption:
                 'error_message': None,
                 'decrypted_payload': list(plaintext),
                 'mode': 'AES-GCM',
-                'key_size': len(key_bytes) * 8,
-                'nonce_used': nonce_bytes.hex()
+                'key_size': len(key_bytes) * 8
             }
             
         except Exception as e:
@@ -172,8 +171,7 @@ class AESDecryption:
                 'error_message': None,
                 'decrypted_payload': list(plaintext),
                 'mode': 'AES-CBC',
-                'key_size': len(key_bytes) * 8,
-                'iv_used': iv_bytes.hex()
+                'key_size': len(key_bytes) * 8
             }
             
         except Exception as e:
