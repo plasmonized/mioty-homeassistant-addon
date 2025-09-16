@@ -640,6 +640,7 @@ class WebGUI:
                 network_key_raw = data['network_key'].strip()
                 short_addr_raw = data['short_addr'].strip()
                 bidirectional = data.get('bidirectional', False)
+                application_key_raw = data.get('application_key', '').strip()  # Optional AES Key
                 
                 # Flexible Hex-Validierung (mit/ohne Trennzeichen)
                 if not _is_valid_hex(eui_raw, 16):
@@ -648,6 +649,14 @@ class WebGUI:
                     return jsonify({'error': 'Network Key muss 32 Hexadezimal-Zeichen enthalten (Format: 28DDB218FAD568035A500060FC8662DC oder 28:DD:B2:18:FA:D5:68:03:5A:50:00:60:FC:86:62:DC)'}), 400
                 if not _is_valid_hex(short_addr_raw, 4):
                     return jsonify({'error': 'Short Address muss 4 Hexadezimal-Zeichen enthalten (Format: 1234 oder 12:34)'}), 400
+                
+                # Application Key Validierung (optional, aber wenn vorhanden: 32 Zeichen für 128-bit AES)
+                application_key = None
+                if application_key_raw:
+                    if not _is_valid_hex(application_key_raw, 32):
+                        return jsonify({'error': 'Application Key muss 32 Hexadezimal-Zeichen enthalten (Format: 01234567890ABCDEF01234567890ABCDEF oder 01:23:45:67:89:0A:BC:DE:F0:12:34:56:78:90:AB:CD)'}), 400
+                    application_key = _normalize_hex_input(application_key_raw)
+                    logging.info(f"🔐 Application Key für {eui_raw}: bereitgestellt (Länge: {len(application_key)} Zeichen)")
                 
                 # Normalisierte Werte für das System
                 eui = _normalize_hex_input(eui_raw)
@@ -665,7 +674,18 @@ class WebGUI:
                 )
                 
                 if result:
-                    # Optional: Metadaten speichern falls vorhanden
+                    # 1. Application Key zuweisen falls vorhanden
+                    if application_key and hasattr(self.addon, 'decoder_manager'):
+                        try:
+                            key_success = self.addon.decoder_manager.assign_application_key(eui, application_key, 'GCM')
+                            if key_success:
+                                logging.info(f"✅ Application Key für {eui} erfolgreich zugewiesen")
+                            else:
+                                logging.warning(f"⚠️ Application Key für {eui} konnte nicht zugewiesen werden")
+                        except Exception as key_error:
+                            logging.error(f"❌ Fehler bei Application Key Zuweisung: {key_error}")
+                    
+                    # 2. Optional: Metadaten speichern falls vorhanden
                     manufacturer = data.get('manufacturer', '').strip()
                     model = data.get('model', '').strip()
                     device_name = data.get('device_name', '').strip()
@@ -1773,6 +1793,17 @@ class WebGUI:
                         </label>
                     </div>
                     
+                    <div class="form-group">
+                        <label for="application_key">🔐 Application Key (optional, 32 Hex-Zeichen):</label>
+                        <input type="text" id="application_key" name="application_key" 
+                               placeholder="0123456789ABCDEF0123456789ABCDEF" 
+                               pattern="[0-9a-fA-F]{32}" 
+                               title="32 Hexadezimal-Zeichen für AES-128 Entschlüsselung">
+                        <small style="color: #666; font-size: 0.9em;">
+                            Für verschlüsselte Sensor-Payloads. Leer lassen falls nicht benötigt.
+                        </small>
+                    </div>
+                    
                     <button type="submit" class="btn">Sensor hinzufügen</button>
                 </form>
             </div>
@@ -2052,7 +2083,8 @@ class WebGUI:
                 sensor_eui: formData.get('sensor_eui'),
                 network_key: formData.get('network_key'),
                 short_addr: formData.get('short_addr'),
-                bidirectional: formData.get('bidirectional') === 'on'
+                bidirectional: formData.get('bidirectional') === 'on',
+                application_key: formData.get('application_key') || ''  // Optional AES Key
             };
             
             try {

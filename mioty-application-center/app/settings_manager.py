@@ -6,13 +6,13 @@ Verwaltet lokale Konfigurationseinstellungen
 import json
 import logging
 import os
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 
 class SettingsManager:
     """Verwaltet Add-on Einstellungen."""
     
-    def __init__(self, config_file: str = None):
+    def __init__(self, config_file: Optional[str] = None):
         """Initialisiere Settings Manager."""
         if config_file is None:
             # Persistente Speicherung in /data für Home Assistant Add-on
