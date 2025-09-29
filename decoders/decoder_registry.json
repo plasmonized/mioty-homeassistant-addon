@@ -17,7 +17,7 @@
       "assigned_at": 1759135400.2
     },
     "FCA84A030000127D": {
-      "decoder_name": "febris_universal", 
+      "decoder_name": "febris_universal",
       "assigned_at": 1759135400.3
     },
     "FCA84A030000127B": {
@@ -85,15 +85,6 @@
       ],
       "created_at": 1756738871.7125535
     },
-    "febris_co2": {
-      "type": "javascript",
-      "file_path": "decoders/febris_co2.js",
-      "name": "febris_co2",
-      "version": "1.0",
-      "description": "Sentinum JavaScript Decoder",
-      "supported_devices": [],
-      "created_at": 1757344254.2031453
-    },
     "juno_th": {
       "type": "javascript",
       "file_path": "decoders/juno_th.js",
@@ -108,9 +99,24 @@
       "file_path": "decoders/febris_universal.js",
       "name": "Sentinum Universal Febris Decoder",
       "version": "2.0",
-      "description": "Universal Decoder für ALLE Febris Sensor-Varianten (TH, CO2, SCW) mit korrekten Einheiten",
-      "supported_devices": ["FEBRIS_TH", "FEBRIS_CO2", "FEBRIS_SCW", "ALL_FEBRIS"],
+      "description": "Universal Decoder f\u00fcr ALLE Febris Sensor-Varianten (TH, CO2, SCW) mit korrekten Einheiten",
+      "supported_devices": [
+        "FEBRIS_TH",
+        "FEBRIS_CO2",
+        "FEBRIS_SCW",
+        "ALL_FEBRIS"
+      ],
       "created_at": 1759135400.0
+    },
+    "decoder_registry": {
+      "type": "blueprint",
+      "file_path": "decoders/decoder_registry.json",
+      "name": "decoder_registry",
+      "version": "1.0",
+      "description": "mioty Blueprint Decoder",
+      "supported_devices": [],
+      "payload_format": {},
+      "created_at": 1759135422.2439494
     }
   }
 }

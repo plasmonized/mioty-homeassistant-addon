@@ -148,3 +148,24 @@ function decodeUplink(input) {
     };
 
 }
+
+/**
+ * 🔧 MIOTY SYSTEM WRAPPER - CommonJS Interface
+ * Wraps TTN-style decodeUplink for mioty system compatibility
+ */
+function decode(payload, metadata) {
+    // Convert raw payload to TTN input format
+    const input = { 
+        bytes: payload, 
+        fPort: (metadata && metadata.fPort) || 1 
+    };
+    
+    // Call original TTN decoder
+    const result = decodeUplink(input);
+    
+    // Return plain object (not wrapped in 'data')
+    return result && result.data ? result.data : result;
+}
+
+// CommonJS export for mioty system
+module.exports = { decode };
