@@ -691,10 +691,21 @@ class PayloadDecoder:
         except Exception as e:
             raise Exception(f"Blueprint decoding error: {str(e)}")
     
-    def _decode_with_javascript(self, decoder_info: Dict[str, Any], 
+    def _decode_with_javascript(self, decoder_info, 
                                payload_bytes: List[int], metadata: Dict[str, Any]) -> Dict[str, Any]:
         """Dekodiere mit Sentinum JavaScript."""
         try:
+            # REPARIERE BUG: Handle both string and dict input
+            if isinstance(decoder_info, str):
+                # Live-System übergibt String - konvertiere zu Dict
+                decoder_name = decoder_info
+                decoder_file_path = self.decoder_dir / f"{decoder_name}.js"
+                decoder_info = {
+                    'name': decoder_name,
+                    'type': 'javascript',
+                    'file_path': str(decoder_file_path)
+                }
+            
             # Erstelle temporäre Node.js Umgebung
             with tempfile.TemporaryDirectory() as temp_dir:
                 temp_path = Path(temp_dir)
