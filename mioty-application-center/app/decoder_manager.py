@@ -24,8 +24,7 @@ class DecoderManager:
         # Payload Decoder Engine
         self.payload_decoder = PayloadDecoder(str(self.decoder_dir))
         
-        # Erstelle Beispiel-Decoder
-        self._create_sample_decoders()
+        # Automatische Erstellung von Beispiel-Decodern deaktiviert (auf Benutzerwunsch)
         
         logging.info("Decoder Manager initialisiert")
     
@@ -33,112 +32,6 @@ class DecoderManager:
         """Delegiere Payload-Dekodierung an PayloadDecoder Engine."""
         return self.payload_decoder.decode_payload(sensor_eui, payload_bytes, metadata)
     
-    def _create_sample_decoders(self):
-        """Erstelle Beispiel-Decoder für Demo."""
-        # mioty Blueprint Beispiel
-        blueprint_example = {
-            "name": "Temperature Humidity Sensor",
-            "version": "1.0",
-            "description": "Standard Temperature/Humidity Sensor Blueprint",
-            "devices": ["TH_SENSOR_V1", "TH_SENSOR_V2"],
-            "payload": {
-                "temperature": {
-                    "type": "uint16",
-                    "length": 2,
-                    "scale": 0.1,
-                    "offset": -40.0,
-                    "unit": "°C",
-                    "description": "Temperature measurement"
-                },
-                "humidity": {
-                    "type": "uint16", 
-                    "length": 2,
-                    "scale": 0.01,
-                    "offset": 0.0,
-                    "unit": "%",
-                    "description": "Relative humidity"
-                },
-                "battery": {
-                    "type": "uint8",
-                    "length": 1,
-                    "scale": 0.1,
-                    "offset": 0.0,
-                    "unit": "V",
-                    "description": "Battery voltage"
-                }
-            }
-        }
-        
-        # Sentinum JavaScript Beispiel
-        sentinum_example = '''
-// @name Sentinum Temperature Humidity Decoder
-// @version 1.0
-// @description Decodes temperature and humidity sensor data
-
-function decode(payload, metadata) {
-    if (payload.length < 4) {
-        return { error: "Payload too short" };
-    }
-    
-    // Temperature (bytes 0-1)
-    const tempRaw = (payload[0] << 8) | payload[1];
-    const temperature = (tempRaw - 400) / 10.0;
-    
-    // Humidity (bytes 2-3) 
-    const humRaw = (payload[2] << 8) | payload[3];
-    const humidity = humRaw / 100.0;
-    
-    // Battery (byte 4, optional)
-    let battery = null;
-    if (payload.length >= 5) {
-        battery = payload[4] * 0.1;
-    }
-    
-    const result = {
-        temperature: {
-            value: Math.round(temperature * 10) / 10,
-            unit: "°C"
-        },
-        humidity: {
-            value: Math.round(humidity * 10) / 10, 
-            unit: "%"
-        }
-    };
-    
-    if (battery !== null) {
-        result.battery = {
-            value: Math.round(battery * 10) / 10,
-            unit: "V"
-        };
-    }
-    
-    return result;
-}
-
-module.exports = { decode };
-'''
-        
-        # Erstelle Beispiel-Dateien falls sie nicht existieren
-        blueprint_file = self.decoder_dir / "temp_humidity_blueprint.json"
-        if not blueprint_file.exists():
-            try:
-                with open(blueprint_file, 'w') as f:
-                    json.dump(blueprint_example, f, indent=2)
-                logging.info("Blueprint Beispiel-Decoder erstellt")
-            except Exception as e:
-                logging.error(f"Fehler beim Erstellen des Blueprint-Beispiels: {e}")
-        
-        sentinum_file = self.decoder_dir / "temp_humidity_sentinum.js"
-        if not sentinum_file.exists():
-            try:
-                with open(sentinum_file, 'w') as f:
-                    f.write(sentinum_example)
-                logging.info("Sentinum Beispiel-Decoder erstellt")
-            except Exception as e:
-                logging.error(f"Fehler beim Erstellen des Sentinum-Beispiels: {e}")
-        
-        # Decoder neu laden um Beispiele zu erkennen
-        self.payload_decoder.load_decoders()
     
     def upload_decoder_file(self, filename: str, content: bytes) -> Dict[str, Any]:
         """Lade Decoder-Datei hoch."""
