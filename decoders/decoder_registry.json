@@ -67,25 +67,6 @@
       "supported_devices": [],
       "created_at": 1756716940.7003171
     },
-    "ifm-000173-20160824-IODD1.0.1-de": {
-      "type": "iodd",
-      "file_path": "decoders/ifm-000173-20160824-IODD1.0.1-de.xml",
-      "filename": "ifm-000173-20160824-IODD1.0.1-de.xml",
-      "name": "ifm electronic KQ Kapazitiver Sensor (000173)",
-      "display_name": "ifm electronic KQ Kapazitiver Sensor (000173)",
-      "version": "1.0",
-      "description": "IODD f\u00fcr ifm electronic KQ Kapazitiver Sensor (000173) (VID:310, DID:29441)",
-      "vendor_id": 310,
-      "device_id": 29441,
-      "vendor_name": "ifm electronic",
-      "device_name": "KQ Kapazitiver Sensor (000173)",
-      "payload_length": 0,
-      "data_fields": [],
-      "supported_devices": [
-        "VID_310_DID_29441"
-      ],
-      "created_at": 1756738425.9478447
-    },
     "ifm-000429-20180717-IODD1.1-de": {
       "type": "iodd",
       "file_path": "decoders/ifm-000429-20180717-IODD1.1-de.xml",
