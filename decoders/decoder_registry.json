@@ -1,24 +1,8 @@
 {
   "sensor_decoders": {
-    "FCA84A030000127C": {
-      "decoder_name": "febris_th",
-      "assigned_at": 1757334039.6976533
-    },
-    "FCA84A030000127D": {
-      "decoder_name": "febris_th",
-      "assigned_at": 1757334045.3847528
-    },
     "74731D0000000016": {
       "decoder_name": "ifm-000429-20180717-IODD1.1-de",
       "assigned_at": 1757334055.9333057
-    },
-    "FCA84A030000127B": {
-      "decoder_name": "febris_th",
-      "assigned_at": 1757334071.0398707
-    },
-    "FCA84A0300001276": {
-      "decoder_name": "febris_th",
-      "assigned_at": 1757334079.0568056
     },
     "FCA84A03000003BC": {
       "decoder_name": "febris_co2",
@@ -30,24 +14,6 @@
     }
   },
   "decoder_files": {
-    "febris_th": {
-      "type": "javascript",
-      "file_path": "decoders/febris_th.js",
-      "name": "febris_th",
-      "version": "1.0",
-      "description": "Sentinum JavaScript Decoder",
-      "supported_devices": [],
-      "created_at": 1756716919.707331
-    },
-    "febris_scw": {
-      "type": "javascript",
-      "file_path": "decoders/febris_scw.js",
-      "name": "febris_scw",
-      "version": "1.0",
-      "description": "Sentinum JavaScript Decoder",
-      "supported_devices": [],
-      "created_at": 1756716924.3223279
-    },
     "apollon-qtr": {
       "type": "javascript",
       "file_path": "decoders/apollon-qtr.js",
