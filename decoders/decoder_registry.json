@@ -6,7 +6,8 @@
     },
     "FCA84A03000003BC": {
       "decoder_name": "febris_universal",
-      "assigned_at": 1759135400.1
+      "assigned_at": 1759135833.7742186,
+      "has_application_key": false
     },
     "FCA84A090000000A": {
       "decoder_name": "juno_th",
@@ -14,15 +15,18 @@
     },
     "FCA84A030000127C": {
       "decoder_name": "febris_universal",
-      "assigned_at": 1759135400.2
+      "assigned_at": 1759135852.2503083,
+      "has_application_key": false
     },
     "FCA84A030000127D": {
       "decoder_name": "febris_universal",
-      "assigned_at": 1759135400.3
+      "assigned_at": 1759135837.825979,
+      "has_application_key": false
     },
     "FCA84A030000127B": {
       "decoder_name": "febris_universal",
-      "assigned_at": 1759135400.4
+      "assigned_at": 1759135844.7122533,
+      "has_application_key": false
     },
     "FCA84A0300001276": {
       "decoder_name": "febris_universal",
