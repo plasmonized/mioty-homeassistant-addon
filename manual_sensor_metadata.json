@@ -22,5 +22,11 @@
     "model": "Aion mioty Adapter",
     "name": "Sentinum Aion mioty Adapter",
     "manual": true
+  },
+  "FCA84A03000013CA": {
+    "manufacturer": "Sentinum",
+    "model": "Febris SCW",
+    "name": "Sentinum Febris SCW",
+    "manual": true
   }
 }

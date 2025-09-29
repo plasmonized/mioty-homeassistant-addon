@@ -1,8 +1,14 @@
 {
   "FCA84A03000003BC": {
     "manufacturer": "Sentinum",
-    "model": "Febris_CO2",
-    "name": "Sentinum Febris_CO2",
-    "device_name": "EG Esszimmer Febris CO2"
+    "model": "Febris CO2",
+    "name": "Sentinum Febris CO2",
+    "device_name": "EG Esszimmer CO2"
+  },
+  "FCA84A0300001276": {
+    "manufacturer": "Sentinum",
+    "model": "Febris TH",
+    "name": "Sentinum Febris TH",
+    "device_name": "EG B\u00fcro TH"
   }
 }
