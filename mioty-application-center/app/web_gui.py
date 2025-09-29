@@ -3147,7 +3147,7 @@ class WebGUI:
                 const response = await fetch(BASE_URL + '/api/decoders');
                 const data = await response.json();
                 currentDecoders = data.decoders || [];
-                currentAssignments = data.assignments || {};
+                currentAssignments = data.assignments.assignments || {};
                 updateDecoderList();
                 updateAssignmentList();
                 updateDecoderSelects();
