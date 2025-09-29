@@ -34,8 +34,8 @@ function decodeUplink(input) {
             "unit": "°C"
         };
         
-        decoded.networkBaseType = 'lorawan';
-        decoded.networkSubType = 'tti';
+        decoded.networkBaseType = 'mioty';
+        decoded.networkSubType = 'mioty';
         
         var it = 7;
         
