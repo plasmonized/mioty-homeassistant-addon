@@ -28,5 +28,17 @@
     "model": "Febris SCW",
     "name": "Sentinum Febris SCW",
     "manual": true
+  },
+  "FCA84A0300001276": {
+    "manufacturer": "Sentinum",
+    "model": "FEbris TH",
+    "name": "Sentinum FEbris TH",
+    "manual": true
+  },
+  "FCA84A030000127C": {
+    "manufacturer": "Sentinum",
+    "model": "Febris TH",
+    "name": "Sentinum Febris TH",
+    "manual": true
   }
 }
