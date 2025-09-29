@@ -722,6 +722,10 @@ try {{
         const decodedResult = decoder.decodeUplink({{bytes: payload, fPort: 1}});
         result = decodedResult.data || decodedResult;
         decoderType = 'febris';
+    }} else if (typeof decoder.decode === 'function') {{
+        // Universal Sentinum Format: decode(payload, metadata)
+        result = decoder.decode(payload, {{fPort: 1}});
+        decoderType = 'sentinum_universal';
     }} else if (typeof decoder.Decoder === 'function') {{
         // Juno Format: Decoder(bytes, port)  
         result = decoder.Decoder(payload, 1);
