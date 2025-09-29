@@ -369,6 +369,25 @@ class BSSCIAddon:
             # Nur noch UNIFIED DISCOVERY - EIN sauberes Topic pro Sensor mit JSON State
             # decoded_payload Daten werden bereits über die normale Discovery verarbeitet
             
+            # 🚀 LIVE-NACHRICHTEN SPEICHERN (für Dashboard)
+            live_message = {
+                'timestamp': current_time,
+                'eui': sensor_eui,
+                'raw_data': payload_bytes,
+                'decoded_data': decoded_payload.get('data', {}) if decoded_payload and decoded_payload.get('decoded') else None,
+                'decoder_name': decoded_payload.get('decoder_name', 'No Decoder') if decoded_payload else 'No Decoder',
+                'rssi': rssi,
+                'snr': snr,
+                'signal_quality': signal_quality
+            }
+            
+            # Nur die letzten 10 Nachrichten behalten
+            self.live_messages.insert(0, live_message)
+            if len(self.live_messages) > 10:
+                self.live_messages = self.live_messages[:10]
+            
+            logging.info(f"💾 Live-Nachricht gespeichert für {sensor_eui} (Total: {len(self.live_messages)})")
+            
         except Exception as e:
             logging.error(f"Fehler beim Verarbeiten der Sensor-Daten für {sensor_eui}: {e}")
     
