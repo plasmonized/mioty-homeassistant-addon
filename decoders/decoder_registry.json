@@ -44,6 +44,16 @@
       "decoder_name": "febris_universal",
       "assigned_at": 1759136415.7541065,
       "has_application_key": false
+    },
+    "FCA84A03000013CA": {
+      "decoder_name": "febris_universal",
+      "assigned_at": 1759138558.3650234,
+      "has_application_key": false
+    },
+    "FCA84A03000003BD": {
+      "decoder_name": "febris_universal",
+      "assigned_at": 1759143229.001585,
+      "has_application_key": false
     }
   },
   "decoder_files": {
@@ -126,6 +136,53 @@
       "supported_devices": [],
       "payload_format": {},
       "created_at": 1759135422.2439494
+    },
+    "temp_humidity_blueprint": {
+      "type": "blueprint",
+      "file_path": "decoders/temp_humidity_blueprint.json",
+      "name": "Temperature Humidity Sensor",
+      "version": "1.0",
+      "description": "Standard Temperature/Humidity Sensor Blueprint",
+      "supported_devices": [
+        "TH_SENSOR_V1",
+        "TH_SENSOR_V2"
+      ],
+      "payload_format": {
+        "temperature": {
+          "type": "uint16",
+          "length": 2,
+          "scale": 0.1,
+          "offset": -40.0,
+          "unit": "\u00b0C",
+          "description": "Temperature measurement"
+        },
+        "humidity": {
+          "type": "uint16",
+          "length": 2,
+          "scale": 0.01,
+          "offset": 0.0,
+          "unit": "%",
+          "description": "Relative humidity"
+        },
+        "battery": {
+          "type": "uint8",
+          "length": 1,
+          "scale": 0.1,
+          "offset": 0.0,
+          "unit": "V",
+          "description": "Battery voltage"
+        }
+      },
+      "created_at": 1759137538.1618006
+    },
+    "temp_humidity_sentinum": {
+      "type": "javascript",
+      "file_path": "decoders/temp_humidity_sentinum.js",
+      "name": "Sentinum Temperature Humidity Decoder",
+      "version": "1.0",
+      "description": "Decodes temperature and humidity sensor data",
+      "supported_devices": [],
+      "created_at": 1759137538.1618006
     }
   }
 }

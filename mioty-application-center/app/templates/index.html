@@ -323,7 +323,7 @@
             </div>
             
             <div id="livedata-section" style="margin-top: 40px;">
-                <h2>📊 Live-Daten (Letzte 10 Nachrichten)</h2>
+                <h2>📊 Live-Daten (Letzten 10 Sensoren mit je 3 Nachrichten)</h2>
                 <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #17a2b8;">
                     <div id="livedata-list">
                         <div style="text-align: center; color: #6c757d; padding: 20px;">
@@ -757,58 +757,77 @@
             };
         }
         
-        // Live-Daten laden (letzte 10 Nachrichten)
+        // Live-Daten laden (letzten 10 Sensoren mit je 3 Nachrichten)
         async function loadLiveData() {
             try {
                 const response = await fetch(getCacheBusterURL('/api/livedata'));
-                const liveMessages = await response.json();
+                const liveData = await response.json();
                 
                 const livedataList = document.getElementById('livedata-list');
                 
-                if (liveMessages.length === 0) {
-                    livedataList.innerHTML = '<div style="text-align: center; color: #6c757d; padding: 20px;"><i>Keine Live-Nachrichten vorhanden</i></div>';
+                if (!liveData.sensors || liveData.sensors.length === 0) {
+                    livedataList.innerHTML = '<div style="text-align: center; color: #6c757d; padding: 20px;"><i>Keine Live-Daten vorhanden</i></div>';
                     return;
                 }
                 
-                livedataList.innerHTML = liveMessages.map(msg => `
-                    <div style="background: white; margin: 10px 0; padding: 15px; border-radius: 6px; border-left: 4px solid ${msg.has_decoded ? '#28a745' : '#ffc107'}; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                        <div style="display: flex; justify-content: between; align-items: start; margin-bottom: 10px;">
-                            <div style="flex: 1;">
-                                <strong>📡 ${msg.eui}</strong>
-                                <span style="color: #6c757d; font-size: 0.9em; margin-left: 10px;">${msg.time_ago}</span>
-                            </div>
-                            <div style="text-align: right; font-size: 0.85em; color: #6c757d;">
-                                <div>📶 ${msg.rssi} | ${msg.snr}</div>
-                                <div>🔧 ${msg.decoder}</div>
-                            </div>
-                        </div>
-                        
-                        <div style="background: #f8f9fa; padding: 10px; border-radius: 4px; margin-bottom: 10px;">
-                            <div style="font-size: 0.85em; color: #495057;">
-                                <strong>Raw Hex:</strong> <code style="background: #e9ecef; padding: 2px 4px; border-radius: 3px;">${msg.raw_hex || 'N/A'}</code>
-                            </div>
-                        </div>
-                        
-                        ${msg.has_decoded ? `
-                            <div style="background: #d4edda; padding: 10px; border-radius: 4px; border: 1px solid #c3e6cb;">
-                                <div style="font-size: 0.85em; color: #155724;">
-                                    <strong>📊 Interpretierte Daten:</strong><br>
-                                    <pre style="margin: 5px 0 0 0; white-space: pre-wrap; font-family: monospace; font-size: 0.8em;">${JSON.stringify(msg.decoded_data, null, 2)}</pre>
+                // Gruppiert nach Sensoren anzeigen
+                livedataList.innerHTML = liveData.sensors.map(sensor => `
+                    <div style="background: white; margin: 15px 0; padding: 15px; border-radius: 8px; border: 2px solid #007bff; box-shadow: 0 3px 6px rgba(0,0,0,0.1);">
+                        <div style="margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #e9ecef;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <strong style="font-size: 1.1em; color: #007bff;">📡 ${sensor.eui}</strong>
+                                    <span style="background: #007bff; color: white; padding: 2px 6px; border-radius: 10px; font-size: 0.8em; margin-left: 10px;">
+                                        ${sensor.message_count} Nachrichten
+                                    </span>
                                 </div>
                             </div>
-                        ` : `
-                            <div style="background: #fff3cd; padding: 10px; border-radius: 4px; border: 1px solid #ffeaa7;">
-                                <div style="font-size: 0.85em; color: #856404;">
-                                    <strong>⚠️ Rohdaten:</strong> Kein Decoder zugewiesen
+                        </div>
+                        
+                        ${sensor.messages.map((msg, index) => `
+                            <div style="background: ${index === 0 ? '#f8f9fa' : '#ffffff'}; margin: 8px 0; padding: 12px; border-radius: 6px; border-left: 4px solid ${msg.has_decoded ? '#28a745' : '#ffc107'}; ${index === 0 ? 'border: 1px solid #007bff;' : 'border: 1px solid #e9ecef;'}">
+                                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                                    <div style="flex: 1;">
+                                        <span style="font-weight: bold; color: #495057;">#${index + 1}</span>
+                                        <span style="color: #6c757d; font-size: 0.9em; margin-left: 8px;">${msg.time_ago}</span>
+                                        ${index === 0 ? '<span style="background: #28a745; color: white; padding: 1px 4px; border-radius: 3px; font-size: 0.75em; margin-left: 6px;">NEUESTE</span>' : ''}
+                                    </div>
+                                    <div style="text-align: right; font-size: 0.85em; color: #6c757d;">
+                                        <div>📶 ${msg.rssi} | ${msg.snr}</div>
+                                        <div>🔧 ${msg.decoder}</div>
+                                    </div>
+                                </div>
+                                
+                                <div style="background: #f8f9fa; padding: 8px; border-radius: 4px; margin-bottom: 8px;">
+                                    <div style="font-size: 0.85em; color: #495057;">
+                                        <strong>Raw Hex:</strong> <code style="background: #e9ecef; padding: 2px 4px; border-radius: 3px;">${msg.raw_hex || 'N/A'}</code>
+                                    </div>
+                                </div>
+                                
+                                ${msg.has_decoded ? `
+                                    <div style="background: #d4edda; padding: 8px; border-radius: 4px; border: 1px solid #c3e6cb;">
+                                        <div style="font-size: 0.85em; color: #155724;">
+                                            <strong>📊 Interpretierte Daten:</strong><br>
+                                            <pre style="margin: 5px 0 0 0; white-space: pre-wrap; font-family: monospace; font-size: 0.8em;">${JSON.stringify(msg.decoded_data, null, 2)}</pre>
+                                        </div>
+                                    </div>
+                                ` : `
+                                    <div style="background: #fff3cd; padding: 8px; border-radius: 4px; border: 1px solid #ffeaa7;">
+                                        <div style="font-size: 0.85em; color: #856404;">
+                                            <strong>⚠️ Rohdaten:</strong> Kein Decoder zugewiesen
+                                        </div>
+                                    </div>
+                                `}
+                                
+                                <div style="font-size: 0.75em; color: #6c757d; margin-top: 6px; text-align: right;">
+                                    ${msg.timestamp}
                                 </div>
                             </div>
-                        `}
-                        
-                        <div style="font-size: 0.75em; color: #6c757d; margin-top: 8px; text-align: right;">
-                            ${msg.timestamp}
-                        </div>
+                        `).join('')}
                     </div>
                 `).join('');
+                
+                console.log(`📊 Live-Daten geladen: ${liveData.sensors.length} Sensoren mit insgesamt ${liveData.sensors.reduce((sum, s) => sum + s.messages.length, 0)} Nachrichten`);
                 
             } catch (error) {
                 console.error('Live data loading error:', error);

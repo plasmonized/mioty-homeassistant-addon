@@ -10,6 +10,8 @@ import json
 import time
 import logging
 import threading
+from collections import OrderedDict, deque
+from datetime import datetime
 from typing import Dict, Any
 
 # Import modules
@@ -37,7 +39,9 @@ class BSSCIAddon:
         self.running = False
         self.sensors = {}
         self.base_stations = {}
-        self.live_messages = []  # Store last 10 live messages with raw + decoded data
+        # Live-Daten: Letzten 10 Sensoren mit je 3 Nachrichten
+        self.live_sensors = OrderedDict()  # EUI -> deque(maxlen=3) of messages
+        self.live_lock = threading.Lock()  # Thread-safe für MQTT/Web
         
         # Sensor Activity Tracking für Warnungen
         self.sensor_last_seen = {}  # EUI -> timestamp
@@ -369,7 +373,7 @@ class BSSCIAddon:
             # Nur noch UNIFIED DISCOVERY - EIN sauberes Topic pro Sensor mit JSON State
             # decoded_payload Daten werden bereits über die normale Discovery verarbeitet
             
-            # 🚀 LIVE-NACHRICHTEN SPEICHERN (für Dashboard)
+            # 🚀 LIVE-NACHRICHTEN SPEICHERN (neue Struktur: 10 Sensoren × 3 Nachrichten)
             live_message = {
                 'timestamp': current_time,
                 'eui': sensor_eui,
@@ -381,12 +385,10 @@ class BSSCIAddon:
                 'signal_quality': signal_quality
             }
             
-            # Nur die letzten 10 Nachrichten behalten
-            self.live_messages.insert(0, live_message)
-            if len(self.live_messages) > 10:
-                self.live_messages = self.live_messages[:10]
+            # Thread-safe Live-Message speichern
+            self._add_live_message(sensor_eui, live_message)
             
-            logging.info(f"💾 Live-Nachricht gespeichert für {sensor_eui} (Total: {len(self.live_messages)})")
+            logging.info(f"💾 Live-Nachricht für {sensor_eui} gespeichert (Sensoren: {len(self.live_sensors)})")
             
         except Exception as e:
             logging.error(f"Fehler beim Verarbeiten der Sensor-Daten für {sensor_eui}: {e}")
@@ -1397,9 +1399,53 @@ class BSSCIAddon:
         """Gibt Liste aller Sensoren zurück."""
         return self.sensors.copy()
     
+    def _add_live_message(self, sensor_eui: str, message: Dict[str, Any]):
+        """Thread-safe: Füge Live-Nachricht für spezifischen Sensor hinzu."""
+        with self.live_lock:
+            # Sensor an das Ende verschieben (Most Recently Used)
+            if sensor_eui in self.live_sensors:
+                self.live_sensors.move_to_end(sensor_eui)
+            else:
+                # Neuen Sensor hinzufügen
+                self.live_sensors[sensor_eui] = deque(maxlen=3)
+            
+            # Nachricht zu Sensor hinzufügen (neue Nachrichten am Anfang)
+            self.live_sensors[sensor_eui].appendleft(message)
+            
+            # Maximal 10 Sensoren behalten
+            while len(self.live_sensors) > 10:
+                oldest_sensor = next(iter(self.live_sensors))  # Erste (älteste) EUI
+                removed_sensor = self.live_sensors.pop(oldest_sensor, None)
+                if removed_sensor:
+                    logging.info(f"🗑️ Sensor {oldest_sensor} aus Live-Daten entfernt (>10 Sensoren)")
+    
+    def get_live_messages_grouped(self, limit_sensors: int = 10, limit_messages: int = 3):
+        """Thread-safe: Gibt gruppierte Live-Nachrichten zurück (letzten X Sensoren mit Y Nachrichten)."""
+        with self.live_lock:
+            result = {
+                'sensors': [],
+                'sensor_count': len(self.live_sensors)
+            }
+            
+            # Sensoren in umgekehrter Reihenfolge (neueste zuerst)
+            for sensor_eui in reversed(list(self.live_sensors.keys())[-limit_sensors:]):
+                messages = list(self.live_sensors[sensor_eui])[:limit_messages]  # Neueste zuerst
+                result['sensors'].append({
+                    'eui': sensor_eui,
+                    'message_count': len(messages),
+                    'messages': messages
+                })
+            
+            return result
+    
     def get_live_messages(self):
-        """Gibt die letzten 10 Live-Nachrichten zurück (Rohdaten + interpretiert)."""
-        return self.live_messages.copy()
+        """Rückwärtskompatibilität: Gibt flache Liste der letzten Nachrichten zurück."""
+        grouped = self.get_live_messages_grouped()
+        flat_messages = []
+        for sensor_data in grouped['sensors']:
+            for msg in sensor_data['messages']:
+                flat_messages.append(msg)
+        return flat_messages
     
     def get_basestation_list(self) -> Dict[str, Any]:
         """Gibt Liste aller Base Stations zurück."""

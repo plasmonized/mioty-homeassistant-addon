@@ -390,13 +390,53 @@ class WebGUI:
         
         @self.app.route('/api/livedata')
         def get_live_data():
-            """API: Letzten 10 Live-Nachrichten (Rohdaten + interpretiert)."""
+            """API: Letzten 10 Sensoren mit je 3 Live-Nachrichten (gruppiert)."""
+            if not self.addon:
+                return jsonify({"error": "Add-on nicht verfügbar"}), 500
+            
+            # Neue gruppierte Live-Daten abrufen
+            grouped_data = self.addon.get_live_messages_grouped()
+            
+            # Format für Frontend optimieren
+            formatted_result = {
+                'sensor_count': grouped_data.get('sensor_count', 0),
+                'sensors': []
+            }
+            
+            for sensor_data in grouped_data.get('sensors', []):
+                formatted_messages = []
+                for msg in sensor_data.get('messages', []):
+                    formatted_msg = {
+                        'timestamp': self._format_timestamp(msg.get('timestamp', 0)),
+                        'time_ago': self._get_time_ago(msg.get('timestamp', 0)),
+                        'decoder': msg.get('decoder_name', 'No Decoder'),
+                        'signal_quality': msg.get('signal_quality', 'Unknown'),
+                        'rssi': f"{msg.get('rssi', 'N/A')} dBm" if msg.get('rssi') != 'N/A' else 'N/A',
+                        'snr': f"{msg.get('snr', 'N/A')} dB" if msg.get('snr') != 'N/A' else 'N/A',
+                        'raw_data': msg.get('raw_data', []),
+                        'raw_hex': ''.join([f'{b:02X}' for b in msg.get('raw_data', [])]) if msg.get('raw_data') else '',
+                        'decoded_data': msg.get('decoded_data'),
+                        'has_decoded': bool(msg.get('decoded_data'))
+                    }
+                    formatted_messages.append(formatted_msg)
+                
+                formatted_result['sensors'].append({
+                    'eui': sensor_data.get('eui', 'Unknown'),
+                    'message_count': sensor_data.get('message_count', 0),
+                    'messages': formatted_messages
+                })
+            
+            return jsonify(formatted_result)
+        
+        @self.app.route('/api/livedata/flat')  
+        def get_live_data_flat():
+            """API: Rückwärtskompatible flache Liste der Live-Nachrichten."""
             if not self.addon:
                 return jsonify({"error": "Add-on nicht verfügbar"}), 500
             
             live_messages = self.addon.get_live_messages()
             
-            # Format für Frontend optimieren
+            # Format für Frontend optimieren  
             formatted_messages = []
             for msg in live_messages:
                 formatted_msg = {
