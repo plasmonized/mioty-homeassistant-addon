@@ -388,6 +388,34 @@ class WebGUI:
                 logging.error(f"❌ Fehler beim Löschen der Warnung: {e}")
                 return jsonify({"error": "Fehler beim Löschen der Warnung"}), 500
         
+        @self.app.route('/api/livedata')
+        def get_live_data():
+            """API: Letzten 10 Live-Nachrichten (Rohdaten + interpretiert)."""
+            if not self.addon:
+                return jsonify({"error": "Add-on nicht verfügbar"}), 500
+            
+            live_messages = self.addon.get_live_messages()
+            
+            # Format für Frontend optimieren
+            formatted_messages = []
+            for msg in live_messages:
+                formatted_msg = {
+                    'timestamp': self._format_timestamp(msg.get('timestamp', 0)),
+                    'time_ago': self._get_time_ago(msg.get('timestamp', 0)),
+                    'eui': msg.get('eui', 'Unknown'),
+                    'decoder': msg.get('decoder_name', 'No Decoder'),
+                    'signal_quality': msg.get('signal_quality', 'Unknown'),
+                    'rssi': f"{msg.get('rssi', 'N/A')} dBm" if msg.get('rssi') != 'N/A' else 'N/A',
+                    'snr': f"{msg.get('snr', 'N/A')} dB" if msg.get('snr') != 'N/A' else 'N/A',
+                    'raw_data': msg.get('raw_data', []),
+                    'raw_hex': ''.join([f'{b:02X}' for b in msg.get('raw_data', [])]) if msg.get('raw_data') else '',
+                    'decoded_data': msg.get('decoded_data'),
+                    'has_decoded': bool(msg.get('decoded_data'))
+                }
+                formatted_messages.append(formatted_msg)
+            
+            return jsonify(formatted_messages)
+        
         @self.app.route('/api/status')
         def get_status():
             """API: System- und Verbindungsstatus."""
@@ -2347,6 +2375,24 @@ class WebGUI:
             except:
                 return "Unbekannt"
         return "Nie"
+    
+    def _get_time_ago(self, timestamp):
+        """Berechne 'vor X Minuten/Stunden' für Frontend."""
+        if not timestamp or timestamp <= 0:
+            return "Nie"
+        
+        import time
+        
+        seconds_ago = time.time() - timestamp
+        
+        if seconds_ago < 60:
+            return f"vor {int(seconds_ago)}s"
+        elif seconds_ago < 3600:
+            return f"vor {int(seconds_ago / 60)}min"
+        elif seconds_ago < 86400:
+            return f"vor {int(seconds_ago / 3600)}h"
+        else:
+            return f"vor {int(seconds_ago / 86400)}d"
 
     def run(self):
         """Starte Flask Server."""

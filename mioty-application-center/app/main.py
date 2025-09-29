@@ -37,6 +37,7 @@ class BSSCIAddon:
         self.running = False
         self.sensors = {}
         self.base_stations = {}
+        self.live_messages = []  # Store last 10 live messages with raw + decoded data
         
         # Sensor Activity Tracking für Warnungen
         self.sensor_last_seen = {}  # EUI -> timestamp
@@ -426,6 +427,23 @@ class BSSCIAddon:
                 data.get('rssi', -100)
             )
         }
+        
+        # Live-Message für Dashboard speichern
+        live_message = {
+            'timestamp': time.time(),
+            'eui': sensor_eui,
+            'raw_data': data.get('data', []),
+            'decoded_data': decoded_payload.get('data', {}) if decoded_payload and decoded_payload.get('decoded') else None,
+            'decoder_name': decoded_payload.get('decoder_name', 'No Decoder') if decoded_payload else 'No Decoder',
+            'rssi': data.get('rssi', 'N/A'),
+            'snr': data.get('snr', 'N/A'),
+            'signal_quality': self.assess_signal_quality(data.get('snr', 0), data.get('rssi', -100))
+        }
+        
+        # Nur die letzten 10 Nachrichten behalten
+        self.live_messages.insert(0, live_message)
+        if len(self.live_messages) > 10:
+            self.live_messages = self.live_messages[:10]
         
         # ✅ NEUE EINHEITLICHE MQTT DISCOVERY 
         if self.config['auto_discovery'] and self.mqtt_manager and decoded_payload:
@@ -1359,6 +1377,10 @@ class BSSCIAddon:
     def get_sensor_list(self) -> Dict[str, Any]:
         """Gibt Liste aller Sensoren zurück."""
         return self.sensors.copy()
+    
+    def get_live_messages(self):
+        """Gibt die letzten 10 Live-Nachrichten zurück (Rohdaten + interpretiert)."""
+        return self.live_messages.copy()
     
     def get_basestation_list(self) -> Dict[str, Any]:
         """Gibt Liste aller Base Stations zurück."""
