@@ -35,7 +35,7 @@ function decodeUplink(input) {
         };
         
         decoded.networkBaseType = 'mioty';
-        decoded.networkSubType = 'mioty';
+        decoded.networkSubType = 'linqs';
         
         var it = 7;
         
