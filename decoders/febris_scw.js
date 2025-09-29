@@ -40,9 +40,18 @@ function decodeUplink(input) {
             
             // Wandtemperatur und Feuchte enthalten wenn subversion bit 2 = 1
             if (decoded.product_version & 0x04) {
-                decoded.wall_temperature = ((bytes[it++] << 8) | bytes[it++]) / 10 - 100;
-                decoded.therm_temperature = ((bytes[it++] << 8) | bytes[it++]) / 10 - 100;
-                decoded.wall_humidity = bytes[it++];
+                decoded.wall_temperature = {
+                    "value": ((bytes[it++] << 8) | bytes[it++]) / 10 - 100,
+                    "unit": "°C"
+                };
+                decoded.therm_temperature = {
+                    "value": ((bytes[it++] << 8) | bytes[it++]) / 10 - 100,
+                    "unit": "°C"
+                };
+                decoded.wall_humidity = {
+                    "value": bytes[it++],
+                    "unit": "%"
+                };
             }
     
         }else{
@@ -71,9 +80,18 @@ function decodeUplink(input) {
             
             // Wandtemperatur und Feuchte enthalten wenn subversion bit 2 = 1
             if (decoded.product_version & 0x04) {
-                decoded.wall_temperature = bytes[it++] - 100;
-                decoded.therm_temperature = bytes[it++] - 100;
-                decoded.wall_humidity = bytes[it++];
+                decoded.wall_temperature = {
+                    "value": bytes[it++] - 100,
+                    "unit": "°C"
+                };
+                decoded.therm_temperature = {
+                    "value": bytes[it++] - 100,
+                    "unit": "°C"
+                };
+                decoded.wall_humidity = {
+                    "value": bytes[it++],
+                    "unit": "%"
+                };
     
             }
     
