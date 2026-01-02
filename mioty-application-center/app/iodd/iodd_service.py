@@ -306,13 +306,103 @@ class IODDService:
             logging.error(f"Failed to create parser for {iodd_filename}: {e}")
             return None
     
+    def _extract_process_data(self, payload_hex: str) -> Dict[str, Any]:
+        """
+        Extract process data from mioty-io-link adapter packet.
+        
+        Packet structure:
+        - Control (1 Byte): Bit0=PD-in, Bit1=PD-out, Bit2=Event, Bit3=Adapter Event
+        - PD-in length (1 Byte): if Control Bit 0 == 1
+        - PD-out length (1 Byte): if Control Bit 1 == 1
+        - Vendor ID (2 Bytes): Mandatory
+        - Device ID (4 Bytes): Mandatory
+        - [PD] (x Bytes): Process Data (PD-in + PD-out)
+        - [Event] (3 Bytes): if Control Bit 2 == 1
+        - [Adapter Event] (1 Byte): if Control Bit 3 == 1
+        
+        Args:
+            payload_hex: Full adapter payload as hex string
+            
+        Returns:
+            Dict with extracted process_data_hex, header info, or error
+        """
+        try:
+            payload_bytes = bytes.fromhex(payload_hex.replace(' ', '').replace('0x', ''))
+            
+            if len(payload_bytes) < 8:
+                return {'error': 'Payload too short for mioty-io-link header', 'process_data_hex': payload_hex}
+            
+            offset = 0
+            
+            # Control byte
+            control = payload_bytes[offset]
+            offset += 1
+            
+            has_pd_in = (control & 0x01) != 0
+            has_pd_out = (control & 0x02) != 0
+            has_event = (control & 0x04) != 0
+            has_adapter_event = (control & 0x08) != 0
+            
+            pd_in_length = 0
+            pd_out_length = 0
+            
+            # PD-in length
+            if has_pd_in:
+                pd_in_length = payload_bytes[offset]
+                offset += 1
+            
+            # PD-out length
+            if has_pd_out:
+                pd_out_length = payload_bytes[offset]
+                offset += 1
+            
+            # Vendor ID (2 bytes)
+            if offset + 2 > len(payload_bytes):
+                return {'error': 'Payload too short for Vendor ID', 'process_data_hex': payload_hex}
+            vendor_id = int.from_bytes(payload_bytes[offset:offset+2], 'big')
+            offset += 2
+            
+            # Device ID (4 bytes)
+            if offset + 4 > len(payload_bytes):
+                return {'error': 'Payload too short for Device ID', 'process_data_hex': payload_hex}
+            device_id = int.from_bytes(payload_bytes[offset:offset+4], 'big')
+            offset += 4
+            
+            # Process Data
+            pd_total_length = pd_in_length + pd_out_length
+            if pd_total_length > 0 and offset + pd_total_length <= len(payload_bytes):
+                process_data = payload_bytes[offset:offset + pd_total_length]
+                process_data_hex = process_data.hex().upper()
+            else:
+                process_data_hex = payload_hex
+            
+            logging.debug(f"mioty-io-link header: control=0x{control:02X}, pd_in={pd_in_length}, "
+                         f"pd_out={pd_out_length}, vendor=0x{vendor_id:04X}, device=0x{device_id:08X}")
+            logging.debug(f"Extracted process data: {process_data_hex} ({pd_total_length} bytes)")
+            
+            return {
+                'success': True,
+                'process_data_hex': process_data_hex,
+                'control': control,
+                'pd_in_length': pd_in_length,
+                'pd_out_length': pd_out_length,
+                'vendor_id': vendor_id,
+                'device_id': device_id,
+                'has_event': has_event,
+                'has_adapter_event': has_adapter_event
+            }
+            
+        except Exception as e:
+            logging.error(f"Failed to extract process data: {e}")
+            return {'error': str(e), 'process_data_hex': payload_hex}
+    
     def decode_process_data(self, sensor_eui: str, payload_hex: str) -> Dict[str, Any]:
         """
         Decode IO-Link process data for an adapter
         
         Args:
             sensor_eui: The adapter EUI
-            payload_hex: The raw payload as hex string
+            payload_hex: The raw payload as hex string (full mioty-io-link packet)
             
         Returns:
             Decoded data dictionary
@@ -334,6 +424,12 @@ class IODDService:
             }
         
         try:
+            # Extract process data from mioty-io-link packet header
+            extraction = self._extract_process_data(payload_hex)
+            process_data_hex = extraction.get('process_data_hex', payload_hex)
+            
+            logging.info(f"🔧 IODD decode: raw={payload_hex} → process_data={process_data_hex}")
+            
             process_data_vars = parser.get_process_data_in()
             
             if not process_data_vars:
@@ -344,7 +440,7 @@ class IODDService:
                 }
             
             decoder = ProcessDataDecoder(process_data_vars)
-            decoded = decoder.decode(payload_hex)
+            decoded = decoder.decode(process_data_hex)
             
             device_info = parser.get_device_info()
             
@@ -354,7 +450,14 @@ class IODDService:
                 'iodd_file': iodd_filename,
                 'device_info': device_info,
                 'data': decoded,
-                'raw_payload': payload_hex
+                'raw_payload': payload_hex,
+                'process_data': process_data_hex,
+                'header_info': {
+                    'vendor_id': extraction.get('vendor_id'),
+                    'device_id': extraction.get('device_id'),
+                    'pd_in_length': extraction.get('pd_in_length'),
+                    'pd_out_length': extraction.get('pd_out_length')
+                }
             }
             
         except Exception as e:
