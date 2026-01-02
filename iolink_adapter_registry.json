@@ -1,0 +1,14 @@
+{
+  "adapters": {
+    "74731D0000000016": {
+      "eui": "74731D0000000016",
+      "name": "UG Pooltechnik IO-Link Adapter",
+      "description": "LDH292",
+      "registered_at": "2026-01-02T11:02:12.695232",
+      "assigned_iodd": null,
+      "io_link_devices": []
+    }
+  },
+  "iodd_assignments": {},
+  "last_updated": "2026-01-02T11:02:12.695245"
+}

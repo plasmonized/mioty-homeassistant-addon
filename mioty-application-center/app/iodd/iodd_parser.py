@@ -554,7 +554,7 @@ class IODDParser:
         info = {}
         
         try:
-            device_id_elems = self.root.xpath("//*[local-name()='DeviceIdentity']")
+            device_id_elems = _find_descendants(self.root, 'DeviceIdentity')
             if device_id_elems:
                 device_id = device_id_elems[0]
                 info['vendor_id'] = device_id.get('vendorId')
@@ -576,7 +576,7 @@ class IODDParser:
         variables = []
         
         try:
-            pdin_elems = self.root.xpath("//*[local-name()='ProcessDataIn']")
+            pdin_elems = _find_descendants(self.root, 'ProcessDataIn')
             if not pdin_elems:
                 return []
             
@@ -602,7 +602,7 @@ class IODDParser:
         variables = []
         
         try:
-            pdout_elems = self.root.xpath("//*[local-name()='ProcessDataOut']")
+            pdout_elems = _find_descendants(self.root, 'ProcessDataOut')
             if not pdout_elems:
                 return []
             
