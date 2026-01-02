@@ -1,9 +1,5 @@
 {
   "sensor_decoders": {
-    "74731D0000000016": {
-      "decoder_name": "ifm-000429-20180717-IODD1.1-de",
-      "assigned_at": 1757334055.9333057
-    },
     "FCA84A03000003BC": {
       "decoder_name": "febris_universal",
       "assigned_at": 1759135913.333441,
@@ -76,25 +72,6 @@
       "description": "Sentinum JavaScript Decoder",
       "supported_devices": [],
       "created_at": 1756716940.7003171
-    },
-    "ifm-000429-20180717-IODD1.1-de": {
-      "type": "iodd",
-      "file_path": "decoders/ifm-000429-20180717-IODD1.1-de.xml",
-      "filename": "ifm-000429-20180717-IODD1.1-de.xml",
-      "name": "ifm electronic KQ Kapazitiver Sensor (000429)",
-      "display_name": "ifm electronic KQ Kapazitiver Sensor (000429)",
-      "version": "1.0",
-      "description": "IODD f\u00fcr ifm electronic KQ Kapazitiver Sensor (000429) (VID:310, DID:29441)",
-      "vendor_id": 310,
-      "device_id": 29441,
-      "vendor_name": "ifm electronic",
-      "device_name": "KQ Kapazitiver Sensor (000429)",
-      "payload_length": 0,
-      "data_fields": [],
-      "supported_devices": [
-        "VID_310_DID_29441"
-      ],
-      "created_at": 1756738871.7125535
     },
     "juno_th": {
       "type": "javascript",

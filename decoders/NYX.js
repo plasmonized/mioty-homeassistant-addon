@@ -8,7 +8,7 @@ function decodeUplink(input) {
 
  
 
-    if (input.fPort == 1) { //TELEMETRY 
+    if (true) { //TELEMETRY (mioty: kein fPort) 
 
  
 
