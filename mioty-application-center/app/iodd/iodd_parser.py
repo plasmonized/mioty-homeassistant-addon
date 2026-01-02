@@ -513,7 +513,23 @@ class IODDParser:
                 if ref_id:
                     referenced = self.datatype_catalog.get(ref_id)
                     if referenced is not None:
-                        sub_vars = self._parse_type(referenced, item_offset, parent_path)
+                        sub_vars = self._parse_type(referenced, item_offset, parent_path, item_name)
+                        
+                        # Apply scaling/unit from referenced datatype if not already set
+                        for var in sub_vars:
+                            if var.scale_gradient is None or var.scale_offset is None:
+                                ref_gradient, ref_offset = self._get_scaling_info(referenced)
+                                if var.scale_gradient is None and ref_gradient is not None:
+                                    var.scale_gradient = ref_gradient
+                                if var.scale_offset is None and ref_offset is not None:
+                                    var.scale_offset = ref_offset
+                            
+                            # Get unit from referenced datatype
+                            if var.unit is None:
+                                unit_code = referenced.get('unitCode')
+                                if unit_code:
+                                    var.unit = self._decode_unit_code(unit_code)
+                        
                         variables.extend(sub_vars)
                         if sub_vars:
                             current_offset = sub_vars[-1].bit_offset + sub_vars[-1].bit_length

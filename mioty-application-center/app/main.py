@@ -1074,6 +1074,7 @@ class BSSCIAddon:
         if decoded_payload is None:
             decoded_payload = {}
         decoded_data = decoded_payload.get('data', {})
+        iodd_units = decoded_payload.get('units', {})
         
         # Device Information extrahieren
         device_info = self._get_device_info_from_decoder(sensor_eui, device_id)
@@ -1179,6 +1180,10 @@ class BSSCIAddon:
                     "name": field_name.replace('_', ' ').title(),
                     "icon": "mdi:information-outline"
                 }
+            
+            # Verwende IODD-Einheit falls vorhanden und keine Standard-Einheit definiert
+            if field_name in iodd_units and "unit_of_measurement" not in config:
+                config["unit_of_measurement"] = iodd_units[field_name]
             
             # Value Template für komplexe Objekte und direkte Werte
             config["value_template"] = f"{{{{ value_json.{field_name}.value | default(value_json.{field_name}) }}}}"

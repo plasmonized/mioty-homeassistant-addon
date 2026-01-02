@@ -183,11 +183,19 @@ class DecoderManager:
                 
                 if iodd_result.get('success'):
                     decoded_data = {}
+                    decoded_units = {}
                     for var_name, var_info in iodd_result.get('data', {}).items():
                         if isinstance(var_info, dict) and 'value' in var_info:
                             clean_name = var_info.get('raw_name', var_name)
                             clean_name = clean_name.lower().replace(' ', '_').replace('-', '_')
-                            decoded_data[clean_name] = var_info['value']
+                            value = var_info['value']
+                            # Round floats to 2 decimal places for display
+                            if isinstance(value, float):
+                                value = round(value, 2)
+                            decoded_data[clean_name] = value
+                            # Store unit info
+                            if var_info.get('unit'):
+                                decoded_units[clean_name] = var_info['unit']
                         else:
                             decoded_data[var_name] = var_info
                     
@@ -204,6 +212,7 @@ class DecoderManager:
                         'device_info': device_info,
                         'iodd_file': assigned_iodd,
                         'data': decoded_data,
+                        'units': decoded_units,
                         'raw_data': iodd_result.get('data', {}),
                         'raw_payload': payload_hex
                     }
