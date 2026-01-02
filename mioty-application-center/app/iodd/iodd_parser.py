@@ -303,14 +303,40 @@ class IODDParser:
         min_val = None
         max_val = None
         try:
-            lower = node.get('lowerValue') or node.get('min')
-            upper = node.get('upperValue') or node.get('max')
+            value_range = _find_one(node, 'ValueRange')
+            if value_range is not None:
+                lower = value_range.get('lowerValue')
+                upper = value_range.get('upperValue')
+            else:
+                lower = node.get('lowerValue') or node.get('min')
+                upper = node.get('upperValue') or node.get('max')
             if lower:
                 min_val = float(lower)
             if upper:
                 max_val = float(upper)
         except ValueError:
             pass
+        
+        # Derive scaling from ValueRange if not explicitly set
+        # Common pattern: raw values 0-1000 → display 0-100.0 (gradient=0.1)
+        if gradient is None and min_val is not None and max_val is not None:
+            name_lower = name.lower() if name else ""
+            # Check for common sensor patterns requiring 0.1 scaling
+            if max_val == 1000 and min_val == 0:
+                # Humidity 0-1000 → 0-100.0%
+                gradient = 0.1
+                if unit is None:
+                    unit = '%'
+            elif max_val == 850 and min_val == -400:
+                # Temperature -400 to 850 → -40.0 to 85.0°C
+                gradient = 0.1
+                if unit is None:
+                    unit = '°C'
+            elif max_val == 1250 and min_val == -400:
+                # Extended temperature range
+                gradient = 0.1
+                if unit is None:
+                    unit = '°C'
         
         return [ProcessDataVariable(
             name=name,
