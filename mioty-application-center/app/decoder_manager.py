@@ -170,7 +170,46 @@ class DecoderManager:
     
     def decode_sensor_payload(self, sensor_eui: str, payload_bytes: List[int], 
                              metadata: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        """Dekodiere Sensor-Payload."""
+        """Dekodiere Sensor-Payload - prüft zuerst auf IO-Link Adapter mit IODD."""
+        sensor_eui_normalized = sensor_eui.upper() if sensor_eui else sensor_eui
+        
+        if self.iodd_service and self.iodd_service.is_adapter(sensor_eui_normalized):
+            adapter_info = self.iodd_service.get_adapter(sensor_eui_normalized)
+            assigned_iodd = self.iodd_service.get_assigned_iodd(sensor_eui_normalized)
+            
+            if assigned_iodd:
+                payload_hex = ''.join(f'{b:02X}' for b in payload_bytes)
+                iodd_result = self.iodd_service.decode_process_data(sensor_eui_normalized, payload_hex)
+                
+                if iodd_result.get('success'):
+                    decoded_data = {}
+                    for var_name, var_info in iodd_result.get('data', {}).items():
+                        if isinstance(var_info, dict) and 'value' in var_info:
+                            clean_name = var_info.get('raw_name', var_name)
+                            clean_name = clean_name.lower().replace(' ', '_').replace('-', '_')
+                            decoded_data[clean_name] = var_info['value']
+                        else:
+                            decoded_data[var_name] = var_info
+                    
+                    device_info = iodd_result.get('device_info', {})
+                    adapter_name = adapter_info.get('name', f"IO-Link {sensor_eui_normalized[-4:]}")
+                    
+                    return {
+                        'decoded': True,
+                        'decoder_name': f"IODD: {device_info.get('device_name', 'IO-Link Device')}",
+                        'decoder_type': 'iodd',
+                        'is_iolink_adapter': True,
+                        'adapter_name': adapter_name,
+                        'adapter_info': adapter_info,
+                        'device_info': device_info,
+                        'iodd_file': assigned_iodd,
+                        'data': decoded_data,
+                        'raw_data': iodd_result.get('data', {}),
+                        'raw_payload': payload_hex
+                    }
+                else:
+                    logging.warning(f"IODD decode failed for {sensor_eui_normalized}: {iodd_result.get('error')}")
+        
         return self.payload_decoder.decode_payload(sensor_eui, payload_bytes, metadata)
     
     def test_decoder(self, decoder_name: str, test_payload: List[int]) -> Dict[str, Any]:

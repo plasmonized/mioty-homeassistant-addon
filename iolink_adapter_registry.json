@@ -9,6 +9,8 @@
       "io_link_devices": []
     }
   },
-  "iodd_assignments": {},
-  "last_updated": "2026-01-02T11:02:12.695245"
+  "iodd_assignments": {
+    "74731D0000000016": "ifm-000539-20201127-IODD1.1.xml"
+  },
+  "last_updated": "2026-01-02T11:06:10.487402"
 }

@@ -557,6 +557,39 @@ class BSSCIAddon:
         except FileNotFoundError:
             pass
         
+        # Prüfe ob IO-Link Adapter mit IODD
+        if hasattr(self, 'decoder_manager') and self.decoder_manager and self.decoder_manager.iodd_service:
+            iodd_service = self.decoder_manager.iodd_service
+            if iodd_service.is_adapter(sensor_eui):
+                adapter_info = iodd_service.get_adapter(sensor_eui)
+                assigned_iodd = iodd_service.get_assigned_iodd(sensor_eui)
+                
+                if adapter_info:
+                    adapter_name = adapter_info.get('name', f"IO-Link Adapter {sensor_eui[-4:]}")
+                    
+                    # Wenn IODD zugewiesen, hole Device-Infos aus IODD
+                    if assigned_iodd:
+                        parser = iodd_service.get_parser(assigned_iodd)
+                        if parser:
+                            iodd_device_info = parser.get_device_info()
+                            device_info.update({
+                                "name": adapter_name,
+                                "model": iodd_device_info.get('device_name', 'IO-Link Device'),
+                                "manufacturer": iodd_device_info.get('vendor_name', 'IO-Link'),
+                                "sw_version": "1.0.5.6.27"
+                            })
+                            logging.info(f"🔌 IO-Link Adapter {sensor_eui}: {device_info['manufacturer']} - {device_info['model']}")
+                            return device_info
+                    
+                    # Fallback ohne IODD
+                    device_info.update({
+                        "name": adapter_name,
+                        "model": "mioty-io-link Adapter",
+                        "manufacturer": "IO-Link",
+                        "sw_version": "1.0.5.6.27"
+                    })
+                    return device_info
+        
         # Prüfe ob Decoder zugewiesen
         if hasattr(self, 'decoder_manager') and self.decoder_manager:
             try:
