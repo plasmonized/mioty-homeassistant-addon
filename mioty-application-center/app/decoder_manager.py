@@ -193,9 +193,11 @@ class DecoderManager:
                             if isinstance(value, float):
                                 value = round(value, 2)
                             decoded_data[clean_name] = value
-                            # Store unit info
-                            if var_info.get('unit'):
-                                decoded_units[clean_name] = var_info['unit']
+                            # Add unit as separate key (like Sentinum sensors)
+                            unit = var_info.get('unit')
+                            if unit:
+                                decoded_units[clean_name] = unit
+                                decoded_data[f"{clean_name}_unit"] = unit
                         else:
                             decoded_data[var_name] = var_info
                     
