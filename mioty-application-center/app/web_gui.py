@@ -228,16 +228,17 @@ class WebGUI:
         
         @self.app.route('/decoders')
         def decoders():
-            """Decoder-Verwaltungsseite."""
-            # Get the ingress path from Home Assistant header
+            """Decoder-Verwaltungsseite mit IO-Link Adapter Management."""
             ingress_path = request.headers.get('X-Ingress-Path', '')
             
-            # Spezielle Ingress-Debugging für Decoder-Seite
-            logging.info("🔧 DECODERS PAGE INGRESS DEBUGGING")
-            logging.info(f"   X-Ingress-Path: {ingress_path}")
-            logging.info(f"   Request URL: {request.url}")
+            logging.info("🔧 DECODERS PAGE - Using new template with IO-Link support")
             
-            return render_template_string(self.get_decoders_template(), ingress_path=ingress_path)
+            template_path = os.path.join(self.app.template_folder, 'decoders.html')
+            if os.path.exists(template_path):
+                return render_template('decoders.html', ingress_path=ingress_path)
+            else:
+                logging.warning("decoders.html not found, using inline template")
+                return render_template_string(self.get_decoders_template(), ingress_path=ingress_path)
         
         @self.app.route('/api/sensors')
         def get_sensors():
@@ -1449,8 +1450,188 @@ class WebGUI:
             if not self.addon or not hasattr(self.addon, 'decoder_manager'):
                 return jsonify({"error": "Decoder Manager nicht verfügbar"}), 500
             
-            adapters = self.addon.decoder_manager.get_iolink_adapters()
+            dm = self.addon.decoder_manager
+            if hasattr(dm, 'iodd_service') and dm.iodd_service:
+                adapters = dm.iodd_service.list_adapters()
+            else:
+                adapters = dm.get_iolink_adapters()
             return jsonify({"adapters": adapters})
+        
+        @self.app.route('/api/iolink/adapter/register', methods=['POST'])
+        def register_iolink_adapter():
+            """API: IO-Link Adapter registrieren."""
+            if not self.addon or not hasattr(self.addon, 'decoder_manager'):
+                return jsonify({"error": "Decoder Manager nicht verfügbar"}), 500
+            
+            dm = self.addon.decoder_manager
+            if not hasattr(dm, 'iodd_service') or not dm.iodd_service:
+                return jsonify({"error": "IODDService nicht verfügbar"}), 500
+            
+            data = request.get_json()
+            sensor_eui = data.get('sensor_eui')
+            if not sensor_eui:
+                return jsonify({"error": "sensor_eui ist erforderlich"}), 400
+            
+            adapter = dm.iodd_service.register_adapter(
+                sensor_eui,
+                name=data.get('name'),
+                description=data.get('description')
+            )
+            return jsonify({"success": True, "adapter": adapter})
+        
+        @self.app.route('/api/iolink/adapter/unregister', methods=['POST'])
+        def unregister_iolink_adapter():
+            """API: IO-Link Adapter deregistrieren."""
+            if not self.addon or not hasattr(self.addon, 'decoder_manager'):
+                return jsonify({"error": "Decoder Manager nicht verfügbar"}), 500
+            
+            dm = self.addon.decoder_manager
+            if not hasattr(dm, 'iodd_service') or not dm.iodd_service:
+                return jsonify({"error": "IODDService nicht verfügbar"}), 500
+            
+            data = request.get_json()
+            sensor_eui = data.get('sensor_eui')
+            if not sensor_eui:
+                return jsonify({"error": "sensor_eui ist erforderlich"}), 400
+            
+            success = dm.iodd_service.unregister_adapter(sensor_eui)
+            if success:
+                return jsonify({"success": True})
+            return jsonify({"error": "Adapter nicht gefunden"}), 404
+        
+        @self.app.route('/api/iodd/list')
+        def list_iodds():
+            """API: Liste verfügbarer IODD-Dateien."""
+            if not self.addon or not hasattr(self.addon, 'decoder_manager'):
+                return jsonify({"error": "Decoder Manager nicht verfügbar"}), 500
+            
+            dm = self.addon.decoder_manager
+            if not hasattr(dm, 'iodd_service') or not dm.iodd_service:
+                return jsonify({"error": "IODDService nicht verfügbar"}), 500
+            
+            iodds = dm.iodd_service.list_available_iodds()
+            return jsonify({"iodds": iodds})
+        
+        @self.app.route('/api/iodd/upload', methods=['POST'])
+        def upload_iodd():
+            """API: IODD-Datei hochladen."""
+            if not self.addon or not hasattr(self.addon, 'decoder_manager'):
+                return jsonify({"error": "Decoder Manager nicht verfügbar"}), 500
+            
+            dm = self.addon.decoder_manager
+            if not hasattr(dm, 'iodd_service') or not dm.iodd_service:
+                return jsonify({"error": "IODDService nicht verfügbar"}), 500
+            
+            if 'file' not in request.files:
+                return jsonify({"error": "Keine Datei hochgeladen"}), 400
+            
+            file = request.files['file']
+            if file.filename == '':
+                return jsonify({"error": "Keine Datei ausgewählt"}), 400
+            
+            if not file.filename.lower().endswith('.xml'):
+                return jsonify({"error": "Nur XML-Dateien erlaubt"}), 400
+            
+            try:
+                result = dm.iodd_service.upload_iodd(file.read(), file.filename)
+                return jsonify(result)
+            except Exception as e:
+                return jsonify({"error": str(e)}), 500
+        
+        @self.app.route('/api/iodd/assign', methods=['POST'])
+        def assign_iodd_new():
+            """API: IODD einem Adapter zuweisen (neue API)."""
+            if not self.addon or not hasattr(self.addon, 'decoder_manager'):
+                return jsonify({"error": "Decoder Manager nicht verfügbar"}), 500
+            
+            dm = self.addon.decoder_manager
+            if not hasattr(dm, 'iodd_service') or not dm.iodd_service:
+                return jsonify({"error": "IODDService nicht verfügbar"}), 500
+            
+            data = request.get_json()
+            sensor_eui = data.get('sensor_eui')
+            iodd_filename = data.get('iodd_filename')
+            
+            if not sensor_eui or not iodd_filename:
+                return jsonify({"error": "sensor_eui und iodd_filename erforderlich"}), 400
+            
+            success = dm.iodd_service.assign_iodd(sensor_eui, iodd_filename)
+            if success:
+                return jsonify({"success": True})
+            return jsonify({"error": "Zuweisung fehlgeschlagen"}), 500
+        
+        @self.app.route('/api/iodd/unassign', methods=['POST'])
+        def unassign_iodd():
+            """API: IODD-Zuweisung entfernen."""
+            if not self.addon or not hasattr(self.addon, 'decoder_manager'):
+                return jsonify({"error": "Decoder Manager nicht verfügbar"}), 500
+            
+            dm = self.addon.decoder_manager
+            if not hasattr(dm, 'iodd_service') or not dm.iodd_service:
+                return jsonify({"error": "IODDService nicht verfügbar"}), 500
+            
+            data = request.get_json()
+            sensor_eui = data.get('sensor_eui')
+            
+            if not sensor_eui:
+                return jsonify({"error": "sensor_eui erforderlich"}), 400
+            
+            dm.iodd_service.unassign_iodd(sensor_eui)
+            return jsonify({"success": True})
+        
+        @self.app.route('/api/iodd/info/<filename>')
+        def get_iodd_info(filename):
+            """API: IODD-Datei Informationen."""
+            if not self.addon or not hasattr(self.addon, 'decoder_manager'):
+                return jsonify({"error": "Decoder Manager nicht verfügbar"}), 500
+            
+            dm = self.addon.decoder_manager
+            if not hasattr(dm, 'iodd_service') or not dm.iodd_service:
+                return jsonify({"error": "IODDService nicht verfügbar"}), 500
+            
+            info = dm.iodd_service.get_iodd_info(filename)
+            return jsonify(info)
+        
+        @self.app.route('/api/iodd/test', methods=['POST'])
+        def test_iodd_decode():
+            """API: IODD-Dekodierung testen."""
+            if not self.addon or not hasattr(self.addon, 'decoder_manager'):
+                return jsonify({"error": "Decoder Manager nicht verfügbar"}), 500
+            
+            dm = self.addon.decoder_manager
+            if not hasattr(dm, 'iodd_service') or not dm.iodd_service:
+                return jsonify({"error": "IODDService nicht verfügbar"}), 500
+            
+            data = request.get_json()
+            iodd_filename = data.get('iodd_filename')
+            payload_hex = data.get('payload_hex', '')
+            
+            if not iodd_filename:
+                return jsonify({"error": "iodd_filename erforderlich"}), 400
+            
+            result = dm.iodd_service.test_decode(iodd_filename, payload_hex)
+            return jsonify(result)
+        
+        @self.app.route('/api/iodd/delete', methods=['POST'])
+        def delete_iodd():
+            """API: IODD-Datei löschen."""
+            if not self.addon or not hasattr(self.addon, 'decoder_manager'):
+                return jsonify({"error": "Decoder Manager nicht verfügbar"}), 500
+            
+            dm = self.addon.decoder_manager
+            if not hasattr(dm, 'iodd_service') or not dm.iodd_service:
+                return jsonify({"error": "IODDService nicht verfügbar"}), 500
+            
+            data = request.get_json()
+            filename = data.get('filename')
+            
+            if not filename:
+                return jsonify({"error": "filename erforderlich"}), 400
+            
+            success = dm.iodd_service.delete_iodd(filename)
+            if success:
+                return jsonify({"success": True})
+            return jsonify({"error": "Datei nicht gefunden"}), 404
     
     def get_main_template(self) -> str:
         """Hauptseiten-Template - SYNCHRONISIERT mit app/templates/index.html."""

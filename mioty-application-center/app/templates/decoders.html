@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <title>mioty Application Center - Decoder & IO-Link</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%); min-height: 100vh; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); overflow: hidden; }
+        .header { background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%); color: white; padding: 30px; text-align: center; }
+        .header h1 { font-size: 2.5em; margin-bottom: 10px; }
+        .header p { font-size: 1.2em; opacity: 0.9; }
+        .nav { background: #6c757d; padding: 0; display: flex; justify-content: center; }
+        .nav-item { color: white; text-decoration: none; padding: 15px 30px; display: block; transition: background-color 0.3s ease; cursor: pointer; }
+        .nav-item:hover, .nav-item.active { background: #ff6b35; color: white; text-decoration: none; }
+        .content { padding: 30px; }
+        
+        .sub-nav { background: #e9ecef; padding: 10px; display: flex; justify-content: center; gap: 10px; border-bottom: 2px solid #dee2e6; }
+        .sub-nav-item { background: white; border: 2px solid #dee2e6; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.3s; }
+        .sub-nav-item:hover { border-color: #ff6b35; }
+        .sub-nav-item.active { background: #ff6b35; color: white; border-color: #ff6b35; }
+        
+        .section { display: none; margin-bottom: 40px; }
+        .section.active { display: block; }
+        .section h2 { color: #333; border-bottom: 3px solid #ff6b35; padding-bottom: 10px; margin-bottom: 20px; }
+        
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-weight: 600; margin-bottom: 5px; color: #555; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: #ff6b35; }
+        .form-group input[type="file"] { padding: 8px; border: 2px dashed #ddd; background: #f8f9fa; }
+        
+        .btn { background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%); color: white; border: none; padding: 12px 24px; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; margin-right: 10px; }
+        .btn:hover { transform: translateY(-2px); }
+        .btn-secondary { background: #6c757d; }
+        .btn-danger { background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); }
+        .btn-success { background: linear-gradient(135deg, #28a745 0%, #218838 100%); }
+        .btn-small { padding: 8px 16px; font-size: 14px; }
+        
+        .card { border: 2px solid #eee; border-radius: 12px; padding: 20px; margin-bottom: 15px; background: #f8f9fa; }
+        .card:hover { border-color: #ff6b35; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .card-title { font-size: 1.2em; font-weight: 600; color: #333; }
+        .card-badge { background: #ff6b35; color: white; padding: 4px 10px; border-radius: 4px; font-size: 0.8em; }
+        .card-badge.iodd { background: #17a2b8; }
+        .card-badge.adapter { background: #28a745; }
+        
+        .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+        .info-item { display: flex; flex-direction: column; }
+        .info-label { font-weight: 600; color: #666; font-size: 0.9em; }
+        .info-value { color: #333; }
+        
+        .alert { padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .alert-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .alert-info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        
+        .empty-state { text-align: center; padding: 40px; color: #666; }
+        .help-text { font-size: 0.9em; color: #666; margin-top: 5px; }
+        .code { font-family: monospace; background: #f8f9fa; padding: 2px 4px; border-radius: 4px; color: #e83e8c; }
+        .json-display { background: #1e1e1e; color: #d4d4d4; border-radius: 8px; padding: 15px; font-family: monospace; font-size: 14px; overflow-x: auto; white-space: pre-wrap; max-height: 300px; overflow-y: auto; }
+        
+        .adapter-card { border-left: 4px solid #28a745; }
+        .adapter-card.no-iodd { border-left-color: #ffc107; }
+        
+        .iodd-card { border-left: 4px solid #17a2b8; }
+        
+        .action-buttons { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px; }
+        
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+        .modal-content { background: white; margin: 5% auto; padding: 30px; border-radius: 15px; width: 90%; max-width: 600px; max-height: 85vh; overflow-y: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-close { font-size: 28px; cursor: pointer; color: #666; }
+        .modal-close:hover { color: #333; }
+        
+        .sentinum-footer { text-align: center; margin-top: 30px; padding: 15px; background: #f8f9fa; border-radius: 10px; color: #6c757d; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔧 mioty Application Center</h1>
+            <p>Decoder & IO-Link Verwaltung</p>
+        </div>
+        
+        <div class="nav">
+            <a class="nav-item" onclick="navigateTo('/')">🏠 Dashboard</a>
+            <a class="nav-item active" onclick="navigateTo('/decoders')">🔧 Decoder</a>
+            <a class="nav-item" onclick="navigateTo('/settings')">⚙️ Einstellungen</a>
+        </div>
+        
+        <div class="sub-nav">
+            <div class="sub-nav-item active" onclick="showSection('decoders')">📝 Decoder</div>
+            <div class="sub-nav-item" onclick="showSection('adapters')">🔌 IO-Link Adapter</div>
+            <div class="sub-nav-item" onclick="showSection('iodds')">📋 IODD-Dateien</div>
+        </div>
+        
+        <div class="content">
+            <div id="alerts"></div>
+            
+            <div id="section-decoders" class="section active">
+                <h2>📤 Decoder hochladen</h2>
+                <form id="uploadDecoderForm" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label>Decoder-Datei:</label>
+                        <input type="file" id="decoderFile" accept=".js,.json" required>
+                        <div class="help-text">Unterstützte Formate: <span class="code">.json</span> (mioty Blueprint) und <span class="code">.js</span> (Sentinum JavaScript)</div>
+                    </div>
+                    <button type="submit" class="btn">📤 Decoder hochladen</button>
+                </form>
+                
+                <h2 style="margin-top: 40px;">📝 Verfügbare Decoder</h2>
+                <div id="decoder-list" class="empty-state">Lade Decoder...</div>
+                
+                <h2 style="margin-top: 40px;">🧪 Decoder testen</h2>
+                <form id="testDecoderForm">
+                    <div class="form-group">
+                        <label>Decoder auswählen:</label>
+                        <select id="testDecoder" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Test-Payload (Hex):</label>
+                        <input type="text" id="testPayload" placeholder="z.B. A1B2C3D4E5F6" required>
+                    </div>
+                    <button type="submit" class="btn">🧪 Testen</button>
+                </form>
+                <div id="test-result"></div>
+            </div>
+            
+            <div id="section-adapters" class="section">
+                <h2>🔌 IO-Link Adapter verwalten</h2>
+                <div class="alert alert-info">
+                    <strong>Hinweis:</strong> Registrieren Sie hier mioty-io-link Adapter und weisen Sie ihnen IODD-Dateien zur automatischen Prozessdaten-Dekodierung zu.
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <button class="btn btn-success" onclick="showRegisterAdapterModal()">➕ Adapter registrieren</button>
+                </div>
+                
+                <h3 style="margin: 20px 0;">Registrierte Adapter</h3>
+                <div id="adapter-list" class="empty-state">Lade Adapter...</div>
+            </div>
+            
+            <div id="section-iodds" class="section">
+                <h2>📋 IODD-Dateien verwalten</h2>
+                <div class="alert alert-info">
+                    <strong>Info:</strong> IODD-Dateien (IO Device Description) beschreiben die Struktur von IO-Link Sensor-Prozessdaten. Laden Sie hier IODDs hoch, um Daten von IO-Link Geräten automatisch zu interpretieren.
+                </div>
+                
+                <form id="uploadIoddForm" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label>IODD-Datei (.xml):</label>
+                        <input type="file" id="ioddFile" accept=".xml" required>
+                        <div class="help-text">IODD-Dateien können von <a href="https://ioddfinder.io-link.com" target="_blank">ioddfinder.io-link.com</a> heruntergeladen werden.</div>
+                    </div>
+                    <button type="submit" class="btn">📤 IODD hochladen</button>
+                </form>
+                
+                <h3 style="margin: 30px 0 20px 0;">Verfügbare IODD-Dateien</h3>
+                <div id="iodd-list" class="empty-state">Lade IODDs...</div>
+                
+                <h3 style="margin: 30px 0 20px 0;">🧪 IODD testen</h3>
+                <form id="testIoddForm">
+                    <div class="form-group">
+                        <label>IODD auswählen:</label>
+                        <select id="testIodd" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Test-Payload (Hex):</label>
+                        <input type="text" id="testIoddPayload" placeholder="z.B. 001A2B3C4D5E6F...">
+                    </div>
+                    <button type="submit" class="btn">🧪 IODD testen</button>
+                </form>
+                <div id="iodd-test-result"></div>
+            </div>
+            
+            <div class="sentinum-footer">
+                <small>powered by Sentinum</small>
+            </div>
+        </div>
+    </div>
+    
+    <div id="registerAdapterModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🔌 IO-Link Adapter registrieren</h3>
+                <span class="modal-close" onclick="closeModal('registerAdapterModal')">&times;</span>
+            </div>
+            <form id="registerAdapterForm">
+                <div class="form-group">
+                    <label>Sensor EUI:</label>
+                    <input type="text" id="adapterEui" placeholder="z.B. FCA84A0900001234" required>
+                    <div class="help-text">EUI des mioty-io-link Adapter-Sensors</div>
+                </div>
+                <div class="form-group">
+                    <label>Name (optional):</label>
+                    <input type="text" id="adapterName" placeholder="z.B. IO-Link Adapter Halle 1">
+                </div>
+                <div class="form-group">
+                    <label>Beschreibung (optional):</label>
+                    <input type="text" id="adapterDescription" placeholder="z.B. Temperatur-Monitoring Produktionslinie">
+                </div>
+                <button type="submit" class="btn btn-success">✅ Registrieren</button>
+            </form>
+        </div>
+    </div>
+    
+    <div id="assignIoddModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>📋 IODD zuweisen</h3>
+                <span class="modal-close" onclick="closeModal('assignIoddModal')">&times;</span>
+            </div>
+            <form id="assignIoddForm">
+                <input type="hidden" id="assignAdapterEui">
+                <div class="form-group">
+                    <label>IODD-Datei auswählen:</label>
+                    <select id="assignIoddSelect" required></select>
+                </div>
+                <button type="submit" class="btn btn-success">✅ Zuweisen</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const BASE_URL = '{{ ingress_path }}' || '';
+        
+        function getCacheBusterURL(path) {
+            return `${BASE_URL}${path}?cb=${Date.now()}&t=${Math.random()}`;
+        }
+        
+        function navigateTo(path) {
+            window.location.href = BASE_URL + path;
+        }
+        
+        function showSection(section) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.sub-nav-item').forEach(s => s.classList.remove('active'));
+            document.getElementById('section-' + section).classList.add('active');
+            event.target.classList.add('active');
+            
+            if (section === 'adapters') loadAdapters();
+            if (section === 'iodds') loadIodds();
+            if (section === 'decoders') loadDecoders();
+        }
+        
+        function showAlert(message, type = 'success') {
+            const alerts = document.getElementById('alerts');
+            alerts.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+            setTimeout(() => alerts.innerHTML = '', 5000);
+        }
+        
+        function showModal(id) {
+            document.getElementById(id).style.display = 'block';
+        }
+        
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+        
+        function showRegisterAdapterModal() {
+            showModal('registerAdapterModal');
+        }
+        
+        async function loadDecoders() {
+            try {
+                const response = await fetch(getCacheBusterURL('/api/decoders'));
+                const data = await response.json();
+                const decoders = data.decoders || [];
+                
+                const list = document.getElementById('decoder-list');
+                const select = document.getElementById('testDecoder');
+                
+                if (decoders.length === 0) {
+                    list.innerHTML = '<div class="empty-state">Keine Decoder gefunden. Laden Sie einen Decoder hoch.</div>';
+                    select.innerHTML = '<option value="">Keine Decoder verfügbar</option>';
+                    return;
+                }
+                
+                list.innerHTML = decoders.map(d => `
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-title">${d.display_name || d.name}</span>
+                            <span class="card-badge">${d.type}</span>
+                        </div>
+                        <div class="info-grid">
+                            <div class="info-item"><span class="info-label">Version</span><span class="info-value">${d.version || '1.0'}</span></div>
+                            <div class="info-item"><span class="info-label">Erstellt</span><span class="info-value">${d.created_at ? new Date(d.created_at * 1000).toLocaleString() : 'Unbekannt'}</span></div>
+                        </div>
+                        <p style="margin-top: 10px; color: #666;">${d.description || 'Keine Beschreibung'}</p>
+                        <div class="action-buttons">
+                            <button class="btn btn-small btn-danger" onclick="deleteDecoder('${d.name}')">🗑️ Löschen</button>
+                        </div>
+                    </div>
+                `).join('');
+                
+                select.innerHTML = decoders.map(d => `<option value="${d.name}">${d.display_name || d.name}</option>`).join('');
+                
+            } catch (error) {
+                console.error('Fehler beim Laden der Decoder:', error);
+            }
+        }
+        
+        async function loadAdapters() {
+            try {
+                const response = await fetch(getCacheBusterURL('/api/iolink/adapters'));
+                const data = await response.json();
+                const adapters = data.adapters || [];
+                
+                const list = document.getElementById('adapter-list');
+                
+                if (adapters.length === 0) {
+                    list.innerHTML = '<div class="empty-state">Keine IO-Link Adapter registriert. Klicken Sie auf "Adapter registrieren".</div>';
+                    return;
+                }
+                
+                list.innerHTML = adapters.map(a => `
+                    <div class="card adapter-card ${a.assigned_iodd ? '' : 'no-iodd'}">
+                        <div class="card-header">
+                            <span class="card-title">${a.name || a.eui}</span>
+                            <span class="card-badge adapter">IO-Link Adapter</span>
+                        </div>
+                        <div class="info-grid">
+                            <div class="info-item"><span class="info-label">EUI</span><span class="info-value code">${a.eui}</span></div>
+                            <div class="info-item"><span class="info-label">IODD</span><span class="info-value">${a.assigned_iodd || '<span style="color: #ffc107;">⚠️ Nicht zugewiesen</span>'}</span></div>
+                            <div class="info-item"><span class="info-label">Registriert</span><span class="info-value">${a.registered_at ? new Date(a.registered_at).toLocaleString() : 'Unbekannt'}</span></div>
+                        </div>
+                        ${a.description ? `<p style="margin-top: 10px; color: #666;">${a.description}</p>` : ''}
+                        <div class="action-buttons">
+                            <button class="btn btn-small btn-success" onclick="showAssignIoddModal('${a.eui}')">📋 IODD zuweisen</button>
+                            ${a.assigned_iodd ? `<button class="btn btn-small btn-secondary" onclick="unassignIodd('${a.eui}')">🔓 IODD entfernen</button>` : ''}
+                            <button class="btn btn-small btn-danger" onclick="unregisterAdapter('${a.eui}')">🗑️ Entfernen</button>
+                        </div>
+                    </div>
+                `).join('');
+                
+            } catch (error) {
+                console.error('Fehler beim Laden der Adapter:', error);
+                document.getElementById('adapter-list').innerHTML = '<div class="empty-state">Fehler beim Laden der Adapter</div>';
+            }
+        }
+        
+        async function loadIodds() {
+            try {
+                const response = await fetch(getCacheBusterURL('/api/iodd/list'));
+                const data = await response.json();
+                const iodds = data.iodds || [];
+                
+                const list = document.getElementById('iodd-list');
+                const select = document.getElementById('testIodd');
+                const assignSelect = document.getElementById('assignIoddSelect');
+                
+                if (iodds.length === 0) {
+                    list.innerHTML = '<div class="empty-state">Keine IODD-Dateien gefunden. Laden Sie eine IODD hoch.</div>';
+                    select.innerHTML = '<option value="">Keine IODDs verfügbar</option>';
+                    assignSelect.innerHTML = '<option value="">Keine IODDs verfügbar</option>';
+                    return;
+                }
+                
+                list.innerHTML = iodds.map(i => `
+                    <div class="card iodd-card">
+                        <div class="card-header">
+                            <span class="card-title">${i.device_name || i.filename}</span>
+                            <span class="card-badge iodd">IODD</span>
+                        </div>
+                        <div class="info-grid">
+                            <div class="info-item"><span class="info-label">Dateiname</span><span class="info-value code">${i.filename}</span></div>
+                            <div class="info-item"><span class="info-label">Hersteller</span><span class="info-value">${i.vendor_name || 'Unbekannt'}</span></div>
+                            <div class="info-item"><span class="info-label">Vendor ID</span><span class="info-value">${i.vendor_id || 'N/A'}</span></div>
+                            <div class="info-item"><span class="info-label">Device ID</span><span class="info-value">${i.device_id || 'N/A'}</span></div>
+                        </div>
+                        ${i.error ? `<p style="margin-top: 10px; color: #dc3545;">⚠️ ${i.error}</p>` : ''}
+                        <div class="action-buttons">
+                            <button class="btn btn-small" onclick="viewIoddInfo('${i.filename}')">ℹ️ Details</button>
+                            <button class="btn btn-small btn-danger" onclick="deleteIodd('${i.filename}')">🗑️ Löschen</button>
+                        </div>
+                    </div>
+                `).join('');
+                
+                const options = iodds.map(i => `<option value="${i.filename}">${i.device_name || i.filename} (${i.vendor_name || 'Unknown'})</option>`).join('');
+                select.innerHTML = options;
+                assignSelect.innerHTML = options;
+                
+            } catch (error) {
+                console.error('Fehler beim Laden der IODDs:', error);
+            }
+        }
+        
+        async function showAssignIoddModal(eui) {
+            document.getElementById('assignAdapterEui').value = eui;
+            await loadIodds();
+            showModal('assignIoddModal');
+        }
+        
+        async function deleteDecoder(name) {
+            if (!confirm(`Decoder "${name}" wirklich löschen?`)) return;
+            try {
+                const response = await fetch(getCacheBusterURL('/api/decoder/delete'), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ decoder_name: name })
+                });
+                if (response.ok) {
+                    showAlert('Decoder gelöscht');
+                    loadDecoders();
+                }
+            } catch (error) {
+                showAlert('Fehler: ' + error.message, 'error');
+            }
+        }
+        
+        async function deleteIodd(filename) {
+            if (!confirm(`IODD "${filename}" wirklich löschen?`)) return;
+            try {
+                const response = await fetch(getCacheBusterURL('/api/iodd/delete'), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ filename })
+                });
+                if (response.ok) {
+                    showAlert('IODD gelöscht');
+                    loadIodds();
+                }
+            } catch (error) {
+                showAlert('Fehler: ' + error.message, 'error');
+            }
+        }
+        
+        async function unregisterAdapter(eui) {
+            if (!confirm(`Adapter "${eui}" wirklich entfernen?`)) return;
+            try {
+                const response = await fetch(getCacheBusterURL('/api/iolink/adapter/unregister'), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sensor_eui: eui })
+                });
+                if (response.ok) {
+                    showAlert('Adapter entfernt');
+                    loadAdapters();
+                }
+            } catch (error) {
+                showAlert('Fehler: ' + error.message, 'error');
+            }
+        }
+        
+        async function unassignIodd(eui) {
+            try {
+                const response = await fetch(getCacheBusterURL('/api/iodd/unassign'), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sensor_eui: eui })
+                });
+                if (response.ok) {
+                    showAlert('IODD-Zuweisung entfernt');
+                    loadAdapters();
+                }
+            } catch (error) {
+                showAlert('Fehler: ' + error.message, 'error');
+            }
+        }
+        
+        async function viewIoddInfo(filename) {
+            try {
+                const response = await fetch(getCacheBusterURL('/api/iodd/info/' + encodeURIComponent(filename)));
+                const info = await response.json();
+                alert(JSON.stringify(info, null, 2));
+            } catch (error) {
+                showAlert('Fehler: ' + error.message, 'error');
+            }
+        }
+        
+        document.getElementById('uploadDecoderForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const formData = new FormData();
+            formData.append('file', document.getElementById('decoderFile').files[0]);
+            try {
+                const response = await fetch(getCacheBusterURL('/api/decoder/upload'), { method: 'POST', body: formData });
+                const result = await response.json();
+                if (response.ok) {
+                    showAlert('Decoder hochgeladen');
+                    loadDecoders();
+                    e.target.reset();
+                } else {
+                    showAlert(result.error || 'Fehler', 'error');
+                }
+            } catch (error) {
+                showAlert('Fehler: ' + error.message, 'error');
+            }
+        };
+        
+        document.getElementById('uploadIoddForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const formData = new FormData();
+            formData.append('file', document.getElementById('ioddFile').files[0]);
+            try {
+                const response = await fetch(getCacheBusterURL('/api/iodd/upload'), { method: 'POST', body: formData });
+                const result = await response.json();
+                if (response.ok && result.success) {
+                    showAlert('IODD hochgeladen');
+                    loadIodds();
+                    e.target.reset();
+                } else {
+                    showAlert(result.error || result.warning || 'Fehler', 'error');
+                }
+            } catch (error) {
+                showAlert('Fehler: ' + error.message, 'error');
+            }
+        };
+        
+        document.getElementById('registerAdapterForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const data = {
+                sensor_eui: document.getElementById('adapterEui').value,
+                name: document.getElementById('adapterName').value,
+                description: document.getElementById('adapterDescription').value
+            };
+            try {
+                const response = await fetch(getCacheBusterURL('/api/iolink/adapter/register'), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    showAlert('Adapter registriert');
+                    closeModal('registerAdapterModal');
+                    loadAdapters();
+                    e.target.reset();
+                } else {
+                    showAlert(result.error || 'Fehler', 'error');
+                }
+            } catch (error) {
+                showAlert('Fehler: ' + error.message, 'error');
+            }
+        };
+        
+        document.getElementById('assignIoddForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const data = {
+                sensor_eui: document.getElementById('assignAdapterEui').value,
+                iodd_filename: document.getElementById('assignIoddSelect').value
+            };
+            try {
+                const response = await fetch(getCacheBusterURL('/api/iodd/assign'), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (response.ok) {
+                    showAlert('IODD zugewiesen');
+                    closeModal('assignIoddModal');
+                    loadAdapters();
+                } else {
+                    const result = await response.json();
+                    showAlert(result.error || 'Fehler', 'error');
+                }
+            } catch (error) {
+                showAlert('Fehler: ' + error.message, 'error');
+            }
+        };
+        
+        document.getElementById('testDecoderForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const data = {
+                decoder_name: document.getElementById('testDecoder').value,
+                payload: document.getElementById('testPayload').value
+            };
+            try {
+                const response = await fetch(getCacheBusterURL('/api/decoder/test'), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                document.getElementById('test-result').innerHTML = `<div class="json-display">${JSON.stringify(result, null, 2)}</div>`;
+            } catch (error) {
+                document.getElementById('test-result').innerHTML = `<div class="alert alert-error">${error.message}</div>`;
+            }
+        };
+        
+        document.getElementById('testIoddForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const data = {
+                iodd_filename: document.getElementById('testIodd').value,
+                payload_hex: document.getElementById('testIoddPayload').value
+            };
+            try {
+                const response = await fetch(getCacheBusterURL('/api/iodd/test'), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                document.getElementById('iodd-test-result').innerHTML = `<div class="json-display">${JSON.stringify(result, null, 2)}</div>`;
+            } catch (error) {
+                document.getElementById('iodd-test-result').innerHTML = `<div class="alert alert-error">${error.message}</div>`;
+            }
+        };
+        
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+            }
+        };
+        
+        loadDecoders();
+    </script>
+</body>
+</html>

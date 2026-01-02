@@ -1,6 +1,7 @@
 """
 Decoder Manager für mioty Application Center
 Verwaltet Decoder-Dateien und deren Zuweisungen
+Erweitert mit IODDService für IO-Link Adapter Management
 """
 
 import os
@@ -12,9 +13,16 @@ from typing import Dict, List, Any, Optional
 from pathlib import Path
 from payload_decoder import PayloadDecoder
 
+try:
+    from iodd.iodd_service import IODDService
+    IODD_SERVICE_AVAILABLE = True
+except ImportError:
+    IODD_SERVICE_AVAILABLE = False
+    logging.warning("IODDService nicht verfügbar - IO-Link Funktionen deaktiviert")
+
 
 class DecoderManager:
-    """Manager für Payload Decoder."""
+    """Manager für Payload Decoder und IO-Link IODD."""
     
     def __init__(self, decoder_dir: str = "/data/decoders"):
         """Initialisiere Decoder Manager."""
@@ -24,7 +32,14 @@ class DecoderManager:
         # Payload Decoder Engine
         self.payload_decoder = PayloadDecoder(str(self.decoder_dir))
         
-        # Automatische Erstellung von Beispiel-Decodern deaktiviert (auf Benutzerwunsch)
+        # IODD Service für IO-Link Adapter
+        if IODD_SERVICE_AVAILABLE:
+            data_dir = Path("/data") if os.path.exists("/data") else Path(".")
+            iodd_dir = self.decoder_dir / "iodd"
+            self.iodd_service = IODDService(data_dir, iodd_dir)
+            logging.info("🔗 IODDService für IO-Link Adapter initialisiert")
+        else:
+            self.iodd_service = None
         
         logging.info("Decoder Manager initialisiert")
     
