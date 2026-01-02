@@ -4,7 +4,7 @@
       "eui": "74731D0000000016",
       "name": "UG Pooltechnik IO-Link Adapter",
       "description": "LDH292",
-      "registered_at": "2026-01-02T11:02:12.695232",
+      "registered_at": "2026-01-02T12:47:02.734564",
       "assigned_iodd": null,
       "io_link_devices": []
     }
@@ -12,5 +12,5 @@
   "iodd_assignments": {
     "74731D0000000016": "ifm-000539-20201127-IODD1.1.xml"
   },
-  "last_updated": "2026-01-02T11:06:10.487402"
+  "last_updated": "2026-01-02T12:47:07.217716"
 }
