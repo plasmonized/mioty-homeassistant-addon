@@ -69,12 +69,13 @@ class ProcessDataDecoder:
         """
         self.variables = variables
         
-    def decode(self, payload: Union[str, bytes]) -> Dict[str, Any]:
+    def decode(self, payload: Union[str, bytes], port: int = 1) -> Dict[str, Any]:
         """
         Decode process data payload
         
         Args:
             payload: Raw payload as hex string (e.g., "A1B2C3") or bytes
+            port: Port number for multi-port adapters (1 or 2, default 1)
             
         Returns:
             Dictionary with variable names as keys and decoded values
@@ -87,9 +88,23 @@ class ProcessDataDecoder:
             max_bit = max((v.bit_offset + v.bit_length) for v in self.variables)
             expected_bytes = (max_bit + 7) // 8
             
-            # If payload is 1 byte longer than expected, remove Port Qualifier (last byte)
-            if len(payload) == expected_bytes + 1:
-                payload = payload[:-1]  # Port Qualifier is at the end
+            # Handle multi-port IO-Link adapter payloads
+            # 2-Port adapter: 9 bytes per port (8 data + 1 qualifier) = 17-18 bytes total
+            # 1-Port adapter: 9 bytes (8 data + 1 qualifier)
+            port_size = expected_bytes + 1  # Process data + Port Qualifier
+            
+            if len(payload) >= 2 * port_size - 1:
+                # This is a 2-port adapter payload
+                if port == 1:
+                    # Extract Port 1: first 'expected_bytes' bytes (before qualifier)
+                    payload = payload[:expected_bytes]
+                elif port == 2:
+                    # Extract Port 2: bytes starting after Port 1 + qualifier
+                    port2_start = port_size
+                    payload = payload[port2_start:port2_start + expected_bytes]
+            elif len(payload) == expected_bytes + 1:
+                # Single port adapter: remove Port Qualifier (last byte)
+                payload = payload[:-1]
             
         bits = BitBuffer(payload)
         
