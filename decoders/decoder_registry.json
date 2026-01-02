@@ -55,6 +55,16 @@
       "decoder_name": "febris_universal",
       "assigned_at": 1759143229.001585,
       "has_application_key": false
+    },
+    "FCA84A030000114F": {
+      "decoder_name": "febris_universal",
+      "assigned_at": 1767349628.9413548,
+      "has_application_key": false
+    },
+    "FCA84A0700000011": {
+      "decoder_name": "NYX",
+      "assigned_at": 1767349648.3791573,
+      "has_application_key": false
     }
   },
   "decoder_files": {
@@ -118,6 +128,15 @@
       "supported_devices": [],
       "payload_format": {},
       "created_at": 1759135422.2439494
+    },
+    "NYX": {
+      "type": "javascript",
+      "file_path": "decoders/NYX.js",
+      "name": "NYX",
+      "version": "1.0",
+      "description": "Sentinum JavaScript Decoder",
+      "supported_devices": [],
+      "created_at": 1767348691.0287673
     }
   }
 }
