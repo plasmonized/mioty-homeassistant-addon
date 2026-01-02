@@ -81,6 +81,15 @@ class ProcessDataDecoder:
         """
         if isinstance(payload, str):
             payload = bytes.fromhex(payload.replace(' ', '').replace('0x', ''))
+        
+        # Calculate expected length from variables
+        if self.variables:
+            max_bit = max((v.bit_offset + v.bit_length) for v in self.variables)
+            expected_bytes = (max_bit + 7) // 8
+            
+            # If payload is 1 byte longer than expected, remove Port Qualifier (last byte)
+            if len(payload) == expected_bytes + 1:
+                payload = payload[:-1]  # Port Qualifier is at the end
             
         bits = BitBuffer(payload)
         
@@ -155,9 +164,11 @@ class ProcessDataDecoder:
             Dictionary with decoded data and metadata
         """
         if isinstance(payload, str):
-            payload = bytes.fromhex(payload.replace(' ', '').replace('0x', ''))
+            payload_bytes = bytes.fromhex(payload.replace(' ', '').replace('0x', ''))
+        else:
+            payload_bytes = payload
             
-        decoded = self.decode(payload)
+        decoded = self.decode(payload_bytes)
         
         return {
             'payload_length_bytes': len(payload),
