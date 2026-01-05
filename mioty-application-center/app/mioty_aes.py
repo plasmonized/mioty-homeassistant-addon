@@ -14,7 +14,7 @@ Unterstützt:
 - Payload format (Section 3.6)
 
 Autor: mioty Application Center
-Version: 1.0.5.6.25
+Version: 1.0.5.7.0
 Basis: mioty Application Layer Specification v1.1.0
 Nutzt PyCryptodome für bessere Kompatibilität mit Replit/NixOS.
 """
