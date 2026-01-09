@@ -59,12 +59,12 @@
     },
     "FCA84A0700000011": {
       "decoder_name": "NYX",
-      "assigned_at": 1767349648.3791573,
+      "assigned_at": 1767947066.905567,
       "has_application_key": false
     },
     "FCA84A0600000036": {
       "decoder_name": "Hyperion",
-      "assigned_at": 1767945832.5776267,
+      "assigned_at": 1767946202.5295255,
       "has_application_key": false
     }
   },
@@ -127,7 +127,7 @@
       "version": "1.0",
       "description": "Sentinum JavaScript Decoder",
       "supported_devices": [],
-      "created_at": 1767945828.6662207
+      "created_at": 1767946190.8501148
     }
   }
 }
