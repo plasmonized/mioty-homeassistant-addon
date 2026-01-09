@@ -161,23 +161,6 @@ function decode(dataBytes, metadata) {
         return result;
     }
     
-    if (result.status === 10) {
-        result.serialNumber = 
-            dataBytes[4].toString(16).padStart(2, '0') + 
-            dataBytes[5].toString(16).padStart(2, '0') + 
-            dataBytes[6].toString(16).padStart(2, '0') + 
-            dataBytes[7].toString(16).padStart(2, '0');
-        if (dataBytes.length > 8) {
-            result.config_byte1 = dataBytes[8];
-            result.config_byte2 = dataBytes[9];
-        }
-        if (dataBytes.length > 12) {
-            result.signal_quality = dataBytes[12];
-        }
-        result.message_type = "heartbeat";
-        return result;
-    }
-    
     if (result.status === 1) {
         index = 16;
         result.p_l123_a = fetchSint32(true); result.p_l123_a_unit = "W";
