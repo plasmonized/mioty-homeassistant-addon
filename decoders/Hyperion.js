@@ -252,3 +252,5 @@ function decode(dataBytes, metadata) {
     
     return result;
 }
+
+module.exports = { decode };
