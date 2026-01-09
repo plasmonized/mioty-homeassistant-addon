@@ -10,5 +10,29 @@
     "model": "WISE",
     "name": "RAK WISE",
     "manual": true
+  },
+  "00073200007E221D": {
+    "manufacturer": "Diehl metering",
+    "model": "Preium Gateway",
+    "name": "Diehl metering Preium Gateway",
+    "manual": true
+  },
+  "B827EB000042E67F": {
+    "manufacturer": "Diehl Metering",
+    "model": "IOT Compact Gateway",
+    "name": "Diehl Metering IOT Compact Gateway",
+    "manual": true
+  },
+  "9C65F9FFFE6BE145": {
+    "manufacturer": "Miromicro",
+    "model": "mioty Base Station Edge",
+    "name": "Miromicro mioty Base Station Edge",
+    "manual": true
+  },
+  "70B3D59CD00009F6": {
+    "manufacturer": "Weptech",
+    "model": "AVA1",
+    "name": "Weptech AVA1",
+    "manual": true
   }
 }

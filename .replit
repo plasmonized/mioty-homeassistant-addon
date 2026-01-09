@@ -4,7 +4,7 @@ expertMode = true
 
 [nix]
 channel = "stable-25_05"
-packages = ["borgbackup", "cargo", "libffi", "libiconv", "libxcrypt", "openssl", "pkg-config", "rustc"]
+packages = ["borgbackup", "cargo", "libffi", "libiconv", "libxcrypt", "openssl", "pkg-config", "rustc", "xcodebuild", "zlib", "libxml2", "libxslt"]
 
 [workflows]
 runButton = "Project"

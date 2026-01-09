@@ -19,9 +19,20 @@ __pycache__/
 .env.production
 .env.staging
 
-# Personal configuration files
+# Personal configuration files (contain private data)
+settings.json
 settings.json.local
 config.local.yaml
+
+# Metadata files with private sensor/basestation data
+manual_basestation_metadata.json
+manual_sensor_metadata.json
+ha_sensor_metadata.json
+*_metadata.json
+
+# Adapter and IODD assignments (may contain EUIs)
+iolink_adapters.json
+iodd_assignments.json
 
 # Home Assistant specific
 /data/

@@ -1,9 +1,5 @@
 {
   "sensor_decoders": {
-    "74731D0000000016": {
-      "decoder_name": "ifm-000429-20180717-IODD1.1-de",
-      "assigned_at": 1757334055.9333057
-    },
     "FCA84A03000003BC": {
       "decoder_name": "febris_universal",
       "assigned_at": 1759135913.333441,
@@ -55,6 +51,21 @@
       "decoder_name": "febris_universal",
       "assigned_at": 1759143229.001585,
       "has_application_key": false
+    },
+    "FCA84A030000114F": {
+      "decoder_name": "febris_universal",
+      "assigned_at": 1767349628.9413548,
+      "has_application_key": false
+    },
+    "FCA84A0700000011": {
+      "decoder_name": "NYX",
+      "assigned_at": 1767947066.905567,
+      "has_application_key": false
+    },
+    "FCA84A0600000036": {
+      "decoder_name": "Hyperion",
+      "assigned_at": 1767946202.5295255,
+      "has_application_key": false
     }
   },
   "decoder_files": {
@@ -66,25 +77,6 @@
       "description": "Sentinum JavaScript Decoder",
       "supported_devices": [],
       "created_at": 1756716940.7003171
-    },
-    "ifm-000429-20180717-IODD1.1-de": {
-      "type": "iodd",
-      "file_path": "decoders/ifm-000429-20180717-IODD1.1-de.xml",
-      "filename": "ifm-000429-20180717-IODD1.1-de.xml",
-      "name": "ifm electronic KQ Kapazitiver Sensor (000429)",
-      "display_name": "ifm electronic KQ Kapazitiver Sensor (000429)",
-      "version": "1.0",
-      "description": "IODD f\u00fcr ifm electronic KQ Kapazitiver Sensor (000429) (VID:310, DID:29441)",
-      "vendor_id": 310,
-      "device_id": 29441,
-      "vendor_name": "ifm electronic",
-      "device_name": "KQ Kapazitiver Sensor (000429)",
-      "payload_length": 0,
-      "data_fields": [],
-      "supported_devices": [
-        "VID_310_DID_29441"
-      ],
-      "created_at": 1756738871.7125535
     },
     "juno_th": {
       "type": "javascript",
@@ -118,6 +110,24 @@
       "supported_devices": [],
       "payload_format": {},
       "created_at": 1759135422.2439494
+    },
+    "NYX": {
+      "type": "javascript",
+      "file_path": "decoders/NYX.js",
+      "name": "NYX",
+      "version": "1.0",
+      "description": "Sentinum JavaScript Decoder",
+      "supported_devices": [],
+      "created_at": 1767348691.0287673
+    },
+    "Hyperion": {
+      "type": "javascript",
+      "file_path": "decoders/Hyperion.js",
+      "name": "Hyperion",
+      "version": "1.0",
+      "description": "Sentinum JavaScript Decoder",
+      "supported_devices": [],
+      "created_at": 1767946190.8501148
     }
   }
 }
