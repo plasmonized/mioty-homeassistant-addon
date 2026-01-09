@@ -61,11 +61,6 @@
       "decoder_name": "NYX",
       "assigned_at": 1767349648.3791573,
       "has_application_key": false
-    },
-    "FCA84A0600000036": {
-      "decoder_name": "Hyperion",
-      "assigned_at": 1767943557.769403,
-      "has_application_key": false
     }
   },
   "decoder_files": {
@@ -119,15 +114,6 @@
       "description": "Sentinum JavaScript Decoder",
       "supported_devices": [],
       "created_at": 1767348691.0287673
-    },
-    "Hyperion": {
-      "type": "javascript",
-      "file_path": "decoders/Hyperion.js",
-      "name": "Hyperion",
-      "version": "1.0",
-      "description": "Sentinum JavaScript Decoder",
-      "supported_devices": [],
-      "created_at": 1767943475.11362
     }
   }
 }
