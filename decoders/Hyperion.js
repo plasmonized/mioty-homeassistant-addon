@@ -161,6 +161,21 @@ function decode(dataBytes, metadata) {
         return result;
     }
     
+    if (result.status === 1) {
+        index = 16;
+        result.p_l123_a = fetchSint32(true); result.p_l123_a_unit = "W";
+        result.epoch = fetchUint64(true);
+        result.epoch_old = fetchUint64(true);
+        result.e_t1_a_i = fetchUint64(true); result.e_t1_a_i_unit = "Wh";
+        result.e_t2_a_i = fetchUint64(true); result.e_t2_a_i_unit = "Wh";
+        result.e_t1_a_e = fetchUint64(true); result.e_t1_a_e_unit = "Wh";
+        result.e_t2_a_e = fetchUint64(true); result.e_t2_a_e_unit = "Wh";
+        result.i_l123 = fetchSint32(true); result.i_l123_unit = "mA";
+        index = 84;
+        result.e_ta_a_i = fetchUint64(true); result.e_ta_a_i_unit = "Wh";
+        return result;
+    }
+    
     if (result.status != 0) {
         return result;
     }
