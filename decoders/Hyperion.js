@@ -154,6 +154,13 @@ function decode(dataBytes, metadata) {
         return result;
     }
     
+    if (result.status === 2) {
+        index = 16;
+        result.e_ta_a_i = fetchUint64(false);
+        result.e_ta_a_e = fetchUint64(false);
+        return result;
+    }
+    
     if (result.status != 0) {
         return result;
     }
