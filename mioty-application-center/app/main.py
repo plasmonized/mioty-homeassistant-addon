@@ -536,7 +536,7 @@ class BSSCIAddon:
             "model": "mioty IoT Sensor",
             "manufacturer": "Unknown",
             "serial_number": sensor_eui,  # ✅ EUI als Seriennummer in Home Assistant anzeigen
-            "sw_version": "1.0.5.7.0"
+            "sw_version": "1.0.5.7.2"
         }
         
         # Prüfe manuelle Metadaten zuerst
@@ -576,7 +576,7 @@ class BSSCIAddon:
                                 "name": adapter_name,
                                 "model": iodd_device_info.get('device_name', 'IO-Link Device'),
                                 "manufacturer": iodd_device_info.get('vendor_name', 'IO-Link'),
-                                "sw_version": "1.0.5.7.0"
+                                "sw_version": "1.0.5.7.2"
                             })
                             logging.info(f"🔌 IO-Link Adapter {sensor_eui}: {device_info['manufacturer']} - {device_info['model']}")
                             return device_info
@@ -586,7 +586,7 @@ class BSSCIAddon:
                         "name": adapter_name,
                         "model": "mioty-io-link Adapter",
                         "manufacturer": "IO-Link",
-                        "sw_version": "1.0.5.7.0"
+                        "sw_version": "1.0.5.7.2"
                     })
                     return device_info
         
@@ -666,7 +666,7 @@ class BSSCIAddon:
             "model": "mioty Base Station",
             "manufacturer": "Unknown",
             "serial_number": bs_eui,  # ✅ EUI als Seriennummer in Home Assistant anzeigen
-            "sw_version": "1.0.5.7.0"
+            "sw_version": "1.0.5.7.2"
         }
         
         # Prüfe manuelle Metadaten zuerst
@@ -1180,6 +1180,10 @@ class BSSCIAddon:
                     "name": field_name.replace('_', ' ').title(),
                     "icon": "mdi:information-outline"
                 }
+            
+            # Extrahiere Einheit aus verschachteltem {value, unit} Objekt
+            if isinstance(field_data, dict) and 'unit' in field_data and "unit_of_measurement" not in config:
+                config["unit_of_measurement"] = field_data['unit']
             
             # Verwende IODD-Einheit falls vorhanden und keine Standard-Einheit definiert
             if field_name in iodd_units and "unit_of_measurement" not in config:

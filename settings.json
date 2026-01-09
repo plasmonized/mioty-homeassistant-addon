@@ -1,14 +1,14 @@
 {
-  "mqtt_broker": "akahlig.selfhost.co",
+  "mqtt_broker": "test.com",
   "mqtt_port": 1887,
   "mqtt_username": "bssci_ac",
-  "mqtt_password": "test=1234",
+  "mqtt_password": "testpass",
   "base_topic": "bssci",
   "auto_discovery": true,
-  "ha_mqtt_broker": "akahlig.selfhost.co",
+  "ha_mqtt_broker": "test.com",
   "ha_mqtt_port": 1887,
   "ha_mqtt_username": "bssci",
-  "ha_mqtt_password": "test=1234",
+  "ha_mqtt_password": "testpass",
   "service_center_enabled": false,
   "service_center_url": "",
   "service_center_auto_register": true

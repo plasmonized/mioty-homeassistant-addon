@@ -27,8 +27,8 @@ COPY app/ /opt/
 COPY run.sh /
 RUN chmod a+x /run.sh
 
-# KRITISCH: Force cache bust für Docker-Image (version 1.0.5.7.0)
-RUN echo "Template update: 1.0.5.7.0 - $(date)" > /opt/version.txt
+# KRITISCH: Force cache bust für Docker-Image (version 1.0.5.7.2)
+RUN echo "Template update: 1.0.5.7.2 - $(date)" > /opt/version.txt
 RUN echo "Node.js support added for JavaScript decoder execution" >> /opt/version.txt
 
 # DEBUGGING: Template-Dateien auflisten
@@ -46,7 +46,7 @@ LABEL \
     io.hass.description="mioty Application Center für die Verwaltung von mioty IoT Sensoren" \
     io.hass.arch="armhf|aarch64|amd64|armv7|i386" \
     io.hass.type="addon" \
-    io.hass.version="1.0.5.7.0"
+    io.hass.version="1.0.5.7.2"
 
 # Run
 CMD ["/run.sh"]

@@ -7,7 +7,7 @@ Kompatibel mit verschiedenen Key-Formaten und Payload-Größen.
 Nutzt PyCryptodome für bessere Kompatibilität mit Replit/NixOS.
 
 Autor: mioty Application Center
-Version: 1.0.5.7.0
+Version: 1.0.5.7.2
 """
 
 import logging

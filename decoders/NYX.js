@@ -4,6 +4,10 @@ function decode(hex) {
         bytes.push(parseInt(hex.substr(i, 2), 16));
     }
 
+    function val(value, unit) {
+        return { value: value, unit: unit };
+    }
+
     var decoded = {};
     decoded.deviceType = "nyx";
 
@@ -13,27 +17,19 @@ function decode(hex) {
     decoded.product_version = bytes[1] & 0x0F;
     decoded.up_cnt = bytes[2];
     
-    decoded.battery_voltage = ((bytes[3] << 8) | bytes[4]) / 1000.0;
-    decoded.battery_voltage_unit = "V";
-    
-    decoded.internal_temperature = ((bytes[5] << 8) | bytes[6]) / 10 - 100;
-    decoded.internal_temperature_unit = "°C";
+    decoded.battery_voltage = val(((bytes[3] << 8) | bytes[4]) / 1000.0, "V");
+    decoded.internal_temperature = val(((bytes[5] << 8) | bytes[6]) / 10 - 100, "°C");
 
     var it = 7;
     if (decoded.major_version >= 1 && bytes.length > 10) {
-        decoded.humidity = bytes[it++];
-        decoded.humidity_unit = "%";
-        
-        decoded.dew_point = ((bytes[it++] << 8) | bytes[it++]) / 10 - 100;
-        decoded.dew_point_unit = "°C";
-        
+        decoded.humidity = val(bytes[it++], "%");
+        decoded.dew_point = val(((bytes[it++] << 8) | bytes[it++]) / 10 - 100, "°C");
         decoded.alarm_level = bytes[it++];
 
         if (decoded.product_version & 0x01) {
             if (it + 1 < bytes.length) {
                 var raw_lux = (bytes[it++] << 8 | bytes[it++]);
-                decoded.lux = (1 << (raw_lux >> 12)) * (raw_lux & 0x0FFF) * 0.01;
-                decoded.lux_unit = "lx";
+                decoded.lux = val((1 << (raw_lux >> 12)) * (raw_lux & 0x0FFF) * 0.01, "lx");
             }
         }
 
@@ -42,8 +38,7 @@ function decode(hex) {
                 decoded.bme_status = bytes[it++];
             }
             if (it + 1 < bytes.length) {
-                decoded.pressure = (bytes[it++] << 8 | bytes[it++]);
-                decoded.pressure_unit = "hPa";
+                decoded.pressure = val((bytes[it++] << 8 | bytes[it++]), "hPa");
             }
             if (decoded.product_version & 0x02) {
                 if (it < bytes.length) {

@@ -6,7 +6,7 @@ Diese Datei enthält die Migration und Sicherheits-Helper Methoden
 die in die PayloadDecoder Klasse integriert werden sollen.
 
 Autor: mioty Application Center
-Version: 1.0.5.7.0
+Version: 1.0.5.7.2
 """
 
 def _migrate_plaintext_keys(self):
