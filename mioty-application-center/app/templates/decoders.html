@@ -114,6 +114,23 @@
                 <h2 style="margin-top: 40px;">📝 Verfügbare Decoder</h2>
                 <div id="decoder-list" class="empty-state">Lade Decoder...</div>
                 
+                <h2 style="margin-top: 40px;">📌 Decoder zuweisen</h2>
+                <form id="assignDecoderForm">
+                    <div class="form-group">
+                        <label>Sensor EUI:</label>
+                        <input type="text" id="assignSensorEui" placeholder="z.B. FCA84A0600000036" required>
+                        <div class="help-text">EUI des Sensors, dem ein Decoder zugewiesen werden soll</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Decoder auswählen:</label>
+                        <select id="assignDecoder" required></select>
+                    </div>
+                    <button type="submit" class="btn btn-success">📌 Zuweisen</button>
+                </form>
+                
+                <h3 style="margin: 30px 0 20px 0;">Aktive Zuweisungen</h3>
+                <div id="assignment-list" class="empty-state">Lade Zuweisungen...</div>
+                
                 <h2 style="margin-top: 40px;">🧪 Decoder testen</h2>
                 <form id="testDecoderForm">
                     <div class="form-group">
@@ -269,37 +286,106 @@
                 const response = await fetch(getCacheBusterURL('/api/decoders'));
                 const data = await response.json();
                 const decoders = data.decoders || [];
+                const assignments = data.assignments || {};
                 
                 const list = document.getElementById('decoder-list');
-                const select = document.getElementById('testDecoder');
+                const testSelect = document.getElementById('testDecoder');
+                const assignSelect = document.getElementById('assignDecoder');
+                const assignmentList = document.getElementById('assignment-list');
                 
                 if (decoders.length === 0) {
                     list.innerHTML = '<div class="empty-state">Keine Decoder gefunden. Laden Sie einen Decoder hoch.</div>';
-                    select.innerHTML = '<option value="">Keine Decoder verfügbar</option>';
-                    return;
+                    testSelect.innerHTML = '<option value="">Keine Decoder verfügbar</option>';
+                    assignSelect.innerHTML = '<option value="">Keine Decoder verfügbar</option>';
+                } else {
+                    list.innerHTML = decoders.map(d => `
+                        <div class="card">
+                            <div class="card-header">
+                                <span class="card-title">${d.display_name || d.name}</span>
+                                <span class="card-badge">${d.type}</span>
+                            </div>
+                            <div class="info-grid">
+                                <div class="info-item"><span class="info-label">Version</span><span class="info-value">${d.version || '1.0'}</span></div>
+                                <div class="info-item"><span class="info-label">Erstellt</span><span class="info-value">${d.created_at ? new Date(d.created_at * 1000).toLocaleString() : 'Unbekannt'}</span></div>
+                            </div>
+                            <p style="margin-top: 10px; color: #666;">${d.description || 'Keine Beschreibung'}</p>
+                            <div class="action-buttons">
+                                <button class="btn btn-small btn-danger" onclick="deleteDecoder('${d.name}')">🗑️ Löschen</button>
+                            </div>
+                        </div>
+                    `).join('');
+                    
+                    const options = decoders.map(d => `<option value="${d.name}">${d.display_name || d.name}</option>`).join('');
+                    testSelect.innerHTML = options;
+                    assignSelect.innerHTML = options;
                 }
                 
-                list.innerHTML = decoders.map(d => `
-                    <div class="card">
-                        <div class="card-header">
-                            <span class="card-title">${d.display_name || d.name}</span>
-                            <span class="card-badge">${d.type}</span>
-                        </div>
-                        <div class="info-grid">
-                            <div class="info-item"><span class="info-label">Version</span><span class="info-value">${d.version || '1.0'}</span></div>
-                            <div class="info-item"><span class="info-label">Erstellt</span><span class="info-value">${d.created_at ? new Date(d.created_at * 1000).toLocaleString() : 'Unbekannt'}</span></div>
-                        </div>
-                        <p style="margin-top: 10px; color: #666;">${d.description || 'Keine Beschreibung'}</p>
-                        <div class="action-buttons">
-                            <button class="btn btn-small btn-danger" onclick="deleteDecoder('${d.name}')">🗑️ Löschen</button>
-                        </div>
-                    </div>
-                `).join('');
-                
-                select.innerHTML = decoders.map(d => `<option value="${d.name}">${d.display_name || d.name}</option>`).join('');
+                const assignmentKeys = Object.keys(assignments);
+                if (assignmentKeys.length === 0) {
+                    assignmentList.innerHTML = '<div class="empty-state">Keine aktiven Zuweisungen</div>';
+                } else {
+                    assignmentList.innerHTML = assignmentKeys.map(eui => {
+                        const a = assignments[eui];
+                        return `
+                            <div class="card" style="border-left: 4px solid #28a745;">
+                                <div class="card-header">
+                                    <span class="card-title code">${eui}</span>
+                                    <span class="card-badge">${a.decoder_name}</span>
+                                </div>
+                                <div class="info-grid">
+                                    <div class="info-item"><span class="info-label">Decoder</span><span class="info-value">${a.decoder_name}</span></div>
+                                    <div class="info-item"><span class="info-label">Zugewiesen</span><span class="info-value">${a.assigned_at ? new Date(a.assigned_at * 1000).toLocaleString() : 'Unbekannt'}</span></div>
+                                    ${a.has_application_key ? '<div class="info-item"><span class="info-label">Verschlüsselung</span><span class="info-value">🔐 AES aktiv</span></div>' : ''}
+                                </div>
+                                <div class="action-buttons">
+                                    <button class="btn btn-small btn-danger" onclick="unassignDecoder('${eui}')">🗑️ Zuweisung entfernen</button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
                 
             } catch (error) {
                 console.error('Fehler beim Laden der Decoder:', error);
+            }
+        }
+        
+        async function assignDecoder(sensorEui, decoderName) {
+            try {
+                const response = await fetch(getCacheBusterURL('/api/decoder/assign'), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sensor_eui: sensorEui, decoder_name: decoderName })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    showAlert(`Decoder "${decoderName}" erfolgreich an ${sensorEui} zugewiesen`, 'success');
+                    loadDecoders();
+                } else {
+                    showAlert(data.error || 'Fehler beim Zuweisen', 'error');
+                }
+            } catch (error) {
+                showAlert('Netzwerkfehler: ' + error.message, 'error');
+            }
+        }
+        
+        async function unassignDecoder(sensorEui) {
+            if (!confirm(`Decoder-Zuweisung für ${sensorEui} entfernen?`)) return;
+            try {
+                const response = await fetch(getCacheBusterURL('/api/decoder/unassign'), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sensor_eui: sensorEui })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    showAlert('Zuweisung entfernt', 'success');
+                    loadDecoders();
+                } else {
+                    showAlert(data.error || 'Fehler', 'error');
+                }
+            } catch (error) {
+                showAlert('Netzwerkfehler: ' + error.message, 'error');
             }
         }
         
@@ -561,11 +647,23 @@
             }
         };
         
+        document.getElementById('assignDecoderForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const sensorEui = document.getElementById('assignSensorEui').value.trim().toUpperCase();
+            const decoderName = document.getElementById('assignDecoder').value;
+            if (!sensorEui || !decoderName) {
+                showAlert('Bitte EUI und Decoder auswählen', 'error');
+                return;
+            }
+            await assignDecoder(sensorEui, decoderName);
+            e.target.reset();
+        };
+        
         document.getElementById('testDecoderForm').onsubmit = async (e) => {
             e.preventDefault();
             const data = {
                 decoder_name: document.getElementById('testDecoder').value,
-                payload: document.getElementById('testPayload').value
+                test_payload: document.getElementById('testPayload').value
             };
             try {
                 const response = await fetch(getCacheBusterURL('/api/decoder/test'), {

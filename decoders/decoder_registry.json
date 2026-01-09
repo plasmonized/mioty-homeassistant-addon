@@ -114,6 +114,15 @@
       "description": "Sentinum JavaScript Decoder",
       "supported_devices": [],
       "created_at": 1767348691.0287673
+    },
+    "Hyperion": {
+      "type": "javascript",
+      "file_path": "decoders/Hyperion.js",
+      "name": "Hyperion",
+      "version": "1.0",
+      "description": "Sentinum JavaScript Decoder",
+      "supported_devices": [],
+      "created_at": 1767942719.705332
     }
   }
 }
