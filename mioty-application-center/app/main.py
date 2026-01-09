@@ -1181,6 +1181,10 @@ class BSSCIAddon:
                     "icon": "mdi:information-outline"
                 }
             
+            # Extrahiere Einheit aus verschachteltem {value, unit} Objekt
+            if isinstance(field_data, dict) and 'unit' in field_data and "unit_of_measurement" not in config:
+                config["unit_of_measurement"] = field_data['unit']
+            
             # Verwende IODD-Einheit falls vorhanden und keine Standard-Einheit definiert
             if field_name in iodd_units and "unit_of_measurement" not in config:
                 config["unit_of_measurement"] = iodd_units[field_name]
