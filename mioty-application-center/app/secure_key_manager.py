@@ -6,7 +6,7 @@ Provides encrypted storage for application keys and sensitive data.
 Uses environment-based master key for encryption/decryption.
 
 Autor: mioty Application Center  
-Version: 1.0.5.7.0
+Version: 1.0.5.7.2
 Security: FIPS-compliant encryption for production use
 """
 
