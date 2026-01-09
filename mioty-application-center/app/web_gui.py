@@ -1130,7 +1130,8 @@ class WebGUI:
             
             try:
                 decoders = self.addon.decoder_manager.get_available_decoders()
-                assignments = self.addon.decoder_manager.get_sensor_assignments()
+                assignments_data = self.addon.decoder_manager.get_sensor_assignments()
+                assignments = assignments_data.get('assignments', {}) if isinstance(assignments_data, dict) else {}
                 
                 logging.info(f"🔧 Decoder API Response:")
                 logging.info(f"   📋 Decoders: {len(decoders) if decoders else 0}")
