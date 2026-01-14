@@ -226,6 +226,20 @@ class WebGUI:
             
             return render_template_string(self.get_settings_template(), ingress_path=ingress_path)
         
+        @self.app.route('/sensors')
+        def sensors_page():
+            """Sensor-Verwaltungsseite."""
+            ingress_path = request.headers.get('X-Ingress-Path', '')
+            
+            logging.info("📡 SENSORS PAGE - Sensor configuration management")
+            
+            template_path = os.path.join(self.app.template_folder, 'sensors.html')
+            if os.path.exists(template_path):
+                return render_template('sensors.html', ingress_path=ingress_path)
+            else:
+                logging.warning("sensors.html not found")
+                return "Sensors template not found", 500
+        
         @self.app.route('/decoders')
         def decoders():
             """Decoder-Verwaltungsseite mit IO-Link Adapter Management."""
@@ -501,6 +515,172 @@ class WebGUI:
             }
             
             return jsonify(status)
+        
+        # ==================== SENSOR CONFIG API ====================
+        
+        @self.app.route('/api/sensor-config/list')
+        def get_sensor_config_list():
+            """API: Liste aller konfigurierten Sensoren."""
+            try:
+                config_file = '/data/sensor_configs.json' if os.path.exists('/data') else 'sensor_configs.json'
+                configs = []
+                
+                if os.path.exists(config_file):
+                    with open(config_file, 'r') as f:
+                        configs = json.load(f)
+                
+                return jsonify(configs)
+            except Exception as e:
+                logging.error(f"Fehler beim Laden der Sensor-Konfigurationen: {e}")
+                return jsonify([])
+        
+        @self.app.route('/api/sensor-config/<eui>')
+        def get_sensor_config(eui):
+            """API: Einzelne Sensor-Konfiguration abrufen."""
+            try:
+                config_file = '/data/sensor_configs.json' if os.path.exists('/data') else 'sensor_configs.json'
+                
+                if os.path.exists(config_file):
+                    with open(config_file, 'r') as f:
+                        configs = json.load(f)
+                    
+                    for config in configs:
+                        if config.get('eui', '').upper() == eui.upper():
+                            return jsonify(config)
+                
+                return jsonify({'error': 'Sensor nicht gefunden'}), 404
+            except Exception as e:
+                logging.error(f"Fehler beim Laden der Sensor-Konfiguration: {e}")
+                return jsonify({'error': str(e)}), 500
+        
+        @self.app.route('/api/sensor-config', methods=['POST'])
+        def add_sensor_config():
+            """API: Neue Sensor-Konfiguration hinzufügen."""
+            try:
+                data = request.get_json()
+                eui = data.get('eui', '').upper().replace(':', '').replace(' ', '')
+                
+                if not eui or len(eui) != 16:
+                    return jsonify({'error': 'Ungültige EUI (16 Hex-Zeichen erforderlich)'}), 400
+                
+                config_file = '/data/sensor_configs.json' if os.path.exists('/data') else 'sensor_configs.json'
+                configs = []
+                
+                if os.path.exists(config_file):
+                    with open(config_file, 'r') as f:
+                        configs = json.load(f)
+                
+                # Prüfe ob EUI bereits existiert
+                for config in configs:
+                    if config.get('eui', '').upper() == eui:
+                        return jsonify({'error': 'Sensor mit dieser EUI existiert bereits'}), 400
+                
+                # Neue Konfiguration erstellen
+                new_config = {
+                    'eui': eui,
+                    'short_addr': data.get('short_addr', '').upper(),
+                    'network_key': data.get('network_key', ''),
+                    'application_key': data.get('application_key') or None,
+                    'bidirectional': data.get('bidirectional', False),
+                    'manufacturer': data.get('manufacturer') or None,
+                    'model': data.get('model') or None,
+                    'device_name': data.get('device_name') or None,
+                    'description': data.get('description') or None,
+                    'latitude': data.get('latitude') or None,
+                    'longitude': data.get('longitude') or None,
+                    'location_name': data.get('location_name') or None,
+                    'created_at': time.time()
+                }
+                
+                configs.append(new_config)
+                
+                with open(config_file, 'w') as f:
+                    json.dump(configs, f, indent=2)
+                
+                logging.info(f"📡 Neue Sensor-Konfiguration erstellt: {eui}")
+                return jsonify({'success': True, 'message': 'Sensor erfolgreich hinzugefügt', 'config': new_config})
+                
+            except Exception as e:
+                logging.error(f"Fehler beim Hinzufügen der Sensor-Konfiguration: {e}")
+                return jsonify({'error': str(e)}), 500
+        
+        @self.app.route('/api/sensor-config/<eui>', methods=['PUT'])
+        def update_sensor_config(eui):
+            """API: Sensor-Konfiguration aktualisieren."""
+            try:
+                data = request.get_json()
+                config_file = '/data/sensor_configs.json' if os.path.exists('/data') else 'sensor_configs.json'
+                configs = []
+                
+                if os.path.exists(config_file):
+                    with open(config_file, 'r') as f:
+                        configs = json.load(f)
+                
+                # Finde und aktualisiere den Sensor
+                found = False
+                for i, config in enumerate(configs):
+                    if config.get('eui', '').upper() == eui.upper():
+                        configs[i] = {
+                            'eui': eui.upper(),
+                            'short_addr': data.get('short_addr', config.get('short_addr', '')).upper(),
+                            'network_key': data.get('network_key', config.get('network_key', '')),
+                            'application_key': data.get('application_key') or None,
+                            'bidirectional': data.get('bidirectional', config.get('bidirectional', False)),
+                            'manufacturer': data.get('manufacturer') or None,
+                            'model': data.get('model') or None,
+                            'device_name': data.get('device_name') or None,
+                            'description': data.get('description') or None,
+                            'latitude': data.get('latitude') or None,
+                            'longitude': data.get('longitude') or None,
+                            'location_name': data.get('location_name') or None,
+                            'created_at': config.get('created_at', time.time()),
+                            'updated_at': time.time()
+                        }
+                        found = True
+                        break
+                
+                if not found:
+                    return jsonify({'error': 'Sensor nicht gefunden'}), 404
+                
+                with open(config_file, 'w') as f:
+                    json.dump(configs, f, indent=2)
+                
+                logging.info(f"📡 Sensor-Konfiguration aktualisiert: {eui}")
+                return jsonify({'success': True, 'message': 'Sensor erfolgreich aktualisiert'})
+                
+            except Exception as e:
+                logging.error(f"Fehler beim Aktualisieren der Sensor-Konfiguration: {e}")
+                return jsonify({'error': str(e)}), 500
+        
+        @self.app.route('/api/sensor-config/<eui>', methods=['DELETE'])
+        def delete_sensor_config(eui):
+            """API: Sensor-Konfiguration löschen."""
+            try:
+                config_file = '/data/sensor_configs.json' if os.path.exists('/data') else 'sensor_configs.json'
+                configs = []
+                
+                if os.path.exists(config_file):
+                    with open(config_file, 'r') as f:
+                        configs = json.load(f)
+                
+                # Finde und lösche den Sensor
+                original_len = len(configs)
+                configs = [c for c in configs if c.get('eui', '').upper() != eui.upper()]
+                
+                if len(configs) == original_len:
+                    return jsonify({'error': 'Sensor nicht gefunden'}), 404
+                
+                with open(config_file, 'w') as f:
+                    json.dump(configs, f, indent=2)
+                
+                logging.info(f"📡 Sensor-Konfiguration gelöscht: {eui}")
+                return jsonify({'success': True, 'message': 'Sensor erfolgreich gelöscht'})
+                
+            except Exception as e:
+                logging.error(f"Fehler beim Löschen der Sensor-Konfiguration: {e}")
+                return jsonify({'error': str(e)}), 500
+        
+        # ==================== END SENSOR CONFIG API ====================
         
         @self.app.route('/api/sensors/<eui>/metadata', methods=['POST'])
         def set_sensor_metadata(eui):

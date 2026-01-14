@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Sensoren - mioty Application Center v1.0.5.7.2</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .nav {
+            background: #6c757d;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+        }
+        
+        .nav-item {
+            color: white;
+            text-decoration: none;
+            padding: 15px 30px;
+            display: block;
+            transition: background-color 0.3s ease;
+        }
+        
+        .nav-item:hover, .nav-item.active {
+            background: #ff6b35;
+            color: white;
+            text-decoration: none;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .section-title {
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #ff6b35;
+        }
+        
+        .sensor-card {
+            background: #f8f9fa;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 10px;
+            border-left: 4px solid #ff6b35;
+        }
+        
+        .sensor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .sensor-eui {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .sensor-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn {
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #ff6b35;
+        }
+        
+        .form-group small {
+            color: #666;
+            font-size: 12px;
+            margin-top: 5px;
+            display: block;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .collapsible-content {
+            display: none;
+            margin-top: 15px;
+            padding: 20px;
+            background: #e9ecef;
+            border-radius: 8px;
+        }
+        
+        .collapsible-content.active {
+            display: block;
+        }
+        
+        .metadata-section {
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border: 1px solid #ddd;
+        }
+        
+        .metadata-section h4 {
+            color: #ff6b35;
+            margin-bottom: 15px;
+        }
+        
+        .coordinates-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .status-bidi {
+            background: #cce5ff;
+            color: #004085;
+        }
+        
+        .no-sensors {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+        
+        .add-sensor-btn {
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        
+        .add-sensor-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 107, 53, 0.4);
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 3% auto;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 700px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .close {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: #ff6b35;
+        }
+        
+        .sentinum-footer {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 30px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+        
+        .key-display {
+            font-family: monospace;
+            background: #e9ecef;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            word-break: break-all;
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .info-label {
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .info-value {
+            color: #333;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📡 Sensor-Verwaltung</h1>
+            <p>mioty Application Center v1.0.5.7.2</p>
+        </div>
+        
+        <div class="nav">
+            <a href="javascript:void(0)" onclick="navigateTo('/')" class="nav-item">🏠 Dashboard</a>
+            <a href="javascript:void(0)" onclick="navigateTo('/sensors')" class="nav-item active">📡 Sensoren</a>
+            <a href="javascript:void(0)" onclick="navigateTo('/decoders')" class="nav-item">🔧 Decoder</a>
+            <a href="javascript:void(0)" onclick="navigateTo('/settings')" class="nav-item">⚙️ Einstellungen</a>
+        </div>
+        
+        <div class="content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 class="section-title" style="margin: 0; border: none;">🔑 Registrierte Sensoren</h2>
+                <button class="add-sensor-btn" onclick="showAddSensorModal()">+ Neuer Sensor</button>
+            </div>
+            
+            <div id="sensors-list">
+                <div class="no-sensors">
+                    <p>Lade Sensoren...</p>
+                </div>
+            </div>
+            
+            <div class="sentinum-footer">
+                <small style="opacity: 0.6; font-size: 0.8em;">powered by Sentinum</small>
+            </div>
+        </div>
+    </div>
+
+    <div id="sensorModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">📡 Sensor bearbeiten</h2>
+                <span class="close" onclick="closeSensorModal()">&times;</span>
+            </div>
+            
+            <form id="sensorForm">
+                <input type="hidden" id="sensor_mode" value="add">
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="sensor_eui">EUI (16 Hex-Zeichen) *</label>
+                        <input type="text" id="sensor_eui" name="sensor_eui" maxlength="23" placeholder="z.B. FCA84A0700000001" required>
+                        <small>Eindeutige Sensor-ID</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="short_addr">Short Address (4 Hex-Zeichen)</label>
+                        <input type="text" id="short_addr" name="short_addr" maxlength="5" placeholder="z.B. 0001">
+                        <small>Kurzadresse im mioty-Netzwerk</small>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="network_key">🔐 Network Key (32 Hex-Zeichen) *</label>
+                    <input type="text" id="network_key" name="network_key" maxlength="47" placeholder="z.B. 000102030405060708090a0b0c0d0e0f">
+                    <small>Netzwerkschlüssel für die mioty-Kommunikation</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="application_key">🔒 Application Key (32 Hex-Zeichen, optional)</label>
+                    <input type="text" id="application_key" name="application_key" maxlength="47" placeholder="z.B. ABCDABCDABCDABCDABCDABCDABCDABCD">
+                    <small>Optionaler Schlüssel für AES-verschlüsselte Payloads</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="bidirectional">Bidirektionale Kommunikation</label>
+                    <select id="bidirectional" name="bidirectional">
+                        <option value="false">Nein - Nur Uplink</option>
+                        <option value="true">Ja - Uplink & Downlink</option>
+                    </select>
+                    <small>Ermöglicht das Senden von Befehlen an den Sensor</small>
+                </div>
+
+                <div class="metadata-section">
+                    <h4>📋 Metadaten</h4>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="manufacturer">Hersteller</label>
+                            <input type="text" id="manufacturer" name="manufacturer" placeholder="z.B. Sentinum">
+                        </div>
+                        <div class="form-group">
+                            <label for="model">Gerätetyp</label>
+                            <input type="text" id="model" name="model" placeholder="z.B. Hyperion">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="device_name">Gerätename</label>
+                        <input type="text" id="device_name" name="device_name" placeholder="z.B. Stromzähler Büro 1">
+                        <small>Anzeigename in Home Assistant</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="description">Beschreibung</label>
+                        <input type="text" id="description" name="description" placeholder="z.B. Stromzähler im Hauptgebäude">
+                    </div>
+
+                    <h4 style="margin-top: 20px;">📍 Standort</h4>
+                    
+                    <div class="coordinates-row">
+                        <div class="form-group">
+                            <label for="latitude">Breitengrad (Latitude)</label>
+                            <input type="number" step="any" id="latitude" name="latitude" placeholder="z.B. 52.520008">
+                            <small>GPS-Koordinate</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="longitude">Längengrad (Longitude)</label>
+                            <input type="number" step="any" id="longitude" name="longitude" placeholder="z.B. 13.404954">
+                            <small>GPS-Koordinate</small>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="location_name">Standortname</label>
+                        <input type="text" id="location_name" name="location_name" placeholder="z.B. Hauptgebäude, Raum 101">
+                    </div>
+                </div>
+
+                <div style="margin-top: 25px; display: flex; gap: 10px;">
+                    <button type="submit" class="btn btn-success" style="flex: 1;">💾 Speichern</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeSensorModal()">Abbrechen</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const BASE_URL = '{{ ingress_path }}' || '';
+        
+        function getCacheBusterURL(path) {
+            const timestamp = Date.now();
+            return `${BASE_URL}${path}?cb=${timestamp}`;
+        }
+        
+        function navigateTo(path) {
+            window.location.href = BASE_URL + path;
+        }
+
+        async function loadSensors() {
+            try {
+                const response = await fetch(getCacheBusterURL('/api/sensor-config/list'));
+                const sensors = await response.json();
+                
+                const sensorsList = document.getElementById('sensors-list');
+                
+                if (!sensors || sensors.length === 0) {
+                    sensorsList.innerHTML = `
+                        <div class="no-sensors">
+                            <p>Keine Sensoren registriert.</p>
+                            <p><small>Klicken Sie auf "+ Neuer Sensor" um einen Sensor hinzuzufügen.</small></p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                sensorsList.innerHTML = sensors.map(sensor => `
+                    <div class="sensor-card">
+                        <div class="sensor-header">
+                            <div>
+                                <span class="sensor-eui">📡 ${sensor.eui}</span>
+                                ${sensor.device_name ? `<span style="color: #666; margin-left: 10px;">(${sensor.device_name})</span>` : ''}
+                            </div>
+                            <div class="sensor-actions">
+                                ${sensor.bidirectional ? '<span class="status-badge status-bidi">↔️ BiDi</span>' : ''}
+                                ${sensor.application_key ? '<span class="status-badge status-active">🔒 AES</span>' : ''}
+                                <button class="btn btn-primary" onclick="editSensor('${sensor.eui}')">✏️ Bearbeiten</button>
+                                <button class="btn btn-danger" onclick="deleteSensor('${sensor.eui}')">🗑️ Löschen</button>
+                            </div>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                            <div>
+                                <div class="info-row">
+                                    <span class="info-label">Short Address:</span>
+                                    <span class="info-value">${sensor.short_addr || 'N/A'}</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Hersteller:</span>
+                                    <span class="info-value">${sensor.manufacturer || 'Unbekannt'}</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Modell:</span>
+                                    <span class="info-value">${sensor.model || 'Unbekannt'}</span>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="info-row">
+                                    <span class="info-label">Standort:</span>
+                                    <span class="info-value">${sensor.location_name || 'Nicht angegeben'}</span>
+                                </div>
+                                ${sensor.latitude && sensor.longitude ? `
+                                <div class="info-row">
+                                    <span class="info-label">Koordinaten:</span>
+                                    <span class="info-value">${sensor.latitude.toFixed(6)}, ${sensor.longitude.toFixed(6)}</span>
+                                </div>
+                                ` : ''}
+                                <div class="info-row">
+                                    <span class="info-label">Network Key:</span>
+                                    <span class="key-display">${sensor.network_key ? sensor.network_key.substring(0, 8) + '...' : 'Nicht gesetzt'}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Fehler beim Laden der Sensoren:', error);
+                document.getElementById('sensors-list').innerHTML = `
+                    <div class="no-sensors">
+                        <p style="color: #dc3545;">Fehler beim Laden der Sensoren</p>
+                        <p><small>${error.message}</small></p>
+                    </div>
+                `;
+            }
+        }
+
+        function showAddSensorModal() {
+            document.getElementById('modalTitle').textContent = '📡 Neuer Sensor';
+            document.getElementById('sensor_mode').value = 'add';
+            document.getElementById('sensorForm').reset();
+            document.getElementById('sensor_eui').disabled = false;
+            document.getElementById('sensorModal').style.display = 'block';
+        }
+
+        async function editSensor(eui) {
+            try {
+                const response = await fetch(getCacheBusterURL(`/api/sensor-config/${eui}`));
+                const sensor = await response.json();
+                
+                document.getElementById('modalTitle').textContent = '✏️ Sensor bearbeiten';
+                document.getElementById('sensor_mode').value = 'edit';
+                
+                document.getElementById('sensor_eui').value = sensor.eui || '';
+                document.getElementById('sensor_eui').disabled = true;
+                document.getElementById('short_addr').value = sensor.short_addr || '';
+                document.getElementById('network_key').value = sensor.network_key || '';
+                document.getElementById('application_key').value = sensor.application_key || '';
+                document.getElementById('bidirectional').value = sensor.bidirectional ? 'true' : 'false';
+                document.getElementById('manufacturer').value = sensor.manufacturer || '';
+                document.getElementById('model').value = sensor.model || '';
+                document.getElementById('device_name').value = sensor.device_name || '';
+                document.getElementById('description').value = sensor.description || '';
+                document.getElementById('latitude').value = sensor.latitude || '';
+                document.getElementById('longitude').value = sensor.longitude || '';
+                document.getElementById('location_name').value = sensor.location_name || '';
+                
+                document.getElementById('sensorModal').style.display = 'block';
+            } catch (error) {
+                alert('Fehler beim Laden des Sensors: ' + error.message);
+            }
+        }
+
+        function closeSensorModal() {
+            document.getElementById('sensorModal').style.display = 'none';
+        }
+
+        document.getElementById('sensorForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const mode = document.getElementById('sensor_mode').value;
+            const eui = document.getElementById('sensor_eui').value.replace(/[:\s]/g, '').toUpperCase();
+            
+            const data = {
+                eui: eui,
+                short_addr: document.getElementById('short_addr').value.replace(/[:\s]/g, '').toUpperCase(),
+                network_key: document.getElementById('network_key').value.replace(/[:\s]/g, ''),
+                application_key: document.getElementById('application_key').value.replace(/[:\s]/g, '') || null,
+                bidirectional: document.getElementById('bidirectional').value === 'true',
+                manufacturer: document.getElementById('manufacturer').value || null,
+                model: document.getElementById('model').value || null,
+                device_name: document.getElementById('device_name').value || null,
+                description: document.getElementById('description').value || null,
+                latitude: document.getElementById('latitude').value ? parseFloat(document.getElementById('latitude').value) : null,
+                longitude: document.getElementById('longitude').value ? parseFloat(document.getElementById('longitude').value) : null,
+                location_name: document.getElementById('location_name').value || null
+            };
+            
+            try {
+                const url = mode === 'add' ? '/api/sensor-config' : `/api/sensor-config/${eui}`;
+                const method = mode === 'add' ? 'POST' : 'PUT';
+                
+                const response = await fetch(BASE_URL + url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    alert(mode === 'add' ? '✅ Sensor erfolgreich hinzugefügt!' : '✅ Sensor erfolgreich aktualisiert!');
+                    closeSensorModal();
+                    loadSensors();
+                } else {
+                    alert('❌ Fehler: ' + (result.error || 'Unbekannter Fehler'));
+                }
+            } catch (error) {
+                alert('❌ Fehler beim Speichern: ' + error.message);
+            }
+        });
+
+        async function deleteSensor(eui) {
+            if (!confirm(`Sensor ${eui} wirklich löschen?`)) return;
+            
+            try {
+                const response = await fetch(BASE_URL + `/api/sensor-config/${eui}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    alert('✅ Sensor gelöscht!');
+                    loadSensors();
+                } else {
+                    const result = await response.json();
+                    alert('❌ Fehler: ' + (result.error || 'Unbekannter Fehler'));
+                }
+            } catch (error) {
+                alert('❌ Fehler beim Löschen: ' + error.message);
+            }
+        }
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('sensorModal');
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        loadSensors();
+    </script>
+</body>
+</html>

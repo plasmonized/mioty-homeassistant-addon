@@ -88,3 +88,4 @@ secure_keys/
 **/*secure_keys/
 *.key
 master.key
+settings.json
