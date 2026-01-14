@@ -482,6 +482,17 @@
         function navigateTo(path) {
             window.location.href = BASE_URL + path;
         }
+        
+        function formatTimeAgo(timestamp) {
+            if (!timestamp) return 'Nie';
+            const now = Date.now() / 1000;
+            const diff = now - timestamp;
+            
+            if (diff < 60) return 'Gerade eben';
+            if (diff < 3600) return `vor ${Math.floor(diff / 60)} Min`;
+            if (diff < 86400) return `vor ${Math.floor(diff / 3600)} Std`;
+            return `vor ${Math.floor(diff / 86400)} Tagen`;
+        }
 
         async function loadSensors() {
             try {
@@ -500,26 +511,38 @@
                     return;
                 }
                 
-                sensorsList.innerHTML = sensors.map(sensor => `
-                    <div class="sensor-card">
+                sensorsList.innerHTML = sensors.map(sensor => {
+                    const lastSeenText = sensor.last_seen ? formatTimeAgo(sensor.last_seen) : 'Nie';
+                    const onlineClass = sensor.online ? 'status-active' : 'status-inactive';
+                    const onlineText = sensor.online ? '🟢 Online' : '⚫ Offline';
+                    const autoDiscovered = sensor.auto_discovered ? '<span class="status-badge" style="background: #17a2b8; color: white;">🔍 Auto</span>' : '';
+                    
+                    return `
+                    <div class="sensor-card" style="border-left-color: ${sensor.online ? '#28a745' : '#6c757d'};">
                         <div class="sensor-header">
                             <div>
                                 <span class="sensor-eui">📡 ${sensor.eui}</span>
                                 ${sensor.device_name ? `<span style="color: #666; margin-left: 10px;">(${sensor.device_name})</span>` : ''}
+                                <span class="status-badge ${onlineClass}" style="margin-left: 10px;">${onlineText}</span>
                             </div>
                             <div class="sensor-actions">
+                                ${autoDiscovered}
                                 ${sensor.bidirectional ? '<span class="status-badge status-bidi">↔️ BiDi</span>' : ''}
                                 ${sensor.application_key ? '<span class="status-badge status-active">🔒 AES</span>' : ''}
                                 <button class="btn btn-primary" onclick="editSensor('${sensor.eui}')">✏️ Bearbeiten</button>
-                                <button class="btn btn-danger" onclick="deleteSensor('${sensor.eui}')">🗑️ Löschen</button>
+                                ${!sensor.auto_discovered ? `<button class="btn btn-danger" onclick="deleteSensor('${sensor.eui}')">🗑️ Löschen</button>` : ''}
                             </div>
                         </div>
                         
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                             <div>
                                 <div class="info-row">
-                                    <span class="info-label">Short Address:</span>
-                                    <span class="info-value">${sensor.short_addr || 'N/A'}</span>
+                                    <span class="info-label">Letztes Signal:</span>
+                                    <span class="info-value">${lastSeenText}</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Signalqualität:</span>
+                                    <span class="info-value">${sensor.signal_quality || 'Unbekannt'}</span>
                                 </div>
                                 <div class="info-row">
                                     <span class="info-label">Hersteller:</span>
@@ -531,6 +554,10 @@
                                 </div>
                             </div>
                             <div>
+                                <div class="info-row">
+                                    <span class="info-label">Short Address:</span>
+                                    <span class="info-value">${sensor.short_addr || 'N/A'}</span>
+                                </div>
                                 <div class="info-row">
                                     <span class="info-label">Standort:</span>
                                     <span class="info-value">${sensor.location_name || 'Nicht angegeben'}</span>
@@ -548,7 +575,7 @@
                             </div>
                         </div>
                     </div>
-                `).join('');
+                `}).join('');
             } catch (error) {
                 console.error('Fehler beim Laden der Sensoren:', error);
                 document.getElementById('sensors-list').innerHTML = `

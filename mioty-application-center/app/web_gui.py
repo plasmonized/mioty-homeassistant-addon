@@ -520,14 +520,55 @@ class WebGUI:
         
         @self.app.route('/api/sensor-config/list')
         def get_sensor_config_list():
-            """API: Liste aller konfigurierten Sensoren."""
+            """API: Liste aller konfigurierten und bekannten Sensoren."""
             try:
                 config_file = '/data/sensor_configs.json' if os.path.exists('/data') else 'sensor_configs.json'
                 configs = []
+                config_euis = set()
                 
+                # Lade gespeicherte Konfigurationen
                 if os.path.exists(config_file):
                     with open(config_file, 'r') as f:
                         configs = json.load(f)
+                    config_euis = {c.get('eui', '').upper() for c in configs}
+                
+                # Füge bekannte Sensoren hinzu (die Daten gesendet haben aber noch nicht konfiguriert sind)
+                if self.addon and hasattr(self.addon, 'sensors'):
+                    for eui, sensor_data in self.addon.sensors.items():
+                        eui_upper = eui.upper()
+                        if eui_upper not in config_euis:
+                            # Neuer Sensor erkannt - erstelle Basis-Eintrag
+                            last_seen = sensor_data.get('last_seen', 0)
+                            new_sensor = {
+                                'eui': eui_upper,
+                                'short_addr': '',
+                                'network_key': '',
+                                'application_key': None,
+                                'bidirectional': False,
+                                'manufacturer': sensor_data.get('manufacturer', None),
+                                'model': sensor_data.get('model', None),
+                                'device_name': None,
+                                'description': None,
+                                'latitude': None,
+                                'longitude': None,
+                                'location_name': None,
+                                'auto_discovered': True,
+                                'last_seen': last_seen,
+                                'signal_quality': sensor_data.get('signal_quality', 'Unknown')
+                            }
+                            configs.append(new_sensor)
+                
+                # Aktualisiere Last-Seen für alle Sensoren
+                if self.addon and hasattr(self.addon, 'sensors'):
+                    for config in configs:
+                        eui = config.get('eui', '').upper()
+                        if eui in self.addon.sensors:
+                            sensor_data = self.addon.sensors[eui]
+                            config['last_seen'] = sensor_data.get('last_seen', config.get('last_seen', 0))
+                            config['signal_quality'] = sensor_data.get('signal_quality', 'Unknown')
+                            config['online'] = True
+                        else:
+                            config['online'] = False
                 
                 return jsonify(configs)
             except Exception as e:
@@ -539,14 +580,35 @@ class WebGUI:
             """API: Einzelne Sensor-Konfiguration abrufen."""
             try:
                 config_file = '/data/sensor_configs.json' if os.path.exists('/data') else 'sensor_configs.json'
+                eui_upper = eui.upper()
                 
+                # Suche in gespeicherten Konfigurationen
                 if os.path.exists(config_file):
                     with open(config_file, 'r') as f:
                         configs = json.load(f)
                     
                     for config in configs:
-                        if config.get('eui', '').upper() == eui.upper():
+                        if config.get('eui', '').upper() == eui_upper:
                             return jsonify(config)
+                
+                # Suche in auto-discovered Sensoren
+                if self.addon and hasattr(self.addon, 'sensors') and eui_upper in self.addon.sensors:
+                    sensor_data = self.addon.sensors[eui_upper]
+                    return jsonify({
+                        'eui': eui_upper,
+                        'short_addr': '',
+                        'network_key': '',
+                        'application_key': None,
+                        'bidirectional': False,
+                        'manufacturer': sensor_data.get('manufacturer', None),
+                        'model': sensor_data.get('model', None),
+                        'device_name': None,
+                        'description': None,
+                        'latitude': None,
+                        'longitude': None,
+                        'location_name': None,
+                        'auto_discovered': True
+                    })
                 
                 return jsonify({'error': 'Sensor nicht gefunden'}), 404
             except Exception as e:
@@ -640,7 +702,24 @@ class WebGUI:
                         break
                 
                 if not found:
-                    return jsonify({'error': 'Sensor nicht gefunden'}), 404
+                    # Sensor noch nicht in Config - als neuen Eintrag hinzufügen (für auto-discovered Sensoren)
+                    new_config = {
+                        'eui': eui.upper(),
+                        'short_addr': data.get('short_addr', '').upper(),
+                        'network_key': data.get('network_key', ''),
+                        'application_key': data.get('application_key') or None,
+                        'bidirectional': data.get('bidirectional', False),
+                        'manufacturer': data.get('manufacturer') or None,
+                        'model': data.get('model') or None,
+                        'device_name': data.get('device_name') or None,
+                        'description': data.get('description') or None,
+                        'latitude': data.get('latitude') or None,
+                        'longitude': data.get('longitude') or None,
+                        'location_name': data.get('location_name') or None,
+                        'created_at': time.time()
+                    }
+                    configs.append(new_config)
+                    logging.info(f"📡 Auto-discovered Sensor konfiguriert: {eui}")
                 
                 with open(config_file, 'w') as f:
                     json.dump(configs, f, indent=2)
