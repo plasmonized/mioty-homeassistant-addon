@@ -523,8 +523,18 @@ class WebGUI:
             """API: Liste aller konfigurierten und bekannten Sensoren."""
             try:
                 config_file = '/data/sensor_configs.json' if os.path.exists('/data') else 'sensor_configs.json'
+                metadata_file = '/data/manual_sensor_metadata.json' if os.path.exists('/data') else 'manual_sensor_metadata.json'
                 configs = []
                 config_euis = set()
+                
+                # Lade manuelle Metadaten (von Dashboard eingetragen)
+                manual_metadata = {}
+                if os.path.exists(metadata_file):
+                    try:
+                        with open(metadata_file, 'r') as f:
+                            manual_metadata = json.load(f)
+                    except:
+                        pass
                 
                 # Lade gespeicherte Konfigurationen
                 if os.path.exists(config_file):
@@ -539,15 +549,17 @@ class WebGUI:
                         if eui_upper not in config_euis:
                             # Neuer Sensor erkannt - erstelle Basis-Eintrag
                             last_seen = sensor_data.get('last_seen', 0)
+                            # Hole manuelle Metadaten falls vorhanden
+                            meta = manual_metadata.get(eui_upper, {})
                             new_sensor = {
                                 'eui': eui_upper,
                                 'short_addr': '',
                                 'network_key': '',
                                 'application_key': None,
                                 'bidirectional': False,
-                                'manufacturer': sensor_data.get('manufacturer', None),
-                                'model': sensor_data.get('model', None),
-                                'device_name': None,
+                                'manufacturer': meta.get('manufacturer') or sensor_data.get('manufacturer', None),
+                                'model': meta.get('model') or sensor_data.get('model', None),
+                                'device_name': meta.get('name') or None,
                                 'description': None,
                                 'latitude': None,
                                 'longitude': None,
@@ -557,11 +569,22 @@ class WebGUI:
                                 'signal_quality': sensor_data.get('signal_quality', 'Unknown')
                             }
                             configs.append(new_sensor)
+                            config_euis.add(eui_upper)
                 
-                # Aktualisiere Last-Seen für alle Sensoren
+                # Aktualisiere Last-Seen und manuelle Metadaten für alle Sensoren
                 if self.addon and hasattr(self.addon, 'sensors'):
                     for config in configs:
                         eui = config.get('eui', '').upper()
+                        # Merge mit manuellen Metadaten
+                        if eui in manual_metadata:
+                            meta = manual_metadata[eui]
+                            if not config.get('manufacturer'):
+                                config['manufacturer'] = meta.get('manufacturer')
+                            if not config.get('model'):
+                                config['model'] = meta.get('model')
+                            if not config.get('device_name'):
+                                config['device_name'] = meta.get('name')
+                        # Update Online-Status
                         if eui in self.addon.sensors:
                             sensor_data = self.addon.sensors[eui]
                             config['last_seen'] = sensor_data.get('last_seen', config.get('last_seen', 0))
@@ -594,15 +617,25 @@ class WebGUI:
                 # Suche in auto-discovered Sensoren
                 if self.addon and hasattr(self.addon, 'sensors') and eui_upper in self.addon.sensors:
                     sensor_data = self.addon.sensors[eui_upper]
+                    # Lade manuelle Metadaten
+                    metadata_file = '/data/manual_sensor_metadata.json' if os.path.exists('/data') else 'manual_sensor_metadata.json'
+                    manual_metadata = {}
+                    if os.path.exists(metadata_file):
+                        try:
+                            with open(metadata_file, 'r') as f:
+                                manual_metadata = json.load(f)
+                        except:
+                            pass
+                    meta = manual_metadata.get(eui_upper, {})
                     return jsonify({
                         'eui': eui_upper,
                         'short_addr': '',
                         'network_key': '',
                         'application_key': None,
                         'bidirectional': False,
-                        'manufacturer': sensor_data.get('manufacturer', None),
-                        'model': sensor_data.get('model', None),
-                        'device_name': None,
+                        'manufacturer': meta.get('manufacturer') or sensor_data.get('manufacturer', None),
+                        'model': meta.get('model') or sensor_data.get('model', None),
+                        'device_name': meta.get('name') or None,
                         'description': None,
                         'latitude': None,
                         'longitude': None,
