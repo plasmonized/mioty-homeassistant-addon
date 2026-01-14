@@ -2206,7 +2206,8 @@ class WebGUI:
         </div>
         
         <div class="nav">
-            <a id="nav-sensors" href="#" class="nav-item active" onclick="navigateTo('/')"><span class="nav-icon">●</span> Sensoren</a>
+            <a id="nav-dashboard" href="#" class="nav-item active" onclick="navigateTo('/')"><span class="nav-icon">●</span> Dashboard</a>
+            <a id="nav-sensors" href="#" class="nav-item" onclick="navigateTo('/sensors')"><span class="nav-icon">◆</span> Sensoren</a>
             <a id="nav-decoders" href="#" class="nav-item" onclick="navigateTo('/decoders')"><span class="nav-icon">◆</span> Decoder</a>
             <a id="nav-settings" href="#" class="nav-item" onclick="navigateTo('/settings')"><span class="nav-icon">▲</span> Einstellungen</a>
         </div>
@@ -3042,8 +3043,9 @@ class WebGUI:
         </div>
         
         <div class="nav">
-            <a id="nav-sensors" href="#" class="nav-item" onclick="navigateTo('/')">📊 Sensoren</a>
-            <a id="nav-decoders" href="#" class="nav-item" onclick="navigateTo('/decoders')">📝 Decoder</a>
+            <a id="nav-dashboard" href="#" class="nav-item" onclick="navigateTo('/')">🏠 Dashboard</a>
+            <a id="nav-sensors" href="#" class="nav-item" onclick="navigateTo('/sensors')">📡 Sensoren</a>
+            <a id="nav-decoders" href="#" class="nav-item" onclick="navigateTo('/decoders')">🔧 Decoder</a>
             <a id="nav-settings" href="#" class="nav-item active" onclick="navigateTo('/settings')">⚙️ Einstellungen</a>
         </div>
         
@@ -3461,8 +3463,9 @@ class WebGUI:
             <p>Payload Decoder Verwaltung <span style="opacity: 0.6; font-size: 0.8em;">• powered by Sentinum</span></p>
         </div>
         <div class="nav">
-            <a id="nav-sensors" href="#" class="nav-item" onclick="navigateTo('/')">📊 Sensoren</a>
-            <a id="nav-decoders" href="#" class="nav-item active" onclick="navigateTo('/decoders')">📝 Decoder</a>
+            <a id="nav-dashboard" href="#" class="nav-item" onclick="navigateTo('/')">🏠 Dashboard</a>
+            <a id="nav-sensors" href="#" class="nav-item" onclick="navigateTo('/sensors')">📡 Sensoren</a>
+            <a id="nav-decoders" href="#" class="nav-item active" onclick="navigateTo('/decoders')">🔧 Decoder</a>
             <a id="nav-settings" href="#" class="nav-item" onclick="navigateTo('/settings')">⚙️ Einstellungen</a>
         </div>
         <div class="content">
