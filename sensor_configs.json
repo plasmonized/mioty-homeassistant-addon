@@ -1,0 +1,33 @@
+[
+  {
+    "eui": "FCA84A0600000036",
+    "short_addr": "",
+    "network_key": "",
+    "application_key": null,
+    "bidirectional": false,
+    "manufacturer": "Sentinum",
+    "model": "Hyperion",
+    "device_name": "OG Stromz\u00e4hler gesamt",
+    "description": "Unterz\u00e4hlerkasten im OG",
+    "latitude": null,
+    "longitude": null,
+    "location_name": null,
+    "created_at": 1769156976.1345515
+  },
+  {
+    "eui": "74731D0000000016",
+    "short_addr": "",
+    "network_key": "",
+    "application_key": null,
+    "bidirectional": false,
+    "manufacturer": "Sentinum",
+    "model": "Aion mioty Adapter",
+    "device_name": "UG Aion mioty Adapter",
+    "description": "UG Pooltechnik Raum Temperatur",
+    "latitude": null,
+    "longitude": null,
+    "location_name": null,
+    "created_at": 1769157279.025155,
+    "updated_at": 1769157293.3823004
+  }
+]
