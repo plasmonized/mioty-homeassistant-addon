@@ -11,5 +11,7 @@
   "ha_mqtt_password": "test=1234",
   "service_center_enabled": false,
   "service_center_url": "",
-  "service_center_auto_register": true
+  "service_center_auto_register": true,
+  "show_lora": false,
+  "show_oms": false
 }
