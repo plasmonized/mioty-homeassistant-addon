@@ -254,6 +254,10 @@ class WebGUI:
                 logging.warning("decoders.html not found, using inline template")
                 return render_template_string(self.get_decoders_template(), ingress_path=ingress_path)
         
+        def _detect_protocol_type(eui: str, data: dict) -> str:
+            """Erkenne Protokoll-Typ aus gespeichertem type-Feld."""
+            return data.get('type', 'mioty').lower()
+
         @self.app.route('/api/sensors')
         def get_sensors():
             """API: Liste aller Sensoren."""
@@ -270,7 +274,7 @@ class WebGUI:
             sensor_list = []
             for eui, data in sensors_dict.items():
                 # Protokoll-Filter anwenden
-                sensor_type = data.get('type', 'mioty').lower()
+                sensor_type = _detect_protocol_type(eui, data)
                 if sensor_type == 'lora' and not show_lora:
                     continue
                 if sensor_type == 'oms' and not show_oms:

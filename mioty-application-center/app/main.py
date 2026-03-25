@@ -359,7 +359,8 @@ class BSSCIAddon:
                 'decoded_data': decoded_payload,
                 'timestamp': current_timestamp,
                 'last_seen': current_time,
-                'status': 'active'
+                'status': 'active',
+                'type': data.get('type', 'mioty').lower()
             }
             
             # Home Assistant Discovery/Update
@@ -446,7 +447,8 @@ class BSSCIAddon:
             'signal_quality': self.assess_signal_quality(
                 data.get('snr', 0), 
                 data.get('rssi', -100)
-            )
+            ),
+            'type': data.get('type', 'mioty').lower()
         }
         
         # Live-Message für Dashboard speichern
