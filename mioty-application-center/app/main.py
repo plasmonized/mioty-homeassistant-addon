@@ -360,7 +360,7 @@ class BSSCIAddon:
                 'timestamp': current_timestamp,
                 'last_seen': current_time,
                 'status': 'active',
-                'type': data.get('type', 'mioty').lower()
+                'type': (data.get('type') or 'mioty').lower()
             }
             
             # Home Assistant Discovery/Update
@@ -448,7 +448,7 @@ class BSSCIAddon:
                 data.get('snr', 0), 
                 data.get('rssi', -100)
             ),
-            'type': data.get('type', 'mioty').lower()
+            'type': (data.get('type') or 'mioty').lower()
         }
         
         # Live-Message für Dashboard speichern

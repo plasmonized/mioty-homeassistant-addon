@@ -255,8 +255,9 @@ class WebGUI:
                 return render_template_string(self.get_decoders_template(), ingress_path=ingress_path)
         
         def _detect_protocol_type(eui: str, data: dict) -> str:
-            """Erkenne Protokoll-Typ aus gespeichertem type-Feld."""
-            return data.get('type', 'mioty').lower()
+            """Erkenne Protokoll-Typ aus gespeichertem type-Feld.
+            Legacy-Fallback: kein type-Feld → mioty."""
+            return (data.get('type') or 'mioty').lower()
 
         @self.app.route('/api/sensors')
         def get_sensors():
