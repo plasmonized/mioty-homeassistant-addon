@@ -262,9 +262,19 @@ class WebGUI:
             
             sensors_dict = self.addon.get_sensor_list()
             
+            # Protokoll-Filter aus Einstellungen
+            show_lora = self.settings.get_setting('show_lora', True) if self.settings else True
+            show_oms = self.settings.get_setting('show_oms', True) if self.settings else True
+            
             # Konvertiere Dictionary zu Liste für Frontend
             sensor_list = []
             for eui, data in sensors_dict.items():
+                # Protokoll-Filter anwenden
+                sensor_type = data.get('type', 'mioty').lower()
+                if sensor_type == 'lora' and not show_lora:
+                    continue
+                if sensor_type == 'oms' and not show_oms:
+                    continue
                 # Prüfe ob Auto-Discovery Device-Metadaten fehlen
                 needs_metadata = False
                 if hasattr(self.addon, 'decoder_manager') and self.addon.decoder_manager:
@@ -409,16 +419,29 @@ class WebGUI:
             if not self.addon:
                 return jsonify({"error": "Add-on nicht verfügbar"}), 500
             
+            # Protokoll-Filter aus Einstellungen
+            show_lora = self.settings.get_setting('show_lora', True) if self.settings else True
+            show_oms = self.settings.get_setting('show_oms', True) if self.settings else True
+            
             # Neue gruppierte Live-Daten abrufen
             grouped_data = self.addon.get_live_messages_grouped()
             
             # Format für Frontend optimieren
             formatted_result = {
-                'sensor_count': grouped_data.get('sensor_count', 0),
+                'sensor_count': 0,
                 'sensors': []
             }
             
             for sensor_data in grouped_data.get('sensors', []):
+                # Protokoll-Filter anwenden
+                sensor_eui = sensor_data.get('eui', '')
+                sensor_type = 'mioty'
+                if self.addon and hasattr(self.addon, 'sensors') and sensor_eui in self.addon.sensors:
+                    sensor_type = self.addon.sensors[sensor_eui].get('type', 'mioty').lower()
+                if sensor_type == 'lora' and not show_lora:
+                    continue
+                if sensor_type == 'oms' and not show_oms:
+                    continue
                 formatted_messages = []
                 for msg in sensor_data.get('messages', []):
                     formatted_msg = {
@@ -441,6 +464,7 @@ class WebGUI:
                     'messages': formatted_messages
                 })
             
+            formatted_result['sensor_count'] = len(formatted_result['sensors'])
             return jsonify(formatted_result)
         
         @self.app.route('/api/livedata/flat')  
@@ -584,14 +608,25 @@ class WebGUI:
                                 config['model'] = meta.get('model')
                             if not config.get('device_name'):
                                 config['device_name'] = meta.get('name')
-                        # Update Online-Status
+                        # Update Online-Status und Typ
                         if eui in self.addon.sensors:
                             sensor_data = self.addon.sensors[eui]
                             config['last_seen'] = sensor_data.get('last_seen', config.get('last_seen', 0))
                             config['signal_quality'] = sensor_data.get('signal_quality', 'Unknown')
                             config['online'] = True
+                            config['protocol_type'] = sensor_data.get('type', 'mioty').lower()
                         else:
                             config['online'] = False
+                            config['protocol_type'] = config.get('protocol_type', 'mioty')
+                
+                # Protokoll-Filter anwenden
+                show_lora = self.settings.get_setting('show_lora', True) if self.settings else True
+                show_oms = self.settings.get_setting('show_oms', True) if self.settings else True
+                configs = [
+                    c for c in configs
+                    if not (c.get('protocol_type', 'mioty') == 'lora' and not show_lora)
+                    and not (c.get('protocol_type', 'mioty') == 'oms' and not show_oms)
+                ]
                 
                 return jsonify(configs)
             except Exception as e:
@@ -1379,6 +1414,17 @@ class WebGUI:
                 return jsonify({"success": True, "message": "Einstellungen gespeichert. Starten Sie das Add-on neu um Änderungen zu übernehmen."})
             else:
                 return jsonify({"error": "Fehler beim Speichern der Einstellungen"}), 500
+        
+        @self.app.route('/api/protocol-filter', methods=['POST'])
+        def update_protocol_filter():
+            """API: Protokoll-Filter (LoRa / OMS) speichern."""
+            data = request.get_json()
+            self.settings.update_settings({
+                'show_lora': bool(data.get('show_lora', True)),
+                'show_oms': bool(data.get('show_oms', True))
+            })
+            logging.info(f"📡 Protokoll-Filter aktualisiert: LoRa={data.get('show_lora')}, OMS={data.get('show_oms')}")
+            return jsonify({"success": True, "message": "Protokoll-Filter gespeichert"})
         
         @self.app.route('/api/ha-settings', methods=['POST'])
         def update_ha_settings():
@@ -3065,6 +3111,36 @@ class WebGUI:
             margin-bottom: 20px;
         }
         
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 52px;
+            height: 28px;
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider {
+            position: absolute;
+            inset: 0;
+            background: #ccc;
+            border-radius: 28px;
+            transition: 0.3s;
+        }
+        .toggle-slider::before {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            left: 4px;
+            top: 4px;
+            background: white;
+            border-radius: 50%;
+            transition: 0.3s;
+        }
+        .toggle-switch input:checked + .toggle-slider { background: #28a745; }
+        .toggle-switch input:checked + .toggle-slider::before { transform: translateX(24px); }
+        
         .form-group {
             margin-bottom: 20px;
         }
@@ -3207,9 +3283,66 @@ class WebGUI:
                     </div>
                     
                     <button type="submit" class="btn">💾 Einstellungen speichern</button>
-                    <button type="button" class="btn btn-secondary" onclick="loadSettings()">🔄 Neu laden</button>
                 </form>
             </div>
+            
+            <div class="section">
+                <h2 class="section-title">📡 Protokoll-Filter</h2>
+                <p style="color: #666; margin-bottom: 20px;">Wähle welche Sensor-Technologien im Dashboard und in der Sensorliste angezeigt werden sollen. Deaktivierte Protokolle werden komplett ausgeblendet.</p>
+                
+                <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 200px; background: #f8f9fa; border-radius: 12px; padding: 20px; border: 2px solid #ddd;">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
+                            <span style="font-size: 28px;">📶</span>
+                            <div>
+                                <strong style="font-size: 16px;">mioty</strong><br>
+                                <span style="color: #28a745; font-size: 12px;">● Immer aktiv</span>
+                            </div>
+                        </div>
+                        <p style="color: #666; font-size: 13px;">Basis-Protokoll, kann nicht deaktiviert werden.</p>
+                    </div>
+                    
+                    <div style="flex: 1; min-width: 200px; background: #f8f9fa; border-radius: 12px; padding: 20px; border: 2px solid #ddd;" id="lora-card">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <span style="font-size: 28px;">🌐</span>
+                                <div>
+                                    <strong style="font-size: 16px;">LoRa / LoRaWAN</strong><br>
+                                    <span id="lora-status-text" style="font-size: 12px; color: #28a745;">● Aktiv</span>
+                                </div>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="show_lora" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <p style="color: #666; font-size: 13px;">LoRa-Sensoren im Dashboard und Sensorliste anzeigen.</p>
+                    </div>
+                    
+                    <div style="flex: 1; min-width: 200px; background: #f8f9fa; border-radius: 12px; padding: 20px; border: 2px solid #ddd;" id="oms-card">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <span style="font-size: 28px;">🔌</span>
+                                <div>
+                                    <strong style="font-size: 16px;">OMS / Zähler</strong><br>
+                                    <span id="oms-status-text" style="font-size: 12px; color: #28a745;">● Aktiv</span>
+                                </div>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="show_oms" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <p style="color: #666; font-size: 13px;">OMS-Zähler (Strom, Gas, Wasser) anzeigen.</p>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 20px;">
+                    <button class="btn" onclick="saveProtocolFilter()">💾 Filter speichern</button>
+                    <span id="protocol-save-msg" style="margin-left: 15px; color: #28a745; display: none;">✅ Gespeichert</span>
+                </div>
+            </div>
+            
             
             <!-- Home Assistant MQTT Konfiguration -->
             <div class="section">
@@ -3316,6 +3449,48 @@ class WebGUI:
         const alerts = document.getElementById('alerts');
         const connectionStatus = document.getElementById('connectionStatus');
         
+        function updateProtocolCard(protocol, active) {
+            const card = document.getElementById(protocol + '-card');
+            const statusText = document.getElementById(protocol + '-status-text');
+            if (card) {
+                card.style.borderColor = active ? '#28a745' : '#dc3545';
+                card.style.opacity = active ? '1' : '0.6';
+            }
+            if (statusText) {
+                statusText.textContent = active ? '● Aktiv' : '● Ausgeblendet';
+                statusText.style.color = active ? '#28a745' : '#dc3545';
+            }
+        }
+        
+        document.getElementById('show_lora').addEventListener('change', function() {
+            updateProtocolCard('lora', this.checked);
+        });
+        document.getElementById('show_oms').addEventListener('change', function() {
+            updateProtocolCard('oms', this.checked);
+        });
+        
+        async function saveProtocolFilter() {
+            const data = {
+                show_lora: document.getElementById('show_lora').checked,
+                show_oms: document.getElementById('show_oms').checked
+            };
+            try {
+                const response = await fetch(BASE_URL + '/api/protocol-filter', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                if (result.success) {
+                    const msg = document.getElementById('protocol-save-msg');
+                    msg.style.display = 'inline';
+                    setTimeout(() => msg.style.display = 'none', 3000);
+                }
+            } catch (e) {
+                alert('Fehler beim Speichern: ' + e.message);
+            }
+        }
+        
         // Einstellungen laden
         async function loadSettings() {
             try {
@@ -3329,6 +3504,14 @@ class WebGUI:
                 document.getElementById('mqtt_password').value = settings.mqtt_password || '';
                 document.getElementById('base_topic').value = settings.base_topic || 'bssci';
                 document.getElementById('auto_discovery').checked = settings.auto_discovery || false;
+                
+                // Protokoll-Filter Toggles laden
+                const showLora = settings.show_lora !== false;
+                const showOms = settings.show_oms !== false;
+                document.getElementById('show_lora').checked = showLora;
+                document.getElementById('show_oms').checked = showOms;
+                updateProtocolCard('lora', showLora);
+                updateProtocolCard('oms', showOms);
                 
                 // Home Assistant MQTT Felder füllen
                 document.getElementById('ha_mqtt_broker').value = settings.ha_mqtt_broker || 'core-mosquitto';

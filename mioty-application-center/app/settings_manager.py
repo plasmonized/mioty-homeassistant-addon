@@ -43,7 +43,9 @@ class SettingsManager:
                     'ha_mqtt_broker': 'core-mosquitto',
                     'ha_mqtt_port': 1883,
                     'ha_mqtt_username': '',
-                    'ha_mqtt_password': ''
+                    'ha_mqtt_password': '',
+                    'show_lora': True,
+                    'show_oms': True
                 }
                 self.save_settings()
                 logging.info("Standard-Einstellungen erstellt")
