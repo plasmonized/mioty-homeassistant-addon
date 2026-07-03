@@ -40,6 +40,15 @@ class MQTTManager:
         self.ha_connected = False
         self.running = False
         
+        # Reconnect / Backoff Status
+        self._reconnect_lock = threading.Lock()
+        self._mioty_backoff = 5      # Sekunden bis zum nächsten Reconnect-Versuch
+        self._ha_backoff = 5
+        self._mioty_backoff_max = 300  # maximal 5 Minuten zwischen Versuchen
+        self._ha_backoff_max = 300
+        self._mioty_next_attempt = 0.0
+        self._ha_next_attempt = 0.0
+        
         # Callbacks
         self.data_callback: Optional[Callable] = None
         self.config_callback: Optional[Callable] = None
@@ -78,10 +87,26 @@ class MQTTManager:
     
     def connect(self) -> bool:
         """Verbinde mit beiden MQTT Brokern."""
-        success = True
+        # Manager gilt ab dem ersten Verbindungsversuch als "aktiv", damit
+        # check_and_reconnect() auch dann greift, wenn der initiale Connect
+        # fehlschlägt (statt dauerhaft getrennt zu bleiben).
+        self.running = True
         
-        # 1. Verbinde mit externem mioty Broker (für Datenempfang)
+        success = self._connect_mioty_client()
+        self._connect_ha_client()
+        
+        return success
+    
+    def _connect_mioty_client(self) -> bool:
+        """Baue die Verbindung zum externen mioty MQTT Broker auf (für Datenempfang)."""
         try:
+            # Falls bereits ein alter Client existiert, sauber aufräumen
+            if self.client:
+                try:
+                    self.client.loop_stop()
+                except Exception:
+                    pass
+            
             # Eindeutige Client-ID generieren um Konflikte zu vermeiden
             unique_id = str(uuid.uuid4())[:8]
             client_id = f"bssci_mioty_{unique_id}"
@@ -110,14 +135,24 @@ class MQTTManager:
             
             if not self.connected:
                 logging.error("mioty MQTT Verbindung Timeout")
-                success = False
+                return False
+            
+            return True
                 
         except Exception as e:
             logging.error(f"mioty MQTT Verbindung fehlgeschlagen: {e}")
-            success = False
-        
-        # 2. Verbinde mit Home Assistant MQTT Broker (für Discovery)
+            return False
+    
+    def _connect_ha_client(self) -> bool:
+        """Baue die Verbindung zum Home Assistant MQTT Broker auf (für Discovery)."""
         try:
+            # Falls bereits ein alter Client existiert, sauber aufräumen
+            if self.ha_client:
+                try:
+                    self.ha_client.loop_stop()
+                except Exception:
+                    pass
+            
             # Eindeutige Client-ID für HA Client generieren
             ha_unique_id = str(uuid.uuid4())[:8]
             ha_client_id = f"bssci_ha_{ha_unique_id}"
@@ -145,16 +180,64 @@ class MQTTManager:
             
             if not self.ha_connected:
                 logging.warning("Home Assistant MQTT Verbindung Timeout - Discovery deaktiviert")
+                return False
+            
+            return True
                 
         except Exception as e:
             logging.warning(f"Home Assistant MQTT Verbindung fehlgeschlagen: {e} - Discovery deaktiviert")
             logging.info("💡 Tipp: Für Home Assistant Add-ons verwenden Sie 'core-mosquitto' als HA MQTT Broker")
             logging.info(f"🔧 Debug: Versuche Verbindung zu {self.ha_broker}:{self.ha_port} mit User='{self.ha_username}'")
+            return False
+    
+    def check_and_reconnect(self):
+        """Prüfe den Verbindungsstatus beider Broker und versuche bei Bedarf mit Backoff eine
+        Wiederverbindung. Wird periodisch aus dem Haupt-Loop aufgerufen."""
+        if not self.running:
+            return
         
-        if success:
-            self.running = True
+        if not self._reconnect_lock.acquire(blocking=False):
+            # Es läuft bereits ein Reconnect-Versuch, nichts zu tun
+            return
+        
+        try:
+            now = time.time()
             
-        return success
+            if not self.connected and now >= self._mioty_next_attempt:
+                logging.warning(
+                    f"🔁 mioty MQTT nicht verbunden - versuche Wiederverbindung "
+                    f"(nächster Versuch in max. {self._mioty_backoff}s Backoff)..."
+                )
+                if self._connect_mioty_client():
+                    logging.info("✅ mioty MQTT Wiederverbindung erfolgreich!")
+                    self._mioty_backoff = 5
+                    self._mioty_next_attempt = 0.0
+                else:
+                    logging.error(
+                        f"❌ mioty MQTT Wiederverbindung fehlgeschlagen - "
+                        f"nächster Versuch in {self._mioty_backoff}s"
+                    )
+                    self._mioty_next_attempt = now + self._mioty_backoff
+                    self._mioty_backoff = min(self._mioty_backoff * 2, self._mioty_backoff_max)
+            
+            if not self.ha_connected and now >= self._ha_next_attempt:
+                logging.warning(
+                    f"🔁 Home Assistant MQTT nicht verbunden - versuche Wiederverbindung "
+                    f"(nächster Versuch in max. {self._ha_backoff}s Backoff)..."
+                )
+                if self._connect_ha_client():
+                    logging.info("✅ Home Assistant MQTT Wiederverbindung erfolgreich!")
+                    self._ha_backoff = 5
+                    self._ha_next_attempt = 0.0
+                else:
+                    logging.error(
+                        f"❌ Home Assistant MQTT Wiederverbindung fehlgeschlagen - "
+                        f"nächster Versuch in {self._ha_backoff}s"
+                    )
+                    self._ha_next_attempt = now + self._ha_backoff
+                    self._ha_backoff = min(self._ha_backoff * 2, self._ha_backoff_max)
+        finally:
+            self._reconnect_lock.release()
     
     def disconnect(self):
         """Trenne beide MQTT Verbindungen."""

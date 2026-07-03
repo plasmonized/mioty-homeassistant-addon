@@ -1358,8 +1358,11 @@ class BSSCIAddon:
     
     def process_status_updates(self):
         """Verarbeite regelmäßige Status-Updates."""
-        # Hier könnte regelmäßige Überwachung implementiert werden
-        pass
+        try:
+            if self.mqtt_manager:
+                self.mqtt_manager.check_and_reconnect()
+        except Exception as e:
+            logging.error(f"❌ Fehler bei MQTT Status-Update/Reconnect-Prüfung: {e}")
     
     def add_sensor(self, sensor_eui: str, network_key: str, short_addr: str, bidirectional: bool = False) -> bool:
         """Füge einen neuen Sensor hinzu - Service Center MQTT Workflow."""
