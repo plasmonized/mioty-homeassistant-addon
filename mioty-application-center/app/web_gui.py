@@ -206,7 +206,7 @@ class WebGUI:
             
             # KRITISCH: Verwende IMMER die aktuelle externe Template-Datei
             if index_exists:
-                logging.info("✅ Verwende AKTUELLE index.html Template-Datei (Version 1.0.5.7.8)")
+                logging.info("✅ Verwende AKTUELLE index.html Template-Datei (Version 1.0.5.7.9)")
                 return render_template('index.html', ingress_path=ingress_path)
             else:
                 logging.error("❌ CRITICAL ERROR: index.html Template-Datei nicht gefunden!")
@@ -839,8 +839,8 @@ class WebGUI:
             """API: Sensor-Metadaten manuell setzen."""
             try:
                 data = request.get_json()
-                manufacturer = data.get('manufacturer', '').strip()
-                model = data.get('model', '').strip()
+                manufacturer = (data.get('manufacturer') or '').strip()
+                model = (data.get('model') or '').strip()
                 
                 if not manufacturer or not model:
                     return jsonify({'error': 'Manufacturer und Model erforderlich'}), 400
@@ -883,8 +883,8 @@ class WebGUI:
             """API: Base Station-Metadaten manuell setzen."""
             try:
                 data = request.get_json()
-                manufacturer = data.get('manufacturer', '').strip()
-                model = data.get('model', '').strip()
+                manufacturer = (data.get('manufacturer') or '').strip()
+                model = (data.get('model') or '').strip()
                 
                 if not manufacturer or not model:
                     return jsonify({'error': 'Manufacturer und Model erforderlich'}), 400
@@ -1058,7 +1058,7 @@ class WebGUI:
                 network_key_raw = data['network_key'].strip()
                 short_addr_raw = data['short_addr'].strip()
                 bidirectional = data.get('bidirectional', False)
-                application_key_raw = data.get('application_key', '').strip()  # Optional AES Key
+                application_key_raw = (data.get('application_key') or '').strip()  # Optional AES Key
                 
                 # Flexible Hex-Validierung (mit/ohne Trennzeichen)
                 if not _is_valid_hex(eui_raw, 16):
@@ -1104,9 +1104,9 @@ class WebGUI:
                             logging.error(f"❌ Fehler bei Application Key Zuweisung: {key_error}")
                     
                     # 2. Optional: Metadaten speichern falls vorhanden
-                    manufacturer = data.get('manufacturer', '').strip()
-                    model = data.get('model', '').strip()
-                    device_name = data.get('device_name', '').strip()
+                    manufacturer = (data.get('manufacturer') or '').strip()
+                    model = (data.get('model') or '').strip()
+                    device_name = (data.get('device_name') or '').strip()
                     
                     logging.info(f"🔍 METADATEN DEBUG: Manufacturer='{manufacturer}', Model='{model}', DeviceName='{device_name}'")
                     
@@ -1617,7 +1617,7 @@ class WebGUI:
                 return jsonify({"error": "Decoder Manager nicht verfügbar"}), 500
             
             data = request.get_json()
-            application_key = data.get('application_key', '').strip()
+            application_key = (data.get('application_key') or '').strip()
             encryption_mode = data.get('encryption_mode', 'GCM').upper()
             
             # Validierung
@@ -1703,7 +1703,7 @@ class WebGUI:
                 return jsonify({"error": "Decoder Manager nicht verfügbar"}), 500
             
             data = request.get_json()
-            test_payload = data.get('test_payload', '').strip()
+            test_payload = (data.get('test_payload') or '').strip()
             
             if not test_payload:
                 return jsonify({"error": "test_payload ist erforderlich"}), 400
@@ -1988,7 +1988,7 @@ class WebGUI:
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>mioty Application Center für Homeassistant v1.0.5.7.8</title>
+    <title>mioty Application Center für Homeassistant v1.0.5.7.9</title>
     <style>
         * {
             margin: 0;
@@ -2926,7 +2926,7 @@ class WebGUI:
     def _get_service_center_client(self):
         """Erstelle Service Center Client basierend auf Settings."""
         settings = self.settings.get_all_settings()
-        service_center_url = settings.get('service_center_url', '').strip()
+        service_center_url = (settings.get('service_center_url') or '').strip()
         
         if not service_center_url or not settings.get('service_center_enabled', False):
             return None
@@ -2990,7 +2990,7 @@ class WebGUI:
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>mioty Application Center Einstellungen v1.0.5.7.8</title>
+    <title>mioty Application Center Einstellungen v1.0.5.7.9</title>
     <style>
         * {
             margin: 0;
