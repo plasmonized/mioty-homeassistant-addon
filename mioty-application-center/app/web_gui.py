@@ -3485,6 +3485,14 @@ class WebGUI:
                 <h2>📡 Verbindungsstatus</h2>
                 <div id="connectionStatus" class="loading">Lade Verbindungsstatus...</div>
             </div>
+            
+            <!-- Über -->
+            <div class="section">
+                <h2>ℹ️ Über</h2>
+                <p><strong>mioty Application Center</strong></p>
+                <p>Version: <span class="code" style="font-weight: bold;">1.0.5.7.12</span></p>
+                <p style="color: #666; font-size: 13px;">BSSCI mioty Add-on für Home Assistant • powered by Sentinum</p>
+            </div>
         </div>
     </div>
     
