@@ -2,6 +2,21 @@
 ARG BUILD_FROM
 FROM $BUILD_FROM
 
+ARG BUILD_ARCH
+ARG TEMPIO_VERSION=2021.09.0
+
+# OCI / HA Labels
+LABEL \
+    io.hass.name="mioty Application Center für Homeassistant" \
+    io.hass.description="mioty Application Center für die Verwaltung von mioty IoT Sensoren" \
+    io.hass.arch="armhf|aarch64|amd64|armv7|i386" \
+    io.hass.type="addon" \
+    io.hass.version="1.0.5.7.4" \
+    org.opencontainers.image.title="mioty Application Center für Homeassistant" \
+    org.opencontainers.image.description="mioty Application Center für die Verwaltung von mioty IoT Sensoren" \
+    org.opencontainers.image.source="https://github.com/plasmonized/mioty-homeassistant-addon" \
+    org.opencontainers.image.licenses="MIT"
+
 # Environment variables
 ENV LANG=C.UTF-8
 
@@ -27,26 +42,8 @@ COPY app/ /opt/
 COPY run.sh /
 RUN chmod a+x /run.sh
 
-# KRITISCH: Force cache bust für Docker-Image (version 1.0.5.7.2)
-RUN echo "Template update: 1.0.5.7.2 - $(date)" > /opt/version.txt
-RUN echo "Node.js support added for JavaScript decoder execution" >> /opt/version.txt
-
-# DEBUGGING: Template-Dateien auflisten
-RUN echo "=== TEMPLATE FILES IN CONTAINER ===" && \
-    find /opt -name "*.html" -type f -exec ls -la {} \; && \
-    echo "=== TEMPLATE CONTENT PREVIEW ===" && \
-    head -10 /opt/templates/index.html 2>/dev/null || echo "NO INDEX.HTML FOUND"
-
 # Set work directory
 WORKDIR /opt
-
-# Labels
-LABEL \
-    io.hass.name="mioty Application Center für Homeassistant" \
-    io.hass.description="mioty Application Center für die Verwaltung von mioty IoT Sensoren" \
-    io.hass.arch="armhf|aarch64|amd64|armv7|i386" \
-    io.hass.type="addon" \
-    io.hass.version="1.0.5.7.2"
 
 # Run
 CMD ["/run.sh"]
