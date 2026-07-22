@@ -440,18 +440,37 @@ class MQTTManager:
             logging.error(f"Fehler beim Senden des Sensor-Status: {e}")
             return False
     
-    def publish_config(self, topic: str, config: Dict[str, Any]) -> bool:
-        """Sende Sensor-Konfiguration."""
+    def publish_config(self, topic: str, config: Dict[str, Any], confirm: bool = True) -> bool:
+        """Sende Sensor-Konfiguration (QoS 1).
+        
+        confirm=True: wartet auf Broker-Bestätigung (PUBACK). Darf NICHT aus
+        MQTT-Callbacks (on_message) aufgerufen werden, da wait_for_publish
+        sonst die Netzwerk-Schleife blockiert - dort confirm=False verwenden.
+        """
         if not self.connected:
+            logging.error(f"❌ MQTT nicht verbunden ({self.broker}:{self.port}) - Publish auf '{topic}' übersprungen")
             return False
         
         try:
             payload = json.dumps(config)
-            result = self.client.publish(topic, payload)
-            return result.rc == mqtt.MQTT_ERR_SUCCESS
+            result = self.client.publish(topic, payload, qos=1)
+            
+            if result.rc != mqtt.MQTT_ERR_SUCCESS:
+                logging.error(f"❌ MQTT Publish fehlgeschlagen (rc={result.rc}) für '{topic}' auf {self.broker}:{self.port}")
+                return False
+            
+            if confirm:
+                # Auf PUBACK vom Broker warten (max. 5 Sekunden)
+                result.wait_for_publish(timeout=5.0)
+                if not result.is_published():
+                    logging.error(f"❌ Keine Broker-Bestätigung (PUBACK) für '{topic}' auf {self.broker}:{self.port} - Nachricht evtl. verloren!")
+                    return False
+                logging.info(f"✅ MQTT Publish bestätigt: '{topic}' auf {self.broker}:{self.port}")
+            
+            return True
             
         except Exception as e:
-            logging.error(f"Fehler beim Senden der Konfiguration: {e}")
+            logging.error(f"Fehler beim Senden der Konfiguration an '{topic}': {e}")
             return False
     
     def send_sensor_command(self, sensor_eui: str, command: str) -> bool:
@@ -735,7 +754,7 @@ class MQTTManager:
                 }
                 
                 response_topic = f"{self.base_topic}/ep/{sensor_eui}/response"
-                self.publish_config(response_topic, response_data)
+                self.publish_config(response_topic, response_data, confirm=False)
                 
         except Exception as e:
             logging.error(f"Fehler beim Verarbeiten des Remote EP Commands: {e}")
@@ -763,7 +782,7 @@ class MQTTManager:
             }
             
             response_topic = f"{self.base_topic}/ep/{sensor_eui}/response"
-            self.publish_config(response_topic, response_data)
+            self.publish_config(response_topic, response_data, confirm=False)
             
         except Exception as e:
             logging.error(f"Fehler beim Verarbeiten des Sensor Commands: {e}")
@@ -790,7 +809,7 @@ class MQTTManager:
             }
             
             response_topic = f"{self.base_topic}/ep/{sensor_eui}/response"
-            self.publish_config(response_topic, response_data)
+            self.publish_config(response_topic, response_data, confirm=False)
             
             logging.info(f"✅ Legacy Registration Response gesendet für {sensor_eui}")
             

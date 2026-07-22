@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.5.7.10
+
+- 🐛 **Bugfix:** Sensor-Registrierung konnte „Erfolg" melden, obwohl die MQTT-Nachricht das Service Center nie erreichte — Registrierungen werden jetzt mit QoS 1 gesendet und auf Broker-Bestätigung (PUBACK) gewartet. Ohne Bestätigung wird ein Fehler angezeigt
+- 📋 **Logging:** Jeder Registrierungs-Publish protokolliert jetzt Broker, Port und Topic, damit Zustellprobleme sofort sichtbar sind
+
 ## 1.0.5.7.9
 
 - 🐛 **Bugfix:** Sensor-Registrierung schlug fehl mit `'NoneType' object has no attribute 'strip'`, wenn optionale Felder (Application Key, Hersteller, Modell, Gerätename) leer gelassen wurden — alle optionalen Felder sind jetzt null-sicher
