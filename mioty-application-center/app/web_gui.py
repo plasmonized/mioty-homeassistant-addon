@@ -1909,10 +1909,15 @@ class WebGUI:
             if not sensor_eui:
                 return jsonify({"error": "sensor_eui ist erforderlich"}), 400
             
+            device_type = data.get('device_type', 'sentinum_aion')
+            if device_type not in dm.iodd_service.DEVICE_TYPES:
+                return jsonify({"error": f"Ungültiger Gerätetyp: {device_type}"}), 400
+            
             adapter = dm.iodd_service.register_adapter(
                 sensor_eui,
                 name=data.get('name'),
-                description=data.get('description')
+                description=data.get('description'),
+                device_type=device_type
             )
             return jsonify({"success": True, "adapter": adapter})
         

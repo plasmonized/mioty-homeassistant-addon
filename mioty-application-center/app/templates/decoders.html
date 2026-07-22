@@ -220,6 +220,14 @@
                     <div class="help-text">EUI des mioty-io-link Adapter-Sensors</div>
                 </div>
                 <div class="form-group">
+                    <label>Gerätetyp:</label>
+                    <select id="adapterDeviceType" required>
+                        <option value="sentinum_aion">Sentinum AION</option>
+                        <option value="ifm_eio240">ifm EIO240</option>
+                    </select>
+                    <div class="help-text">Bestimmt, wie die IO-Link Nachrichten des Adapters ausgewertet werden</div>
+                </div>
+                <div class="form-group">
                     <label>Name (optional):</label>
                     <input type="text" id="adapterName" placeholder="z.B. IO-Link Adapter Halle 1">
                 </div>
@@ -461,6 +469,7 @@
                         </div>
                         <div class="info-grid">
                             <div class="info-item"><span class="info-label">EUI</span><span class="info-value code">${a.eui}</span></div>
+                            <div class="info-item"><span class="info-label">Gerätetyp</span><span class="info-value">${a.device_type === 'ifm_eio240' ? 'ifm EIO240' : 'Sentinum AION'}</span></div>
                             <div class="info-item"><span class="info-label">IODD</span><span class="info-value">${a.assigned_iodd || '<span style="color: #ffc107;">⚠️ Nicht zugewiesen</span>'}</span></div>
                             <div class="info-item"><span class="info-label">Registriert</span><span class="info-value">${a.registered_at ? new Date(a.registered_at).toLocaleString() : 'Unbekannt'}</span></div>
                         </div>
@@ -659,7 +668,8 @@
             const data = {
                 sensor_eui: selectedEui,
                 name: document.getElementById('adapterName').value,
-                description: document.getElementById('adapterDescription').value
+                description: document.getElementById('adapterDescription').value,
+                device_type: document.getElementById('adapterDeviceType').value
             };
             try {
                 const response = await fetch(getCacheBusterURL('/api/iolink/adapter/register'), {

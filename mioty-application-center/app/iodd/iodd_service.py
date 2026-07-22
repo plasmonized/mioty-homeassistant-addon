@@ -70,8 +70,14 @@ class IODDService:
         except Exception as e:
             logging.error(f"Failed to save adapter registry: {e}")
     
+    DEVICE_TYPES = {
+        'sentinum_aion': 'Sentinum AION',
+        'ifm_eio240': 'ifm EIO240'
+    }
+    
     def register_adapter(self, sensor_eui: str, name: str = None, 
-                        description: str = None) -> Dict[str, Any]:
+                        description: str = None,
+                        device_type: str = 'sentinum_aion') -> Dict[str, Any]:
         """
         Register a mioty-io-link adapter
         
@@ -79,14 +85,19 @@ class IODDService:
             sensor_eui: The EUI of the adapter sensor
             name: Optional friendly name for the adapter
             description: Optional description
+            device_type: Adapter hardware type ('sentinum_aion' or 'ifm_eio240')
             
         Returns:
             The registered adapter info
         """
+        if device_type not in self.DEVICE_TYPES:
+            device_type = 'sentinum_aion'
+        
         adapter = {
             'eui': sensor_eui,
             'name': name or f"IO-Link Adapter {sensor_eui[-4:]}",
             'description': description or "",
+            'device_type': device_type,
             'registered_at': datetime.now().isoformat(),
             'assigned_iodd': self._iodd_assignments.get(sensor_eui),
             'io_link_devices': []
@@ -396,6 +407,68 @@ class IODDService:
             logging.error(f"Failed to extract process data: {e}")
             return {'error': str(e), 'process_data_hex': payload_hex}
     
+    def _extract_process_data_eio240(self, payload_hex: str) -> Dict[str, Any]:
+        """
+        Extract process data from ifm EIO240 mioty packet.
+        
+        Packet structure (before optional Application Key encryption):
+        - Header (1 Byte): ProtlV (Protokollversion) + MessT (Messagetype)
+        - VendorID (2 Bytes): HEX value of the connected IO-Link device
+        - DeviceID (3 Bytes): HEX value of the connected IO-Link device
+        - Data (<= 32 Bytes): the IO-Link process data (e.g. PDin)
+        
+        Only valid data are transmitted.
+        
+        Args:
+            payload_hex: Full adapter payload as hex string
+            
+        Returns:
+            Dict with extracted process_data_hex, header info, or error
+        """
+        try:
+            payload_bytes = bytes.fromhex(payload_hex.replace(' ', '').replace('0x', ''))
+            
+            # Header (1) + VendorID (2) + DeviceID (3) = 6 bytes minimum
+            if len(payload_bytes) < 6:
+                return {'error': 'Payload too short for EIO240 header', 'process_data_hex': payload_hex}
+            
+            header = payload_bytes[0]
+            protocol_version = (header >> 4) & 0x0F
+            message_type = header & 0x0F
+            
+            vendor_id = int.from_bytes(payload_bytes[1:3], 'big')
+            device_id = int.from_bytes(payload_bytes[3:6], 'big')
+            
+            process_data = payload_bytes[6:]
+            process_data_hex = process_data.hex().upper() if process_data else payload_hex
+            
+            logging.debug(f"EIO240 header: 0x{header:02X} (protV={protocol_version}, messT={message_type}), "
+                         f"vendor=0x{vendor_id:04X}, device=0x{device_id:06X}")
+            logging.debug(f"Extracted process data: {process_data_hex} ({len(process_data)} bytes)")
+            
+            return {
+                'success': True,
+                'process_data_hex': process_data_hex,
+                'header': header,
+                'protocol_version': protocol_version,
+                'message_type': message_type,
+                'vendor_id': vendor_id,
+                'device_id': device_id,
+                'pd_in_length': len(process_data),
+                'pd_out_length': 0
+            }
+            
+        except Exception as e:
+            logging.error(f"Failed to extract EIO240 process data: {e}")
+            return {'error': str(e), 'process_data_hex': payload_hex}
+    
+    def get_adapter_device_type(self, sensor_eui: str) -> str:
+        """Get the device type of a registered adapter (default: sentinum_aion)"""
+        adapter = self._adapters.get(sensor_eui)
+        if adapter:
+            return adapter.get('device_type', 'sentinum_aion')
+        return 'sentinum_aion'
+    
     def decode_process_data(self, sensor_eui: str, payload_hex: str) -> Dict[str, Any]:
         """
         Decode IO-Link process data for an adapter
@@ -424,11 +497,15 @@ class IODDService:
             }
         
         try:
-            # Extract process data from mioty-io-link packet header
-            extraction = self._extract_process_data(payload_hex)
+            # Extract process data based on adapter device type
+            device_type = self.get_adapter_device_type(sensor_eui)
+            if device_type == 'ifm_eio240':
+                extraction = self._extract_process_data_eio240(payload_hex)
+            else:
+                extraction = self._extract_process_data(payload_hex)
             process_data_hex = extraction.get('process_data_hex', payload_hex)
             
-            logging.info(f"🔧 IODD decode: raw={payload_hex} → process_data={process_data_hex}")
+            logging.info(f"🔧 IODD decode ({device_type}): raw={payload_hex} → process_data={process_data_hex}")
             
             process_data_vars = parser.get_process_data_in()
             
@@ -448,6 +525,7 @@ class IODDService:
                 'success': True,
                 'decoder_type': 'iodd',
                 'iodd_file': iodd_filename,
+                'adapter_device_type': device_type,
                 'device_info': device_info,
                 'data': decoded,
                 'raw_payload': payload_hex,
