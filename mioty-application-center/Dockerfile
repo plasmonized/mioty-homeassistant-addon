@@ -1,6 +1,6 @@
 # mioty Application Center für Homeassistant Add-on Dockerfile
-ARG BUILD_FROM
-FROM $BUILD_FROM
+ARG BUILD_ARCH=amd64
+FROM ghcr.io/home-assistant/${BUILD_ARCH}-base:3.19
 
 ARG BUILD_ARCH
 ARG TEMPIO_VERSION=2021.09.0
@@ -11,7 +11,7 @@ LABEL \
     io.hass.description="mioty Application Center für die Verwaltung von mioty IoT Sensoren" \
     io.hass.arch="armhf|aarch64|amd64|armv7|i386" \
     io.hass.type="addon" \
-    io.hass.version="1.0.5.7.6" \
+    io.hass.version="1.0.5.7.7" \
     org.opencontainers.image.title="mioty Application Center für Homeassistant" \
     org.opencontainers.image.description="mioty Application Center für die Verwaltung von mioty IoT Sensoren" \
     org.opencontainers.image.source="https://github.com/plasmonized/mioty-homeassistant-addon" \

@@ -1,7 +1,7 @@
 # BSSCI mioty Home Assistant Add-on Konfiguration
 name: "mioty Application Center für Homeassistant"
 description: "mioty Application Center für die Verwaltung von mioty IoT Sensoren mit MQTT Integration und Web-GUI"
-version: "1.0.5.7.6"
+version: "1.0.5.7.7"
 slug: mioty-application-center
 logo: logo.png
 init: false
@@ -11,12 +11,6 @@ arch:
   - aarch64
   - amd64
   - i386
-build_from:
-  aarch64: "ghcr.io/home-assistant/aarch64-base:3.19"
-  amd64: "ghcr.io/home-assistant/amd64-base:3.19"
-  armv7: "ghcr.io/home-assistant/armv7-base:3.19"
-  armhf: "ghcr.io/home-assistant/armhf-base:3.19"
-  i386: "ghcr.io/home-assistant/i386-base:3.19"
 startup: application
 boot: auto
 hassio_api: true

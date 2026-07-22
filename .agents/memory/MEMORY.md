@@ -1,0 +1,1 @@
+- [HA add-on BUILD_FROM deprecation](ha-addon-build-from.md) — Supervisor 2026.04+ passes no BUILD_FROM; hardcode base via ARG BUILD_ARCH default in Dockerfile.
