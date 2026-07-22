@@ -3,6 +3,8 @@
 ## 1.0.5.7.11
 
 - ✨ **Neu anlernen:** Neue Buttons auf der Sensoren-Seite — jeder Sensor kann einzeln über „🔄 Neu anlernen" erneut am Service Center registriert werden, oder alle auf einmal über „🔄 Alle neu anlernen". Nutzt gespeicherten Network Key & Short Address; Ergebnis pro Sensor mit Broker-Bestätigung
+- ✨ **IO-Link Adapter:** Beim Registrieren eines Adapters kann der Sensor jetzt bequem aus einem Dropdown (EUI + Gerätename) ausgewählt werden statt die EUI abzutippen — manuelle Eingabe bleibt als Option verfügbar
+- 🐛 **Bugfix:** „Decoder hinzufügen"-Link im Dashboard führte unter Home Assistant Ingress auf eine 404-Seite — Link nutzt jetzt die korrekte Ingress-Navigation
 
 ## 1.0.5.7.10
 

@@ -208,8 +208,15 @@
             </div>
             <form id="registerAdapterForm">
                 <div class="form-group">
-                    <label>Sensor EUI:</label>
-                    <input type="text" id="adapterEui" placeholder="z.B. FCA84A0900001234" required>
+                    <label>Sensor auswählen:</label>
+                    <select id="adapterEuiSelect" required>
+                        <option value="">-- Sensor wählen --</option>
+                    </select>
+                    <div class="help-text">Registrierte Sensoren (EUI + Gerätename). Der gewählte Sensor wird als IO-Link Adapter verknüpft.</div>
+                </div>
+                <div class="form-group" id="adapterEuiManualGroup" style="display: none;">
+                    <label>Sensor EUI (manuell):</label>
+                    <input type="text" id="adapterEui" placeholder="z.B. FCA84A0900001234">
                     <div class="help-text">EUI des mioty-io-link Adapter-Sensors</div>
                 </div>
                 <div class="form-group">
@@ -279,7 +286,50 @@
         }
         
         function showRegisterAdapterModal() {
+            populateAdapterSensorDropdown();
             showModal('registerAdapterModal');
+        }
+        
+        async function populateAdapterSensorDropdown() {
+            const select = document.getElementById('adapterEuiSelect');
+            const manualGroup = document.getElementById('adapterEuiManualGroup');
+            select.innerHTML = '<option value="">Lade Sensoren...</option>';
+            try {
+                const response = await fetch(getCacheBusterURL('/api/sensor-config/list'));
+                const sensors = await response.json();
+                
+                if (!sensors || sensors.length === 0) {
+                    // Keine Sensoren vorhanden → manuelle Eingabe anbieten
+                    select.innerHTML = '<option value="">Keine Sensoren gefunden</option>';
+                    select.removeAttribute('required');
+                    manualGroup.style.display = 'block';
+                    return;
+                }
+                
+                manualGroup.style.display = 'none';
+                select.setAttribute('required', 'required');
+                select.innerHTML = '<option value="">-- Sensor wählen --</option>' +
+                    sensors.map(s => {
+                        const name = s.device_name || s.model || '';
+                        const label = name ? `${s.eui} — ${name}` : s.eui;
+                        return `<option value="${s.eui}">${label}</option>`;
+                    }).join('') +
+                    '<option value="__manual__">✏️ EUI manuell eingeben...</option>';
+                
+                select.onchange = () => {
+                    if (select.value === '__manual__') {
+                        manualGroup.style.display = 'block';
+                        document.getElementById('adapterEui').setAttribute('required', 'required');
+                    } else {
+                        manualGroup.style.display = 'none';
+                        document.getElementById('adapterEui').removeAttribute('required');
+                    }
+                };
+            } catch (error) {
+                select.innerHTML = '<option value="">Fehler beim Laden</option>';
+                select.removeAttribute('required');
+                manualGroup.style.display = 'block';
+            }
         }
         
         async function loadDecoders() {
@@ -598,8 +648,16 @@
         
         document.getElementById('registerAdapterForm').onsubmit = async (e) => {
             e.preventDefault();
+            const selectValue = document.getElementById('adapterEuiSelect').value;
+            const selectedEui = (selectValue && selectValue !== '__manual__')
+                ? selectValue
+                : document.getElementById('adapterEui').value;
+            if (!selectedEui) {
+                showAlert('Bitte einen Sensor auswählen oder eine EUI eingeben', 'error');
+                return;
+            }
             const data = {
-                sensor_eui: document.getElementById('adapterEui').value,
+                sensor_eui: selectedEui,
                 name: document.getElementById('adapterName').value,
                 description: document.getElementById('adapterDescription').value
             };
