@@ -538,7 +538,7 @@ class BSSCIAddon:
             "model": "mioty IoT Sensor",
             "manufacturer": "Unknown",
             "serial_number": sensor_eui,  # ✅ EUI als Seriennummer in Home Assistant anzeigen
-            "sw_version": "1.0.5.7.7"
+            "sw_version": "1.0.5.7.8"
         }
         
         # Prüfe manuelle Metadaten zuerst
@@ -578,7 +578,7 @@ class BSSCIAddon:
                                 "name": adapter_name,
                                 "model": iodd_device_info.get('device_name', 'IO-Link Device'),
                                 "manufacturer": iodd_device_info.get('vendor_name', 'IO-Link'),
-                                "sw_version": "1.0.5.7.7"
+                                "sw_version": "1.0.5.7.8"
                             })
                             logging.info(f"🔌 IO-Link Adapter {sensor_eui}: {device_info['manufacturer']} - {device_info['model']}")
                             return device_info
@@ -588,7 +588,7 @@ class BSSCIAddon:
                         "name": adapter_name,
                         "model": "mioty-io-link Adapter",
                         "manufacturer": "IO-Link",
-                        "sw_version": "1.0.5.7.7"
+                        "sw_version": "1.0.5.7.8"
                     })
                     return device_info
         
@@ -668,7 +668,7 @@ class BSSCIAddon:
             "model": "mioty Base Station",
             "manufacturer": "Unknown",
             "serial_number": bs_eui,  # ✅ EUI als Seriennummer in Home Assistant anzeigen
-            "sw_version": "1.0.5.7.7"
+            "sw_version": "1.0.5.7.8"
         }
         
         # Prüfe manuelle Metadaten zuerst
@@ -918,9 +918,9 @@ class BSSCIAddon:
                 "name": "uptime",
                 "display_name": "Uptime",
                 "device_class": "duration",
-                "unit": None,
+                "unit": "s",
                 "icon": "mdi:clock-time-eight-outline",
-                "value_template": "{{ value_json.uptime }}"
+                "value_template": "{{ value_json.raw_uptime }}"
             },
             {
                 "name": "status",
@@ -930,6 +930,29 @@ class BSSCIAddon:
                 "icon": "mdi:antenna",
                 "value_template": "{{ value_json.state }}"
             },
+        ]
+        
+        # BSSCI v1.1.0: Neue optionale Felder nur hinzufügen, wenn die Base Station sie liefert
+        if status.get('temp') is not None:
+            metrics.append({
+                "name": "temperature",
+                "display_name": "Temperature",
+                "device_class": "temperature",
+                "unit": "°C",
+                "icon": "mdi:thermometer",
+                "value_template": "{{ value_json.temperature }}"
+            })
+        if status.get('noisePwDns') is not None:
+            metrics.append({
+                "name": "noise_power",
+                "display_name": "Noise Power Density",
+                "device_class": None,
+                "unit": "dBm/Hz",
+                "icon": "mdi:waveform",
+                "value_template": "{{ value_json.noise_power }}"
+            })
+        
+        metrics += [
             {
                 "name": "eui",
                 "display_name": "EUI (Serial Number)",
@@ -985,20 +1008,37 @@ class BSSCIAddon:
         state_value = "online" if status.get('code', 1) == 0 else "offline"
         
         # Alle Base Station Daten in einem JSON zusammenfassen
+        # BSSCI v1.0 + v1.1: Optionale Felder robust behandeln (können fehlen oder null sein)
+        mem_load = status.get('memLoad') or 0
+        cpu_load = status.get('cpuLoad') or 0
+        duty_cycle = status.get('dutyCycle') or 0
+        try:
+            uptime = int(float(status.get('uptime') or 0))
+        except (ValueError, TypeError):
+            uptime = 0
+        
         state_data = {
             "state": state_value,  # Hauptstatus
             "base_station_eui": bs_eui,
             "status_code": status.get('code'),
-            "memory_usage": round(status.get('memLoad', 0) * 100, 1),
-            "cpu_usage": round(status.get('cpuLoad', 0) * 100, 1),
-            "duty_cycle": round(status.get('dutyCycle', 0) * 100, 1),
-            "uptime": self.format_uptime(status.get('uptime', 0)),
+            "memory_usage": round(mem_load * 100, 1),
+            "cpu_usage": round(cpu_load * 100, 1),
+            "duty_cycle": round(duty_cycle * 100, 1),
+            "uptime": self.format_uptime(uptime),
             "last_seen": self.format_timestamp(status.get('time')),
-            "raw_memory_load": status.get('memLoad', 0),
-            "raw_cpu_load": status.get('cpuLoad', 0),
-            "raw_duty_cycle": status.get('dutyCycle', 0),
-            "raw_uptime": status.get('uptime', 0)
+            "raw_memory_load": mem_load,
+            "raw_cpu_load": cpu_load,
+            "raw_duty_cycle": duty_cycle,
+            "raw_uptime": uptime
         }
+        
+        # BSSCI v1.1.0: Neue optionale Felder durchreichen, falls vorhanden
+        if status.get('temp') is not None:
+            state_data["temperature"] = round(status['temp'], 1)
+        if status.get('noisePwDns') is not None:
+            state_data["noise_power"] = round(status['noisePwDns'], 1)
+        if status.get('geoLocation'):
+            state_data["geo_location"] = status['geoLocation']
         
         # State Message senden
         import json
