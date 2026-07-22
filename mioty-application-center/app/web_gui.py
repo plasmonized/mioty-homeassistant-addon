@@ -372,12 +372,22 @@ class WebGUI:
                 if 'memLoad' in status_data:
                     memory_usage = f"{status_data.get('memLoad', 0) * 100:.1f}%"
                 
+                # Duty Cycle als Prozentwert (0-100) für Bargraph
+                duty_cycle = None
+                if 'dutyCycle' in status_data:
+                    try:
+                        duty_cycle = round(float(status_data.get('dutyCycle', 0)) * 100, 1)
+                        duty_cycle = max(0.0, min(100.0, duty_cycle))
+                    except (TypeError, ValueError):
+                        duty_cycle = None
+                
                 bs_info = {
                     'eui': eui,
                     'status': data.get('status', 'Online'),
                     'last_update': self._format_timestamp(data.get('last_seen', 0)),
                     'cpu_usage': cpu_usage,
                     'memory_usage': memory_usage,
+                    'duty_cycle': duty_cycle,
                     'needs_metadata': needs_metadata,
                     'metadata': metadata
                 }

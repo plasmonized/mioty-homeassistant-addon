@@ -676,6 +676,18 @@
                             <strong>Memory Usage:</strong> ${bs.memory_usage || 'N/A'}
                         </div>
                         
+                        <div style="margin-top: 12px;">
+                            <strong>Duty Cycle:</strong>
+                            ${(bs.duty_cycle !== null && bs.duty_cycle !== undefined) ? `
+                                <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
+                                    <div style="flex: 1; height: 14px; background: #e9ecef; border-radius: 7px; overflow: hidden; border: 1px solid #dee2e6;">
+                                        <div style="width: ${Math.max(bs.duty_cycle, 0.5)}%; height: 100%; border-radius: 7px; background: ${bs.duty_cycle < 50 ? '#28a745' : bs.duty_cycle < 80 ? '#ffc107' : '#dc3545'}; transition: width 0.5s;"></div>
+                                    </div>
+                                    <span style="min-width: 55px; text-align: right; font-weight: bold;">${bs.duty_cycle.toFixed(2)}%</span>
+                                </div>
+                            ` : ' N/A'}
+                        </div>
+                        
                         <!-- Ausklappbare Metadaten -->
                         <div id="basestation-${bs.eui}" style="display: none; margin-top: 15px; padding: 15px; background: #e9ecef; border-radius: 5px; border-left: 3px solid #6c757d;">
                             <h5 style="margin: 0 0 10px 0; color: #495057;">🏢 Base Station-Metadaten</h5>
