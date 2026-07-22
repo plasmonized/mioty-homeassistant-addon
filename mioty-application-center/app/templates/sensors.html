@@ -358,7 +358,10 @@
         <div class="content">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h2 class="section-title" style="margin: 0; border: none;">🔑 Registrierte Sensoren</h2>
-                <button class="add-sensor-btn" onclick="showAddSensorModal()">+ Neuer Sensor</button>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-secondary" id="bulkReregisterBtn" onclick="reregisterAll()">🔄 Alle neu anlernen</button>
+                    <button class="add-sensor-btn" onclick="showAddSensorModal()">+ Neuer Sensor</button>
+                </div>
             </div>
             
             <div id="sensors-list">
@@ -494,11 +497,14 @@
             return `vor ${Math.floor(diff / 86400)} Tagen`;
         }
 
+        let allSensorEuis = [];
+
         async function loadSensors() {
             try {
                 const response = await fetch(getCacheBusterURL('/api/sensor-config/list'));
                 const sensors = await response.json();
                 
+                allSensorEuis = (sensors || []).map(s => s.eui);
                 const sensorsList = document.getElementById('sensors-list');
                 
                 if (!sensors || sensors.length === 0) {
@@ -529,6 +535,7 @@
                                 ${autoDiscovered}
                                 ${sensor.bidirectional ? '<span class="status-badge status-bidi">↔️ BiDi</span>' : ''}
                                 ${sensor.application_key ? '<span class="status-badge status-active">🔒 AES</span>' : ''}
+                                <button class="btn btn-secondary" onclick="reregisterSensor('${sensor.eui}')" title="Sensor erneut am Service Center registrieren">🔄 Neu anlernen</button>
                                 <button class="btn btn-primary" onclick="editSensor('${sensor.eui}')">✏️ Bearbeiten</button>
                                 ${!sensor.auto_discovered ? `<button class="btn btn-danger" onclick="deleteSensor('${sensor.eui}')">🗑️ Löschen</button>` : ''}
                             </div>
@@ -698,6 +705,68 @@
                 }
             } catch (error) {
                 alert('❌ Fehler beim Löschen: ' + error.message);
+            }
+        }
+
+        async function doReregister(euis, progressCallback) {
+            // In Paketen von max. 5 senden, damit kein Request in ein Timeout läuft
+            const CHUNK_SIZE = 5;
+            const allResults = [];
+            try {
+                for (let i = 0; i < euis.length; i += CHUNK_SIZE) {
+                    const chunk = euis.slice(i, i + CHUNK_SIZE);
+                    if (progressCallback) progressCallback(i, euis.length);
+                    
+                    const response = await fetch(BASE_URL + '/api/sensor/reregister', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ euis: chunk })
+                    });
+                    const result = await response.json();
+                    
+                    if (!response.ok) {
+                        chunk.forEach(eui => allResults.push({ eui: eui, success: false, error: result.error || 'Unbekannter Fehler' }));
+                    } else {
+                        allResults.push(...(result.results || []));
+                    }
+                }
+                
+                const succeeded = allResults.filter(r => r.success).length;
+                const failed = allResults.filter(r => !r.success);
+                if (failed.length === 0) {
+                    alert(`✅ ${succeeded} Sensor(en) erfolgreich neu angelernt (vom Broker bestätigt)!`);
+                } else {
+                    const details = failed.map(r => `• ${r.eui}: ${r.error}`).join('\n');
+                    alert(`⚠️ ${succeeded} von ${allResults.length} Sensor(en) neu angelernt.\n\nFehlgeschlagen:\n${details}`);
+                }
+                loadSensors();
+            } catch (error) {
+                alert('❌ Fehler beim Neu-Anlernen: ' + error.message);
+            }
+        }
+
+        async function reregisterSensor(eui) {
+            if (!confirm(`Sensor ${eui} jetzt neu am Service Center anlernen?`)) return;
+            await doReregister([eui]);
+        }
+
+        async function reregisterAll() {
+            if (!allSensorEuis || allSensorEuis.length === 0) {
+                alert('Keine Sensoren vorhanden.');
+                return;
+            }
+            if (!confirm(`Alle ${allSensorEuis.length} Sensoren jetzt neu am Service Center anlernen?`)) return;
+            
+            const btn = document.getElementById('bulkReregisterBtn');
+            btn.disabled = true;
+            btn.textContent = '🔄 Anlernen läuft...';
+            try {
+                await doReregister(allSensorEuis, (done, total) => {
+                    btn.textContent = `🔄 Anlernen läuft... (${done}/${total})`;
+                });
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🔄 Alle neu anlernen';
             }
         }
 

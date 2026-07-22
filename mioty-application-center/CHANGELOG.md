@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.5.7.11
+
+- ✨ **Neu anlernen:** Neue Buttons auf der Sensoren-Seite — jeder Sensor kann einzeln über „🔄 Neu anlernen" erneut am Service Center registriert werden, oder alle auf einmal über „🔄 Alle neu anlernen". Nutzt gespeicherten Network Key & Short Address; Ergebnis pro Sensor mit Broker-Bestätigung
+
 ## 1.0.5.7.10
 
 - 🐛 **Bugfix:** Sensor-Registrierung konnte „Erfolg" melden, obwohl die MQTT-Nachricht das Service Center nie erreichte — Registrierungen werden jetzt mit QoS 1 gesendet und auf Broker-Bestätigung (PUBACK) gewartet. Ohne Bestätigung wird ein Fehler angezeigt

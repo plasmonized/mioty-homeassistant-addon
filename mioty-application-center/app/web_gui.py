@@ -206,7 +206,7 @@ class WebGUI:
             
             # KRITISCH: Verwende IMMER die aktuelle externe Template-Datei
             if index_exists:
-                logging.info("✅ Verwende AKTUELLE index.html Template-Datei (Version 1.0.5.7.10)")
+                logging.info("✅ Verwende AKTUELLE index.html Template-Datei (Version 1.0.5.7.11)")
                 return render_template('index.html', ingress_path=ingress_path)
             else:
                 logging.error("❌ CRITICAL ERROR: index.html Template-Datei nicht gefunden!")
@@ -1153,6 +1153,89 @@ class WebGUI:
                 logging.error(f"❌ Fehler bei Web GUI Sensor Registration: {e}")
                 return jsonify({"error": f"Registration fehlgeschlagen: {str(e)}"}), 500
         
+        @self.app.route('/api/sensor/reregister', methods=['POST'])
+        def reregister_sensors():
+            """API: Sensoren neu anlernen (einzeln oder Bulk) via Service Center MQTT."""
+            if not self.addon:
+                return jsonify({"error": "Add-on nicht verfügbar"}), 500
+            
+            try:
+                data = request.get_json() or {}
+                euis = data.get('euis') or []
+                if isinstance(euis, str):
+                    euis = [euis]
+                if not isinstance(euis, list) or not all(isinstance(e, str) for e in euis):
+                    return jsonify({"error": "'euis' muss eine Liste von EUI-Strings sein"}), 400
+                # Deduplizieren, Reihenfolge beibehalten
+                euis = list(dict.fromkeys(e.strip().upper() for e in euis if e.strip()))
+                if not euis:
+                    return jsonify({"error": "Keine EUIs angegeben"}), 400
+                # Limit pro Request: 5s PUBACK-Timeout pro Sensor möglich → kurze Requests erzwingen
+                MAX_EUIS_PER_REQUEST = 10
+                if len(euis) > MAX_EUIS_PER_REQUEST:
+                    return jsonify({"error": f"Maximal {MAX_EUIS_PER_REQUEST} EUIs pro Anfrage - bitte in Teilmengen senden"}), 400
+                
+                # Gespeicherte Sensor-Konfigurationen laden
+                config_file = '/data/sensor_configs.json' if os.path.exists('/data') else 'sensor_configs.json'
+                configs_by_eui = {}
+                if os.path.exists(config_file):
+                    try:
+                        with open(config_file, 'r') as f:
+                            for c in json.load(f):
+                                configs_by_eui[c.get('eui', '').upper()] = c
+                    except Exception as e:
+                        logging.error(f"❌ Fehler beim Laden von {config_file}: {e}")
+                
+                results = []
+                for eui_raw in euis:
+                    eui = _normalize_hex_input(str(eui_raw).strip()).upper()
+                    config = configs_by_eui.get(eui)
+                    
+                    # Fallback: In-Memory Sensordaten (z.B. frisch registriert)
+                    if not config and hasattr(self.addon, 'sensors') and eui in self.addon.sensors:
+                        s = self.addon.sensors[eui]
+                        if s.get('network_key') and s.get('short_addr'):
+                            config = {
+                                'network_key': s['network_key'],
+                                'short_addr': s['short_addr'],
+                                'bidirectional': s.get('bidirectional', False)
+                            }
+                    
+                    if not config or not config.get('network_key') or not config.get('short_addr'):
+                        results.append({
+                            "eui": eui, "success": False,
+                            "error": "Keine gespeicherte Konfiguration (Network Key / Short Address fehlt) - bitte Sensor zuerst bearbeiten und Schlüssel eintragen"
+                        })
+                        continue
+                    
+                    logging.info(f"🔄 RE-REGISTRATION: {eui}")
+                    try:
+                        success = self.addon.add_sensor(
+                            sensor_eui=eui,
+                            network_key=_normalize_hex_input(str(config['network_key'])),
+                            short_addr=_normalize_hex_input(str(config['short_addr'])),
+                            bidirectional=config.get('bidirectional') in (True, 'true', 'True', 1, '1')
+                        )
+                        results.append({
+                            "eui": eui, "success": bool(success),
+                            "error": None if success else "MQTT-Registrierung fehlgeschlagen (keine Broker-Bestätigung)"
+                        })
+                    except Exception as e:
+                        logging.error(f"❌ Re-Registration Fehler für {eui}: {e}")
+                        results.append({"eui": eui, "success": False, "error": str(e)})
+                
+                ok = sum(1 for r in results if r['success'])
+                return jsonify({
+                    "success": ok == len(results),
+                    "total": len(results),
+                    "succeeded": ok,
+                    "failed": len(results) - ok,
+                    "results": results
+                })
+            except Exception as e:
+                logging.error(f"❌ Fehler beim Neu-Anlernen: {e}")
+                return jsonify({"error": f"Neu-Anlernen fehlgeschlagen: {str(e)}"}), 500
+        
         @self.app.route('/api/sensor/remove', methods=['POST'])
         def remove_sensor():
             """API: Sensor entfernen."""
@@ -1988,7 +2071,7 @@ class WebGUI:
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>mioty Application Center für Homeassistant v1.0.5.7.10</title>
+    <title>mioty Application Center für Homeassistant v1.0.5.7.11</title>
     <style>
         * {
             margin: 0;
@@ -2990,7 +3073,7 @@ class WebGUI:
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>mioty Application Center Einstellungen v1.0.5.7.10</title>
+    <title>mioty Application Center Einstellungen v1.0.5.7.11</title>
     <style>
         * {
             margin: 0;
