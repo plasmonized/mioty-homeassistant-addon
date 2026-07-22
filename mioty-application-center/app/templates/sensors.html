@@ -649,13 +649,22 @@
             };
             
             try {
-                const url = mode === 'add' ? '/api/sensor-config' : `/api/sensor-config/${eui}`;
-                const method = mode === 'add' ? 'POST' : 'PUT';
-                
+                let url, method, body;
+                if (mode === 'add') {
+                    // Service Center MQTT Push: sensor_eui statt eui
+                    url = '/api/sensor/add';
+                    method = 'POST';
+                    body = JSON.stringify({ ...data, sensor_eui: eui });
+                } else {
+                    url = `/api/sensor-config/${eui}`;
+                    method = 'PUT';
+                    body = JSON.stringify(data);
+                }
+
                 const response = await fetch(BASE_URL + url, {
                     method: method,
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
+                    body: body
                 });
                 
                 const result = await response.json();
