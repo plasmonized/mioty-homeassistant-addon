@@ -479,7 +479,7 @@
                         ${sensor.needs_metadata ? `
                             <div style="margin-top: 10px; padding: 10px; background: #fff3cd; border-radius: 4px; border-left: 3px solid #ffc107;">
                                 <small><strong>⚠️ Auto-Discovery unvollständig:</strong><br>
-                                Manufacturer/Model fehlen. <a href="/decoders" style="color: #0066cc;">Decoder hinzufügen</a> oder 
+                                Manufacturer/Model fehlen. <a href="javascript:void(0)" onclick="navigateTo('/decoders')" style="color: #0066cc;">Decoder hinzufügen</a> oder 
                                 <button onclick="addManualSensorData('${sensor.eui}')" style="border: none; background: #007bff; color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px; cursor: pointer;">Schnell ergänzen</button>
                                 </small>
                             </div>
