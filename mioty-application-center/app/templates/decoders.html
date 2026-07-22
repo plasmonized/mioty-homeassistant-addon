@@ -118,8 +118,15 @@
                 <h2 style="margin-top: 40px;">📌 Decoder zuweisen</h2>
                 <form id="assignDecoderForm">
                     <div class="form-group">
-                        <label>Sensor EUI:</label>
-                        <input type="text" id="assignSensorEui" placeholder="z.B. FCA84A0600000036" required>
+                        <label>Sensor auswählen:</label>
+                        <select id="assignSensorEuiSelect" required>
+                            <option value="">-- Sensor wählen --</option>
+                        </select>
+                        <div class="help-text">Sensor, dem ein Decoder zugewiesen werden soll (EUI + Gerätename)</div>
+                    </div>
+                    <div class="form-group" id="assignSensorEuiManualGroup" style="display: none;">
+                        <label>Sensor EUI (manuell):</label>
+                        <input type="text" id="assignSensorEui" placeholder="z.B. FCA84A0600000036">
                         <div class="help-text">EUI des Sensors, dem ein Decoder zugewiesen werden soll</div>
                     </div>
                     <div class="form-group">
@@ -276,7 +283,10 @@
             
             if (section === 'adapters') loadAdapters();
             if (section === 'iodds') loadIodds();
-            if (section === 'decoders') loadDecoders();
+            if (section === 'decoders') {
+                loadDecoders();
+                populateSensorDropdown('assignSensorEuiSelect', 'assignSensorEuiManualGroup', 'assignSensorEui');
+            }
         }
         
         function showAlert(message, type = 'success') {
@@ -298,9 +308,10 @@
             showModal('registerAdapterModal');
         }
         
-        async function populateAdapterSensorDropdown() {
-            const select = document.getElementById('adapterEuiSelect');
-            const manualGroup = document.getElementById('adapterEuiManualGroup');
+        async function populateSensorDropdown(selectId, manualGroupId, manualInputId) {
+            const select = document.getElementById(selectId);
+            const manualGroup = document.getElementById(manualGroupId);
+            const manualInput = document.getElementById(manualInputId);
             select.innerHTML = '<option value="">Lade Sensoren...</option>';
             try {
                 const response = await fetch(getCacheBusterURL('/api/sensor-config/list'));
@@ -327,10 +338,10 @@
                 select.onchange = () => {
                     if (select.value === '__manual__') {
                         manualGroup.style.display = 'block';
-                        document.getElementById('adapterEui').setAttribute('required', 'required');
+                        manualInput.setAttribute('required', 'required');
                     } else {
                         manualGroup.style.display = 'none';
-                        document.getElementById('adapterEui').removeAttribute('required');
+                        manualInput.removeAttribute('required');
                     }
                 };
             } catch (error) {
@@ -338,6 +349,16 @@
                 select.removeAttribute('required');
                 manualGroup.style.display = 'block';
             }
+        }
+        
+        function populateAdapterSensorDropdown() {
+            return populateSensorDropdown('adapterEuiSelect', 'adapterEuiManualGroup', 'adapterEui');
+        }
+        
+        function getSelectedEui(selectId, manualInputId) {
+            const selectValue = document.getElementById(selectId).value;
+            if (selectValue && selectValue !== '__manual__') return selectValue;
+            return document.getElementById(manualInputId).value;
         }
         
         async function loadDecoders() {
@@ -718,14 +739,15 @@
         
         document.getElementById('assignDecoderForm').onsubmit = async (e) => {
             e.preventDefault();
-            const sensorEui = document.getElementById('assignSensorEui').value.trim().toUpperCase();
+            const sensorEui = getSelectedEui('assignSensorEuiSelect', 'assignSensorEui').trim().toUpperCase();
             const decoderName = document.getElementById('assignDecoder').value;
             if (!sensorEui || !decoderName) {
-                showAlert('Bitte EUI und Decoder auswählen', 'error');
+                showAlert('Bitte Sensor und Decoder auswählen', 'error');
                 return;
             }
             await assignDecoder(sensorEui, decoderName);
             e.target.reset();
+            populateSensorDropdown('assignSensorEuiSelect', 'assignSensorEuiManualGroup', 'assignSensorEui');
         };
         
         document.getElementById('testDecoderForm').onsubmit = async (e) => {
@@ -773,6 +795,7 @@
         };
         
         loadDecoders();
+        populateSensorDropdown('assignSensorEuiSelect', 'assignSensorEuiManualGroup', 'assignSensorEui');
     </script>
 </body>
 </html>

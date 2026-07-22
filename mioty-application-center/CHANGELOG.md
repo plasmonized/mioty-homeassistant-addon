@@ -4,6 +4,7 @@
 
 - ✨ **Neu anlernen:** Neue Buttons auf der Sensoren-Seite — jeder Sensor kann einzeln über „🔄 Neu anlernen" erneut am Service Center registriert werden, oder alle auf einmal über „🔄 Alle neu anlernen". Nutzt gespeicherten Network Key & Short Address; Ergebnis pro Sensor mit Broker-Bestätigung
 - ✨ **IO-Link Adapter:** Beim Registrieren eines Adapters kann der Sensor jetzt bequem aus einem Dropdown (EUI + Gerätename) ausgewählt werden statt die EUI abzutippen — manuelle Eingabe bleibt als Option verfügbar
+- ✨ **Decoder zuweisen:** Auch bei der Decoder-Zuweisung wird der Sensor jetzt aus einem Dropdown (EUI + Gerätename) ausgewählt statt die EUI einzutippen — manuelle Eingabe bleibt als Option verfügbar
 - 🐛 **Bugfix:** „Decoder hinzufügen"-Link im Dashboard führte unter Home Assistant Ingress auf eine 404-Seite — Link nutzt jetzt die korrekte Ingress-Navigation
 - ✨ **Neuer Adaptertyp ifm EIO240:** Beim Registrieren eines IO-Link Adapters kann jetzt der Gerätetyp gewählt werden (Sentinum AION oder ifm EIO240). Die Payload-Auswertung erfolgt automatisch passend zum Typ — EIO240-Format: 1 Byte Header (ProtlV/MessT), 2 Byte VendorID, 3 Byte DeviceID, danach Prozessdaten. Bestehende Adapter laufen unverändert als Sentinum AION weiter
 - ✨ **Duty Cycle Anzeige:** Base-Station-Übersicht im Dashboard zeigt jetzt den Duty Cycle als 0–100 % Balkenanzeige (grün < 50 %, gelb < 80 %, rot ≥ 80 %) mit Prozentwert
