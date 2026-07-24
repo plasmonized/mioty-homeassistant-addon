@@ -354,7 +354,8 @@ class SCACIClient:
             logging.warning(f"⚠️ SCACI: Antwort für unbekannte Operation {op_id}: {command}")
             return
         if command == "error":
-            op["error"] = SCACIError(message.get("code", -1), message.get("message", ""))
+            # Spec: Fehlerfeld heißt "rc", nicht "code"
+            op["error"] = SCACIError(message.get("rc", message.get("code", -1)), message.get("message", ""))
             # Fehler mit errorAck bestätigen (schließt die Operation ab)
             try:
                 self._send_message({"command": "errorAck", "opId": op_id})
@@ -383,7 +384,10 @@ class SCACIClient:
     def _sc_ep_status(self, op_id: int, message: Dict[str, Any]):
         ep_eui = self._eui_to_hex(message.get("epEui"))
         self._send_message({"command": "epStatRsp", "opId": op_id})
-        logging.info(f"📡 SCACI EP-Status: {ep_eui} -> {message.get('epStatus')}")
+        # Spec: online (bool) + attached (bool), kein "epStatus"-Feld
+        online = message.get("online", False)
+        attached = message.get("attached", False)
+        logging.info(f"📡 SCACI EP-Status: {ep_eui} -> online={online}, attached={attached}")
         if self.on_ep_status:
             self.on_ep_status(ep_eui, message)
 
@@ -396,13 +400,15 @@ class SCACIClient:
             self.on_dl_data_result(ep_eui, message)
 
     def _sc_error(self, op_id: int, message: Dict[str, Any]):
+        # Spec: Fehlerfeld heißt "rc", nicht "code"
         logging.error(f"❌ SCACI Fehler vom Service Center (opId {op_id}): "
-                      f"{message.get('code')} - {message.get('message')}")
+                      f"rc={message.get('rc', message.get('code'))} - {message.get('message')}")
         self._send_message({"command": "errorAck", "opId": op_id})
 
     def _send_error(self, op_id: int, code: int, text: str):
         try:
-            self._send_message({"command": "error", "opId": op_id, "code": code, "message": text})
+            # Spec: Fehlerfeld heißt "rc"
+            self._send_message({"command": "error", "opId": op_id, "rc": code, "message": text})
         except Exception:
             pass
 
@@ -487,16 +493,22 @@ class SCACIClient:
         """Status-Operation: Service Center- und Base-Station-Status abrufen."""
         rsp = self._run_operation({"command": "status", "opId": self._next_op_id()}, timeout)
         base_stations = []
-        for bs in rsp.get("baseStations") or []:
+        # Spec: Feld heißt "basestations" (komplett lowercase), nicht "baseStations"
+        for bs in rsp.get("basestations") or rsp.get("baseStations") or []:
             entry = dict(bs)
-            if "eui" in entry and entry["eui"] is not None:
-                entry["eui"] = self._eui_to_hex(entry["eui"])
+            for eui_field in ("eui", "bsEui"):
+                if eui_field in entry and entry[eui_field] is not None:
+                    entry[eui_field] = self._eui_to_hex(entry[eui_field])
             base_stations.append(entry)
         return {
-            "code": rsp.get("code"),
+            # Spec-Felder: rc, message, timeNs, uptimeS
+            "rc": rsp.get("rc", rsp.get("code")),
             "message": rsp.get("message"),
-            "time": rsp.get("time"),
-            "uptime": rsp.get("uptime"),
+            "timeNs": rsp.get("timeNs", rsp.get("time")),
+            "uptimeS": rsp.get("uptimeS", rsp.get("uptime")),
+            "bsConnected": rsp.get("bsConnected"),
+            "epRegistered": rsp.get("epRegistered"),
+            "epOnline": rsp.get("epOnline"),
             "baseStations": base_stations,
         }
 

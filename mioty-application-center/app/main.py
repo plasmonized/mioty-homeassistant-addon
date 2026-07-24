@@ -269,12 +269,18 @@ class BSSCIAddon:
             logging.error(f"❌ Fehler bei SCACI Uplink-Verarbeitung für {ep_eui}: {e}")
     
     def _handle_scaci_ep_status(self, ep_eui: str, message: Dict[str, Any]):
-        """SCACI End-Point-Status (attach/detach) verarbeiten."""
-        status = message.get('epStatus', 'unknown')
+        """SCACI End-Point-Status (attach/detach) verarbeiten.
+        Spec-Felder: online (bool), attached (bool), attachedBsEui, packetCnt, lastSeen.
+        """
+        online = message.get('online', False)
+        attached = message.get('attached', False)
+        status = 'online' if online else ('attached' if attached else 'offline')
         ep_eui = self.normalize_sensor_eui(ep_eui)
         if ep_eui in self.sensors:
             self.sensors[ep_eui]['attachment_status'] = status
-        logging.info(f"📡 SCACI EP-Status: {ep_eui} ist jetzt '{status}'")
+            self.sensors[ep_eui]['online'] = online
+            self.sensors[ep_eui]['attached'] = attached
+        logging.info(f"📡 SCACI EP-Status: {ep_eui} — online={online}, attached={attached}")
     
     def _start_scaci_status_poll(self):
         """Fragt regelmäßig den Service-Center-Status über SCACI ab (Base Stations)."""
@@ -291,13 +297,14 @@ class BSSCIAddon:
                 try:
                     status = client.get_status()
                     for bs in status.get('baseStations', []):
-                        bs_eui = bs.get('eui')
+                        bs_eui = bs.get('eui') or bs.get('bsEui')
                         if not bs_eui:
                             continue
                         self.handle_base_station_data(bs_eui, {
-                            'code': bs.get('code', 0),
+                            'rc': bs.get('rc', bs.get('code', 0)),
                             'message': bs.get('message', ''),
-                            'uptime': bs.get('uptime'),
+                            # Spec: uptimeS (Sekunden), nicht "uptime"
+                            'uptime': bs.get('uptimeS', bs.get('uptime')),
                             'dutyCycle': bs.get('dlLoad'),
                             'ulLoad': bs.get('ulLoad'),
                             'dlLoad': bs.get('dlLoad'),
