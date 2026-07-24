@@ -5,6 +5,7 @@
 - ✨ **SCACI Direktverbindung:** Das Add-on kann sich jetzt zusätzlich zu MQTT direkt per TLS mit dem mioty Service Center verbinden (offizieller SCACI-Standard v1.0.0). Konfiguration unter Einstellungen → „🔐 SCACI Direktverbindung": Host, Port (Standard 16017), AC-EUI und optionale TLS-Testoption
 - ✨ **AC-EUI Generator:** Auf Wunsch wird eine Application-Center-EUI aus einem frei wählbaren Namen erzeugt (16 Hex-Zeichen mit „AC"-Präfix)
 - ✨ **Zertifikats-Upload:** ZIP-Datei aus dem Service-Center-Generator (ca_cert.pem, Client-Zertifikat, privater Schlüssel) kann direkt in den Einstellungen hochgeladen werden — Ablage unter certs/ac_&lt;eui&gt;/
+- 🐛 **SNR/RSSI aus realem SC-Payload:** Der Uplink-Parser liest SNR, RSSI, Base-Station-EUI und Empfangszeit jetzt sowohl von der obersten Nachrichtenebene als auch aus `rxInfo`/`baseStations`; Paketzähler als `cnt` oder `packetCnt`, Nutzdaten als `userData` oder `data` — kompatibel mit dem tatsächlichen Service-Center-Format
 - ✨ **Voller SCACI-Funktionsumfang:** Uplink-Empfang (fließt in die normale Sensor-Pipeline inkl. Decoder & Home Assistant Discovery), End-Point-Status, Base-Station-Status-Abfrage (alle 60 s), Registrierung/Deregistrierung, Downlink-Queue, Ping/Keepalive, automatischer Reconnect mit Session-Fortsetzung
 
 ## 1.0.5.8

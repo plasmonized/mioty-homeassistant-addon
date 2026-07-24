@@ -613,28 +613,48 @@ class SCACIClient:
 
 def parse_ul_data_message(message: Dict[str, Any]) -> Dict[str, Any]:
     """Konvertiere eine SCACI ulData Nachricht in das interne Sensor-Datenformat
-    (kompatibel zum MQTT-Format des Add-ons)."""
-    base_stations = message.get("baseStations") or []
-    best = {}
-    if base_stations:
-        # Base Station mit bestem SNR wählen
-        best = max(base_stations, key=lambda b: b.get("snr", -999))
-    user_data = message.get("userData") or []
+    (kompatibel zum MQTT-Format des Add-ons).
+
+    Unterstützt beide bekannten Feldvarianten des Service Centers:
+    - Empfangsinfos in "rxInfo" oder "baseStations" (Liste) sowie zusätzlich
+      snr/rssi/bsEui/rxTime auf der obersten Ebene
+    - Paketzähler als "cnt" oder "packetCnt"
+    - Nutzdaten als "userData" oder "data"
+    """
+    rx_list = message.get("rxInfo") or message.get("baseStations") or []
+    best: Dict[str, Any] = {}
+    if rx_list:
+        # Empfangsweg mit bestem SNR wählen
+        best = max(rx_list, key=lambda b: b.get("snr", -999))
+    
+    # Fallback / Vorrang: Werte auf oberster Ebene (so sendet sie das reale SC)
+    snr = message.get("snr", best.get("snr", 0))
+    rssi = message.get("rssi", best.get("rssi", 0))
+    rx_time = message.get("rxTime", best.get("rxTime", 0))
+    bs_eui = message.get("bsEui", best.get("bsEui"))
+    
+    user_data = message.get("userData")
+    if user_data is None:
+        user_data = message.get("data") or []
     if isinstance(user_data, (bytes, bytearray)):
         user_data = list(user_data)
+    
+    packet_cnt = message.get("cnt", message.get("packetCnt", 0))
+    
     return {
         "data": user_data,
-        "snr": best.get("snr", 0),
-        "rssi": best.get("rssi", 0),
-        "timestamp_ns": best.get("rxTime", 0),
-        "rxTime": best.get("rxTime", 0),
-        "bs_eui": SCACIClient._eui_to_hex(best.get("bsEui")) if best.get("bsEui") is not None else "Unknown",
-        "packet_cnt": message.get("packetCnt", 0),
+        "snr": snr,
+        "rssi": rssi,
+        "timestamp_ns": rx_time,
+        "rxTime": rx_time,
+        "bs_eui": SCACIClient._eui_to_hex(bs_eui) if bs_eui is not None else "Unknown",
+        "packet_cnt": packet_cnt,
+        "short_addr": message.get("shAddr"),
         "dl_open": message.get("dlOpen", False),
         "response_exp": message.get("responseExp", False),
         "dl_ack": message.get("dlAck", False),
         "format": message.get("format", 0),
-        "base_station_count": len(base_stations),
+        "base_station_count": max(len(rx_list), 1 if bs_eui is not None else 0),
         "type": "mioty",
         "source": "scaci",
     }

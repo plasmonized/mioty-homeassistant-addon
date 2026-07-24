@@ -8,5 +8,6 @@ description: Non-obvious details of the mioty SC-AC-Interface (SCACI) v1.0.0 imp
 - Spec quirk: the response to an SC-initiated `dlDataRes` is named `txDataResRsp` (not `dlDataResRsp`).
 - Every operation is a 3-way handshake: request → Rsp → Cmp (or error → errorAck). The receiver of a Rsp sends the Cmp.
 - ReCon (`rc.*`) sublayer is not implemented — must be rejected with error code 38.
+- Real-world SC `ulData` payloads differ from a literal spec reading: snr/rssi/bsEui/rxTime appear at the TOP level (and duplicated in an `rxInfo` list, not `baseStations`); packet counter is `cnt` (not `packetCnt`); user data may be `userData` or `data`. Parse both variants, prefer top-level values.
 - **Why:** these details are easy to get wrong when revisiting the client and are not derivable without re-reading the PDF.
 - **How to apply:** when touching mioty-application-center/app/scaci_client.py or the mock test server, keep framing/opId/handshake rules consistent with the above.
