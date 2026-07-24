@@ -1,2 +1,3 @@
 - [HA add-on BUILD_FROM deprecation](ha-addon-build-from.md) — Supervisor 2026.04+ passes no BUILD_FROM; hardcode base via ARG BUILD_ARCH default in Dockerfile.
 - [paho wait_for_publish deadlock](paho-puback-deadlock.md) — never wait for PUBACK inside paho callbacks; use confirm=False there, confirm only on API paths.
+- [SCACI protocol quirks](scaci-protocol.md) — framing "MIOTYA01"+LE size, con uses opId 0, dlDataRes is answered by txDataResRsp, 3-way req/Rsp/Cmp handshake.

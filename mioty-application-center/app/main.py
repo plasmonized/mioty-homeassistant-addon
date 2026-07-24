@@ -32,6 +32,7 @@ class BSSCIAddon:
         # Komponenten
         self.mqtt_manager = None
         self.bssci_client = None
+        self.scaci_client = None
         self.web_gui = None
         self.decoder_manager = None
         
@@ -90,7 +91,13 @@ class BSSCIAddon:
 
                 'base_topic': saved_settings.get('base_topic') or os.getenv('BASE_TOPIC', 'bssci'),
                 'auto_discovery': saved_settings.get('auto_discovery', True) if saved_settings.get('auto_discovery') is not None else (os.getenv('AUTO_DISCOVERY', 'true').lower() == 'true'),
-                'web_port': int(os.getenv('WEB_PORT', '5000'))
+                'web_port': int(os.getenv('WEB_PORT', '5000')),
+                # SCACI (direkte TLS-Verbindung zum Service Center)
+                'scaci_enabled': bool(saved_settings.get('scaci_enabled', False)),
+                'scaci_host': saved_settings.get('scaci_host', ''),
+                'scaci_port': int(saved_settings.get('scaci_port') or 16017),
+                'scaci_ac_eui': saved_settings.get('scaci_ac_eui', ''),
+                'scaci_tls_insecure': bool(saved_settings.get('scaci_tls_insecure', False))
             }
             return config
         except Exception as e:
@@ -137,6 +144,9 @@ class BSSCIAddon:
             # BSSCI Client starten (optional, falls direkter Zugriff gewünscht)
             # self.bssci_client = BSSCIClient(self.config['bssci_service_url'])
             
+            # SCACI Client starten (direkte TLS-Verbindung zum Service Center)
+            self.start_scaci_client()
+            
             # Decoder Manager starten (verwende lokales Verzeichnis in Demo-Umgebung)
             decoder_dir = "decoders" if os.path.exists("demo_run.py") else "/data/decoders"
             self.decoder_manager = DecoderManager(decoder_dir)
@@ -180,6 +190,127 @@ class BSSCIAddon:
         
         finally:
             self.shutdown()
+    
+    def get_scaci_cert_paths(self) -> Dict[str, str]:
+        """Ermittle Zertifikatspfade für SCACI (certs/ac_<eui>/)."""
+        import re
+        ac_eui = (self.config.get('scaci_ac_eui') or '').lower()
+        # Sicherheit: nur exakte 16-stellige Hex-EUIs für Pfade zulassen
+        if not re.fullmatch(r'[0-9a-f]{16}', ac_eui):
+            ac_eui = ''
+        base_dir = '/data/certs' if os.path.exists('/data') else 'certs'
+        cert_dir = os.path.join(base_dir, f'ac_{ac_eui}') if ac_eui else base_dir
+        return {
+            'dir': cert_dir,
+            'ca_cert': os.path.join(cert_dir, 'ca_cert.pem'),
+            'client_cert': os.path.join(cert_dir, 'cert.pem'),
+            'client_key': os.path.join(cert_dir, 'key.pem')
+        }
+    
+    def start_scaci_client(self):
+        """Starte SCACI Client, falls in den Einstellungen aktiviert."""
+        if not self.config.get('scaci_enabled'):
+            logging.info("🔌 SCACI deaktiviert (MQTT-Modus)")
+            return
+        
+        host = self.config.get('scaci_host')
+        ac_eui = self.config.get('scaci_ac_eui')
+        if not host or not ac_eui:
+            logging.warning("⚠️ SCACI aktiviert, aber Host oder AC-EUI fehlt — SCACI wird nicht gestartet")
+            return
+        
+        try:
+            from scaci_client import SCACIClient, parse_ul_data_message
+            
+            certs = self.get_scaci_cert_paths()
+            session_file = '/data/scaci_session.json' if os.path.exists('/data') else 'scaci_session.json'
+            
+            self.scaci_client = SCACIClient(
+                host=host,
+                port=self.config.get('scaci_port', 16017),
+                ac_eui=ac_eui,
+                ca_cert=certs['ca_cert'] if os.path.exists(certs['ca_cert']) else None,
+                client_cert=certs['client_cert'] if os.path.exists(certs['client_cert']) else None,
+                client_key=certs['client_key'] if os.path.exists(certs['client_key']) else None,
+                tls_insecure=self.config.get('scaci_tls_insecure', False),
+                session_file=session_file
+            )
+            self.scaci_client.on_ul_data = self._handle_scaci_ul_data
+            self.scaci_client.on_ep_status = self._handle_scaci_ep_status
+            self.scaci_client.start()
+            self._start_scaci_status_poll()
+        except Exception as e:
+            logging.error(f"❌ SCACI Client konnte nicht gestartet werden: {e}")
+            self.scaci_client = None
+    
+    def stop_scaci_client(self):
+        """Stoppe SCACI Client."""
+        if self.scaci_client:
+            try:
+                self.scaci_client.stop()
+            except Exception:
+                pass
+            self.scaci_client = None
+    
+    def restart_scaci_client(self):
+        """Starte SCACI Client mit aktuellen Einstellungen neu."""
+        self.stop_scaci_client()
+        self.config = self.load_config()
+        self.start_scaci_client()
+    
+    def _handle_scaci_ul_data(self, ep_eui: str, message: Dict[str, Any]):
+        """SCACI Uplink-Daten in die normale Sensor-Pipeline einspeisen."""
+        try:
+            from scaci_client import parse_ul_data_message
+            data = parse_ul_data_message(message)
+            logging.info(f"📡 SCACI Uplink von {ep_eui}: {len(data.get('data', []))} Bytes")
+            self.handle_sensor_data(ep_eui, data)
+        except Exception as e:
+            logging.error(f"❌ Fehler bei SCACI Uplink-Verarbeitung für {ep_eui}: {e}")
+    
+    def _handle_scaci_ep_status(self, ep_eui: str, message: Dict[str, Any]):
+        """SCACI End-Point-Status (attach/detach) verarbeiten."""
+        status = message.get('epStatus', 'unknown')
+        ep_eui = self.normalize_sensor_eui(ep_eui)
+        if ep_eui in self.sensors:
+            self.sensors[ep_eui]['attachment_status'] = status
+        logging.info(f"📡 SCACI EP-Status: {ep_eui} ist jetzt '{status}'")
+    
+    def _start_scaci_status_poll(self):
+        """Fragt regelmäßig den Service-Center-Status über SCACI ab (Base Stations)."""
+        bound_client = self.scaci_client
+        
+        def status_poll():
+            while True:
+                time.sleep(60)
+                client = self.scaci_client
+                if client is None or client is not bound_client:
+                    break
+                if not client.connect_completed:
+                    continue
+                try:
+                    status = client.get_status()
+                    for bs in status.get('baseStations', []):
+                        bs_eui = bs.get('eui')
+                        if not bs_eui:
+                            continue
+                        self.handle_base_station_data(bs_eui, {
+                            'code': bs.get('code', 0),
+                            'message': bs.get('message', ''),
+                            'uptime': bs.get('uptime'),
+                            'dutyCycle': bs.get('dlLoad'),
+                            'ulLoad': bs.get('ulLoad'),
+                            'dlLoad': bs.get('dlLoad'),
+                            'vendor': bs.get('vendor'),
+                            'model': bs.get('model'),
+                            'name': bs.get('name'),
+                            'source': 'scaci'
+                        })
+                except Exception as e:
+                    logging.debug(f"SCACI Status-Abfrage fehlgeschlagen: {e}")
+        
+        thread = threading.Thread(target=status_poll, daemon=True, name="scaci-status")
+        thread.start()
     
     def _start_warning_monitor(self):
         """Startet Background Thread für Sensor Warning System."""
@@ -538,7 +669,7 @@ class BSSCIAddon:
             "model": "mioty IoT Sensor",
             "manufacturer": "Unknown",
             "serial_number": sensor_eui,  # ✅ EUI als Seriennummer in Home Assistant anzeigen
-            "sw_version": "1.0.5.8"
+            "sw_version": "1.0.5.9"
         }
         
         # Prüfe manuelle Metadaten zuerst
@@ -578,7 +709,7 @@ class BSSCIAddon:
                                 "name": adapter_name,
                                 "model": iodd_device_info.get('device_name', 'IO-Link Device'),
                                 "manufacturer": iodd_device_info.get('vendor_name', 'IO-Link'),
-                                "sw_version": "1.0.5.8"
+                                "sw_version": "1.0.5.9"
                             })
                             logging.info(f"🔌 IO-Link Adapter {sensor_eui}: {device_info['manufacturer']} - {device_info['model']}")
                             return device_info
@@ -588,7 +719,7 @@ class BSSCIAddon:
                         "name": adapter_name,
                         "model": "mioty-io-link Adapter",
                         "manufacturer": "IO-Link",
-                        "sw_version": "1.0.5.8"
+                        "sw_version": "1.0.5.9"
                     })
                     return device_info
         
@@ -668,7 +799,7 @@ class BSSCIAddon:
             "model": "mioty Base Station",
             "manufacturer": "Unknown",
             "serial_number": bs_eui,  # ✅ EUI als Seriennummer in Home Assistant anzeigen
-            "sw_version": "1.0.5.8"
+            "sw_version": "1.0.5.9"
         }
         
         # Prüfe manuelle Metadaten zuerst
@@ -1546,6 +1677,8 @@ class BSSCIAddon:
         
         if self.mqtt_manager:
             self.mqtt_manager.disconnect()
+        
+        self.stop_scaci_client()
         
         if self.web_gui:
             self.web_gui.shutdown()

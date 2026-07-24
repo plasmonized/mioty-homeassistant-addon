@@ -206,7 +206,7 @@ class WebGUI:
             
             # KRITISCH: Verwende IMMER die aktuelle externe Template-Datei
             if index_exists:
-                logging.info("✅ Verwende AKTUELLE index.html Template-Datei (Version 1.0.5.8)")
+                logging.info("✅ Verwende AKTUELLE index.html Template-Datei (Version 1.0.5.9)")
                 return render_template('index.html', ingress_path=ingress_path)
             else:
                 logging.error("❌ CRITICAL ERROR: index.html Template-Datei nicht gefunden!")
@@ -1555,6 +1555,164 @@ class WebGUI:
             else:
                 return jsonify({"error": "Fehler beim Speichern der HA MQTT Einstellungen"}), 500
         
+        @self.app.route('/api/scaci-settings', methods=['POST'])
+        def update_scaci_settings():
+            """API: SCACI Einstellungen aktualisieren."""
+            data = request.get_json() or {}
+            
+            enabled = bool(data.get('scaci_enabled', False))
+            host = (data.get('scaci_host') or '').strip()
+            ac_eui = (data.get('scaci_ac_eui') or '').strip().lower()
+            
+            import re
+            if ac_eui and not re.fullmatch(r'[0-9a-f]{16}', ac_eui):
+                return jsonify({"error": "AC-EUI muss aus genau 16 Hex-Zeichen bestehen"}), 400
+            
+            if enabled:
+                if not host:
+                    return jsonify({"error": "SCACI Host ist erforderlich"}), 400
+                if not ac_eui:
+                    return jsonify({"error": "AC-EUI ist erforderlich"}), 400
+            
+            try:
+                port = int(data.get('scaci_port') or 16017)
+                if not (1 <= port <= 65535):
+                    raise ValueError()
+            except ValueError:
+                return jsonify({"error": "SCACI Port muss eine gültige Portnummer sein"}), 400
+            
+            settings_update = {
+                'scaci_enabled': enabled,
+                'scaci_host': host,
+                'scaci_port': port,
+                'scaci_ac_eui': ac_eui,
+                'scaci_tls_insecure': bool(data.get('scaci_tls_insecure', False))
+            }
+            
+            if self.settings.update_settings(settings_update):
+                if self.addon and hasattr(self.addon, 'restart_scaci_client'):
+                    try:
+                        self.addon.restart_scaci_client()
+                    except Exception as e:
+                        logging.error(f"❌ SCACI Neustart fehlgeschlagen: {e}")
+                return jsonify({"success": True, "message": "SCACI Einstellungen gespeichert und Verbindung neu gestartet"})
+            return jsonify({"error": "Fehler beim Speichern der SCACI Einstellungen"}), 500
+        
+        @self.app.route('/api/scaci/status')
+        def get_scaci_status():
+            """API: SCACI Verbindungsstatus."""
+            result = {
+                'enabled': bool(self.settings.get_setting('scaci_enabled', False)) if self.settings else False,
+                'connected': False,
+                'ac_eui': self.settings.get_setting('scaci_ac_eui', '') if self.settings else '',
+                'certs_present': False
+            }
+            if self.addon:
+                if hasattr(self.addon, 'get_scaci_cert_paths'):
+                    try:
+                        certs = self.addon.get_scaci_cert_paths()
+                        result['certs_present'] = all(os.path.exists(certs[k]) for k in ('ca_cert', 'client_cert', 'client_key'))
+                        result['cert_dir'] = certs['dir']
+                    except Exception:
+                        pass
+                client = getattr(self.addon, 'scaci_client', None)
+                if client:
+                    result.update(client.get_connection_info())
+            return jsonify(result)
+        
+        @self.app.route('/api/scaci/generate-eui', methods=['POST'])
+        def generate_scaci_eui():
+            """API: AC-EUI aus Namen generieren (AC + Namens-Hash + Zufall)."""
+            data = request.get_json() or {}
+            name = (data.get('name') or '').strip()
+            try:
+                from scaci_client import generate_ac_eui
+                eui = generate_ac_eui(name)
+                return jsonify({"success": True, "ac_eui": eui})
+            except Exception as e:
+                return jsonify({"error": f"EUI-Generierung fehlgeschlagen: {e}"}), 500
+        
+        @self.app.route('/api/scaci/certs', methods=['POST'])
+        def upload_scaci_certs():
+            """API: Zertifikats-ZIP hochladen (ca_cert.pem, Zertifikat, privater Schlüssel)."""
+            if 'file' not in request.files:
+                return jsonify({"error": "Keine Datei hochgeladen"}), 400
+            file = request.files['file']
+            if not file.filename or not file.filename.lower().endswith('.zip'):
+                return jsonify({"error": "Bitte eine ZIP-Datei hochladen"}), 400
+            if not self.addon or not hasattr(self.addon, 'get_scaci_cert_paths'):
+                return jsonify({"error": "Add-on nicht verfügbar"}), 500
+            
+            import re
+            ac_eui = (self.settings.get_setting('scaci_ac_eui', '') or '').strip().lower()
+            if not re.fullmatch(r'[0-9a-f]{16}', ac_eui):
+                return jsonify({"error": "Bitte zuerst eine gültige AC-EUI (16 Hex-Zeichen) speichern, dann Zertifikate hochladen"}), 400
+            
+            import zipfile
+            import io
+            try:
+                zip_bytes = file.read(5 * 1024 * 1024 + 1)
+                if len(zip_bytes) > 5 * 1024 * 1024:
+                    return jsonify({"error": "ZIP-Datei zu groß (max. 5 MB)"}), 400
+                
+                certs = self.addon.get_scaci_cert_paths()
+                cert_dir = certs['dir']
+                base_dir = '/data/certs' if os.path.exists('/data') else 'certs'
+                if os.path.realpath(cert_dir) != os.path.realpath(base_dir) and not os.path.realpath(cert_dir).startswith(os.path.realpath(base_dir) + os.sep):
+                    return jsonify({"error": "Ungültiger Zertifikatspfad"}), 400
+                os.makedirs(cert_dir, exist_ok=True)
+                
+                found = {'ca_cert': False, 'client_cert': False, 'client_key': False}
+                with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zf:
+                    for info in zf.infolist():
+                        if info.is_dir():
+                            continue
+                        basename = os.path.basename(info.filename)
+                        if not basename or basename.startswith('.'):
+                            continue
+                        if info.file_size > 1024 * 1024:
+                            continue
+                        content = zf.read(info)
+                        lower = basename.lower()
+                        text = content.decode('utf-8', errors='ignore')
+                        if 'ca_cert' in lower or 'ca.pem' == lower:
+                            target = certs['ca_cert']
+                            found['ca_cert'] = True
+                        elif 'PRIVATE KEY' in text:
+                            target = certs['client_key']
+                            found['client_key'] = True
+                        elif 'BEGIN CERTIFICATE' in text:
+                            target = certs['client_cert']
+                            found['client_cert'] = True
+                        else:
+                            continue
+                        with open(target, 'wb') as f:
+                            f.write(content)
+                        try:
+                            os.chmod(target, 0o600)
+                        except Exception:
+                            pass
+                
+                missing = [k for k, v in found.items() if not v]
+                if missing:
+                    labels = {'ca_cert': 'CA-Zertifikat (ca_cert.pem)', 'client_cert': 'Client-Zertifikat', 'client_key': 'Privater Schlüssel'}
+                    return jsonify({"error": f"ZIP unvollständig, fehlt: {', '.join(labels[m] for m in missing)}"}), 400
+                
+                # SCACI mit neuen Zertifikaten neu starten
+                if hasattr(self.addon, 'restart_scaci_client'):
+                    try:
+                        self.addon.restart_scaci_client()
+                    except Exception as e:
+                        logging.error(f"❌ SCACI Neustart nach Zertifikats-Upload fehlgeschlagen: {e}")
+                
+                logging.info(f"🔐 SCACI Zertifikate gespeichert in {cert_dir}")
+                return jsonify({"success": True, "message": f"Zertifikate gespeichert in {cert_dir}", "cert_dir": cert_dir})
+            except zipfile.BadZipFile:
+                return jsonify({"error": "Ungültige ZIP-Datei"}), 400
+            except Exception as e:
+                logging.error(f"❌ Zertifikats-Upload fehlgeschlagen: {e}")
+                return jsonify({"error": f"Upload fehlgeschlagen: {e}"}), 500
+        
         @self.app.route('/api/decoders')
         def get_decoders():
             """API: Liste aller Decoder."""
@@ -2086,7 +2244,7 @@ class WebGUI:
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>mioty Application Center für Homeassistant v1.0.5.8</title>
+    <title>mioty Application Center für Homeassistant v1.0.5.9</title>
     <style>
         * {
             margin: 0;
@@ -3088,7 +3246,7 @@ class WebGUI:
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>mioty Application Center Einstellungen v1.0.5.8</title>
+    <title>mioty Application Center Einstellungen v1.0.5.9</title>
     <style>
         * {
             margin: 0;
@@ -3480,6 +3638,71 @@ class WebGUI:
                 </form>
             </div>
             
+            <!-- SCACI Direktverbindung -->
+            <div class="section">
+                <h2>🔐 SCACI Direktverbindung (TLS)</h2>
+                <p style="color: #666; font-size: 13px; margin-bottom: 15px;">
+                    Direkte TLS-Verbindung zum mioty Service Center nach dem offiziellen SCACI-Standard v1.0.0
+                    (zusätzlich zu MQTT). Benötigt ein CA-signiertes Client-Zertifikat.
+                </p>
+                
+                <div id="scaciStatusBox" style="padding: 12px 15px; background: #f8f9fa; border-radius: 8px; margin-bottom: 20px;">
+                    Lade SCACI Status...
+                </div>
+                
+                <form id="scaciSettingsForm">
+                    <div class="form-group">
+                        <label style="display: flex; align-items: center; gap: 10px;">
+                            <input type="checkbox" id="scaci_enabled" name="scaci_enabled" style="width: auto;">
+                            SCACI Verbindung aktivieren
+                        </label>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="scaci_host">Service Center Host:</label>
+                        <input type="text" id="scaci_host" name="scaci_host" placeholder="service-center.example.com">
+                        <div class="help-text">Hostname oder IP-Adresse des SCACI-Servers</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="scaci_port">Service Center Port:</label>
+                        <input type="number" id="scaci_port" name="scaci_port" placeholder="16017" min="1" max="65535">
+                        <div class="help-text">TCP-Port des SCACI-Servers (Standard: 16017)</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="scaci_ac_eui">Application Center EUI (AC-EUI):</label>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <input type="text" id="scaci_ac_eui" name="scaci_ac_eui" placeholder="aabbccddeeff0011" maxlength="16" pattern="[0-9a-fA-F]{16}" style="flex: 1; min-width: 200px; font-family: monospace;">
+                            <input type="text" id="scaci_eui_name" placeholder="Name (z.B. Zuhause)" style="flex: 1; min-width: 140px;">
+                            <button type="button" class="btn btn-secondary" onclick="generateScaciEui()">🎲 EUI generieren</button>
+                        </div>
+                        <div class="help-text">16 Hex-Zeichen ohne Trennzeichen. „EUI generieren" erstellt eine EUI mit AC-Präfix aus dem Namen + Zufallsteil.</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label style="display: flex; align-items: center; gap: 10px;">
+                            <input type="checkbox" id="scaci_tls_insecure" name="scaci_tls_insecure" style="width: auto;">
+                            TLS-Zertifikatsprüfung deaktivieren (nur für Tests!)
+                        </label>
+                    </div>
+                    
+                    <button type="submit" class="btn">💾 SCACI speichern & verbinden</button>
+                </form>
+                
+                <div style="margin-top: 25px; padding-top: 20px; border-top: 1px solid #eee;">
+                    <h3 style="margin-bottom: 10px;">🔑 Client-Zertifikate</h3>
+                    <p style="color: #666; font-size: 13px; margin-bottom: 10px;">
+                        ZIP-Datei aus dem Service-Center-Generator hochladen (enthält ca_cert.pem, Zertifikat und privaten Schlüssel).
+                        Speicherung unter certs/ac_&lt;eui&gt;/. Bitte zuerst die AC-EUI speichern.
+                    </p>
+                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                        <input type="file" id="scaciCertFile" accept=".zip">
+                        <button type="button" class="btn" onclick="uploadScaciCerts()">📤 Zertifikate hochladen</button>
+                    </div>
+                </div>
+            </div>
+            
             <!-- Verbindungsstatus -->
             <div class="section">
                 <h2>📡 Verbindungsstatus</h2>
@@ -3490,7 +3713,7 @@ class WebGUI:
             <div class="section">
                 <h2>ℹ️ Über</h2>
                 <p><strong>mioty Application Center</strong></p>
-                <p>Version: <span class="code" style="font-weight: bold;">1.0.5.8</span></p>
+                <p>Version: <span class="code" style="font-weight: bold;">1.0.5.9</span></p>
                 <p style="color: #666; font-size: 13px;">BSSCI mioty Add-on für Home Assistant • powered by Sentinum</p>
             </div>
         </div>
@@ -3794,13 +4017,132 @@ class WebGUI:
             }
         }
         
+        // SCACI Status laden
+        async function loadScaciStatus() {
+            try {
+                const response = await fetch(BASE_URL + '/api/scaci/status');
+                const s = await response.json();
+                const box = document.getElementById('scaciStatusBox');
+                if (!s.enabled) {
+                    box.innerHTML = '<span style="color: #666;">⚪ SCACI ist deaktiviert — Daten kommen über MQTT.</span>';
+                    return;
+                }
+                const connColor = s.connected ? '#28a745' : '#dc3545';
+                const connText = s.connected ? 'Verbunden' : 'Nicht verbunden';
+                const certText = s.certs_present ? '✅ Zertifikate vorhanden' : '⚠️ Zertifikate fehlen';
+                box.innerHTML = `
+                    <div style="display: flex; align-items: center; margin-bottom: 6px;">
+                        <div style="width: 12px; height: 12px; background: ${connColor}; border-radius: 50%; margin-right: 10px;"></div>
+                        <strong>SCACI: ${connText}${s.host ? ' (' + s.host + ':' + s.port + ')' : ''}</strong>
+                    </div>
+                    <div style="font-size: 13px; color: #666;">AC-EUI: <span style="font-family: monospace;">${s.ac_eui || '—'}</span> · ${certText}${s.last_error ? ' · Letzter Fehler: ' + s.last_error : ''}</div>
+                `;
+            } catch (error) {
+                console.error('SCACI Status Fehler:', error);
+            }
+        }
+        
+        // SCACI Einstellungen in Formular laden
+        async function loadScaciSettings() {
+            try {
+                const response = await fetch(BASE_URL + '/api/settings');
+                const settings = await response.json();
+                document.getElementById('scaci_enabled').checked = settings.scaci_enabled || false;
+                document.getElementById('scaci_host').value = settings.scaci_host || '';
+                document.getElementById('scaci_port').value = settings.scaci_port || 16017;
+                document.getElementById('scaci_ac_eui').value = settings.scaci_ac_eui || '';
+                document.getElementById('scaci_tls_insecure').checked = settings.scaci_tls_insecure || false;
+            } catch (error) {
+                console.error('SCACI Settings Fehler:', error);
+            }
+        }
+        
+        // AC-EUI generieren
+        async function generateScaciEui() {
+            const name = document.getElementById('scaci_eui_name').value;
+            try {
+                const response = await fetch(BASE_URL + '/api/scaci/generate-eui', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: name })
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    document.getElementById('scaci_ac_eui').value = result.ac_eui;
+                    showAlert('AC-EUI generiert: ' + result.ac_eui, 'success');
+                } else {
+                    showAlert(result.error, 'error');
+                }
+            } catch (error) {
+                showAlert('Fehler bei der EUI-Generierung', 'error');
+            }
+        }
+        
+        // SCACI Zertifikate hochladen
+        async function uploadScaciCerts() {
+            const fileInput = document.getElementById('scaciCertFile');
+            if (!fileInput.files.length) {
+                showAlert('Bitte zuerst eine ZIP-Datei auswählen', 'error');
+                return;
+            }
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            try {
+                const response = await fetch(BASE_URL + '/api/scaci/certs', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    showAlert(result.message, 'success');
+                    fileInput.value = '';
+                    loadScaciStatus();
+                } else {
+                    showAlert(result.error, 'error');
+                }
+            } catch (error) {
+                showAlert('Fehler beim Hochladen der Zertifikate', 'error');
+            }
+        }
+        
+        // SCACI Einstellungen speichern
+        document.getElementById('scaciSettingsForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = {
+                scaci_enabled: document.getElementById('scaci_enabled').checked,
+                scaci_host: document.getElementById('scaci_host').value,
+                scaci_port: document.getElementById('scaci_port').value,
+                scaci_ac_eui: document.getElementById('scaci_ac_eui').value,
+                scaci_tls_insecure: document.getElementById('scaci_tls_insecure').checked
+            };
+            try {
+                const response = await fetch(BASE_URL + '/api/scaci-settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    showAlert(result.message, 'success');
+                    loadScaciStatus();
+                } else {
+                    showAlert(result.error, 'error');
+                }
+            } catch (error) {
+                showAlert('Fehler beim Speichern der SCACI Einstellungen', 'error');
+            }
+        });
+        
         // Auto-refresh für Verbindungsstatus
         setInterval(loadConnectionStatus, 5000); // Alle 5 Sekunden
+        setInterval(loadScaciStatus, 10000);
         
         // Initialisierung
         document.addEventListener('DOMContentLoaded', () => {
             loadSettings();
             loadConnectionStatus();
+            loadScaciSettings();
+            loadScaciStatus();
         });
     </script>
 </body>
