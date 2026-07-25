@@ -261,10 +261,44 @@ class BSSCIAddon:
     def _handle_scaci_ul_data(self, ep_eui: str, message: Dict[str, Any]):
         """SCACI Uplink-Daten in die normale Sensor-Pipeline einspeisen."""
         try:
-            from scaci_client import parse_ul_data_message
+            from scaci_client import parse_ul_data_message, SCACIClient
             data = parse_ul_data_message(message)
             logging.info(f"📡 SCACI Uplink von {ep_eui}: {len(data.get('data', []))} Bytes")
             self.handle_sensor_data(ep_eui, data)
+
+            # Basisstationen aus dem Uplink sofort registrieren (ohne auf den 60s-Poll zu warten).
+            # Top-Level bsEui gilt als primäre BS; rxInfo enthält alle empfangenden BSes.
+            seen_bs: set = set()
+            top_bs_eui_raw = message.get("bsEui")
+            rx_info = message.get("rxInfo") or []
+
+            def _register_bs_from_uplink(bs_eui_raw, snr=None, rssi=None, rx_time=None):
+                if bs_eui_raw is None:
+                    return
+                bs_eui_hex = SCACIClient._eui_to_hex(bs_eui_raw)
+                if not bs_eui_hex or bs_eui_hex in seen_bs:
+                    return
+                seen_bs.add(bs_eui_hex)
+                self.handle_base_station_data(bs_eui_hex, {
+                    'source': 'scaci',
+                    'snr': snr,
+                    'rssi': rssi,
+                    'rxTime': rx_time,
+                })
+
+            _register_bs_from_uplink(
+                top_bs_eui_raw,
+                snr=message.get("snr"),
+                rssi=message.get("rssi"),
+                rx_time=message.get("rxTime"),
+            )
+            for rx in rx_info:
+                _register_bs_from_uplink(
+                    rx.get("bsEui"),
+                    snr=rx.get("snr"),
+                    rssi=rx.get("rssi"),
+                    rx_time=rx.get("rxTime"),
+                )
         except Exception as e:
             logging.error(f"❌ Fehler bei SCACI Uplink-Verarbeitung für {ep_eui}: {e}")
     
@@ -296,7 +330,13 @@ class BSSCIAddon:
                     continue
                 try:
                     status = client.get_status()
-                    for bs in status.get('baseStations', []):
+                    bs_list = status.get('baseStations', [])
+                    logging.info(f"📊 SCACI statusRsp: rc={status.get('rc')}, "
+                                 f"bsConnected={status.get('bsConnected')}, "
+                                 f"epRegistered={status.get('epRegistered')}, "
+                                 f"BS-Einträge={len(bs_list)}, "
+                                 f"BS-Keys={[list(b.keys()) for b in bs_list[:3]]}")
+                    for bs in bs_list:
                         bs_eui = bs.get('eui') or bs.get('bsEui')
                         if not bs_eui:
                             continue
