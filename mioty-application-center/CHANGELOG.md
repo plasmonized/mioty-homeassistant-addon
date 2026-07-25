@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.0.6.2
+## 1.0.6.3
 
 - ✨ **SCACI Direktverbindung:** Das Add-on kann sich jetzt zusätzlich zu MQTT direkt per TLS mit dem mioty Service Center verbinden (offizieller SCACI-Standard v1.0.0). Konfiguration unter Einstellungen → „🔐 SCACI Direktverbindung": Host, Port (Standard 16017), AC-EUI und optionale TLS-Testoption
 - ✨ **AC-EUI Generator:** Auf Wunsch wird eine Application-Center-EUI aus einem frei wählbaren Namen erzeugt (16 Hex-Zeichen mit „AC"-Präfix)
