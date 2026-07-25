@@ -343,14 +343,19 @@ class BSSCIAddon:
                         bs_eui = bs.get('eui') or bs.get('bsEui')
                         if not bs_eui:
                             continue
+                        # SCACI statusRsp liefert cpu/memory als 0-100 Prozent,
+                        # web_gui erwartet cpuLoad/memLoad als 0-1 Fraktion.
+                        cpu_val = bs.get('cpu')
+                        mem_val = bs.get('memory')
+                        duty_val = bs.get('dutyCycle')
                         self.handle_base_station_data(bs_eui, {
                             'rc': bs.get('rc', bs.get('code', 0)),
                             'message': bs.get('message', ''),
-                            # Spec: uptimeS (Sekunden), nicht "uptime"
                             'uptime': bs.get('uptimeS', bs.get('uptime')),
-                            'dutyCycle': bs.get('dlLoad'),
-                            'ulLoad': bs.get('ulLoad'),
-                            'dlLoad': bs.get('dlLoad'),
+                            # Normalisiert auf 0-1 Fraktion für web_gui
+                            'cpuLoad': (cpu_val / 100.0) if cpu_val is not None else None,
+                            'memLoad': (mem_val / 100.0) if mem_val is not None else None,
+                            'dutyCycle': (duty_val / 100.0) if duty_val is not None else None,
                             'vendor': bs.get('vendor'),
                             'model': bs.get('model'),
                             'name': bs.get('name'),
