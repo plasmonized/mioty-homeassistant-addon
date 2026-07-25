@@ -525,18 +525,22 @@ class WebGUI:
             ha_mqtt_broker = 'Unbekannt'
             
             if hasattr(self.addon, 'mqtt_manager') and self.addon.mqtt_manager:
-                # mioty MQTT Client Status
                 mqtt_connected = self.addon.mqtt_manager.connected
                 mqtt_broker = f"{self.addon.mqtt_manager.broker}:{self.addon.mqtt_manager.port}"
-                
-                # Home Assistant MQTT Client Status
                 ha_mqtt_connected = self.addon.mqtt_manager.ha_connected
                 ha_mqtt_broker = f"{self.addon.mqtt_manager.ha_broker}:{self.addon.mqtt_manager.ha_port}"
             
-            # Debug-Logging für MQTT Status
-            logging.info(f"📊 STATUS API CALL:")
-            logging.info(f"   📡 mioty MQTT: {mqtt_connected} ({mqtt_broker})")
-            logging.info(f"   🏠 HA MQTT: {ha_mqtt_connected} ({ha_mqtt_broker})")
+            # SCACI Status
+            sc_connected = False
+            sc_host = ''
+            scaci_client = getattr(self.addon, 'scaci_client', None)
+            if scaci_client:
+                info = scaci_client.get_connection_info()
+                sc_connected = info.get('connected', False)
+                sc_host = info.get('host', '')
+            
+            # Einheitlicher Service-Center-Status (SCACI oder MQTT)
+            service_center_connected = sc_connected or mqtt_connected
             
             # Decoder Count berechnen
             decoder_count = 0
@@ -548,6 +552,9 @@ class WebGUI:
                 'mqtt_broker': mqtt_broker,
                 'ha_mqtt_connected': ha_mqtt_connected,
                 'ha_mqtt_broker': ha_mqtt_broker,
+                'sc_connected': sc_connected,
+                'sc_host': sc_host,
+                'service_center_connected': service_center_connected,
                 'sensor_count': len(self.addon.sensors) if hasattr(self.addon, 'sensors') else 0,
                 'basestation_count': len(self.addon.base_stations) if hasattr(self.addon, 'base_stations') else 0,
                 'decoder_count': decoder_count
@@ -2634,6 +2641,12 @@ class WebGUI:
         <div class="content">
             <div id="alerts"></div>
             
+            <!-- Service Center Status Banner -->
+            <div id="scStatusBanner" style="display:flex;align-items:center;gap:10px;padding:10px 18px;border-radius:8px;margin-bottom:16px;background:#f8f9fa;border:1px solid #dee2e6;">
+                <div id="scStatusDot" style="width:12px;height:12px;border-radius:50%;background:#6c757d;flex-shrink:0;"></div>
+                <span id="scStatusText" style="font-weight:600;font-size:0.95em;color:#444;">Service Center: Lade...</span>
+            </div>
+            
             <!-- Sensor hinzufügen -->
             <div class="section">
                 <h2><span class="section-icon">+</span> Neuen Sensor hinzufügen</h2>
@@ -3158,15 +3171,43 @@ class WebGUI:
             }
         }
         
+        // Service Center Status Banner aktualisieren
+        async function loadScStatus() {
+            try {
+                const response = await fetch(BASE_URL + '/api/status');
+                const status = await response.json();
+                const dot = document.getElementById('scStatusDot');
+                const txt = document.getElementById('scStatusText');
+                if (!dot || !txt) return;
+                if (status.service_center_connected) {
+                    dot.style.background = '#28a745';
+                    const via = status.sc_connected
+                        ? `SCACI (${status.sc_host || 'TLS'})`
+                        : `MQTT (${status.mqtt_broker || ''})`;
+                    txt.textContent = `Service Center: ✅ Verbunden — ${via}`;
+                    txt.style.color = '#155724';
+                } else {
+                    dot.style.background = '#dc3545';
+                    txt.textContent = 'Service Center: ❌ Nicht verbunden';
+                    txt.style.color = '#721c24';
+                }
+            } catch (e) {
+                const txt = document.getElementById('scStatusText');
+                if (txt) txt.textContent = 'Service Center: Status unbekannt';
+            }
+        }
+        
         // Daten regelmäßig aktualisieren
         function startAutoRefresh() {
             loadSensors();
             loadBaseStations();
+            loadScStatus();
             
             setInterval(() => {
                 loadSensors();
                 loadBaseStations();
             }, 30000); // Alle 30 Sekunden
+            setInterval(loadScStatus, 10000); // Alle 10 Sekunden
         }
         
         // Start
@@ -3972,10 +4013,18 @@ class WebGUI:
                 const response = await fetch(BASE_URL + '/api/status');
                 const status = await response.json();
                 
-                const mqttColor = status.mqtt_connected ? '#28a745' : '#dc3545';
-                const mqttText = status.mqtt_connected ? 
-                    `mioty MQTT: Verbunden (${status.mqtt_broker})` : 
-                    'mioty MQTT: Getrennt';
+                const scOk = status.service_center_connected;
+                const scColor = scOk ? '#28a745' : '#dc3545';
+                let scLabel = '';
+                if (scOk) {
+                    if (status.sc_connected) {
+                        scLabel = `Service Center: ✅ Verbunden via SCACI (${status.sc_host || 'TLS'})`;
+                    } else {
+                        scLabel = `Service Center: ✅ Verbunden via MQTT (${status.mqtt_broker || ''})`;
+                    }
+                } else {
+                    scLabel = 'Service Center: ❌ Nicht verbunden';
+                }
                 
                 const haMqttColor = status.ha_mqtt_connected ? '#28a745' : '#dc3545';
                 const haMqttText = status.ha_mqtt_connected ? 
@@ -3989,16 +4038,12 @@ class WebGUI:
                             <strong>Web-GUI: Online</strong>
                         </div>
                         <div style="display: flex; align-items: center; margin-bottom: 10px;">
-                            <div style="width: 12px; height: 12px; background: ${mqttColor}; border-radius: 50%; margin-right: 10px;"></div>
-                            <strong>${mqttText}</strong>
+                            <div style="width: 12px; height: 12px; background: ${scColor}; border-radius: 50%; margin-right: 10px;"></div>
+                            <strong>${scLabel}</strong>
                         </div>
                         <div style="display: flex; align-items: center; margin-bottom: 10px;">
                             <div style="width: 12px; height: 12px; background: ${haMqttColor}; border-radius: 50%; margin-right: 10px;"></div>
                             <strong>${haMqttText}</strong>
-                        </div>
-                        <div style="display: flex; align-items: center; margin-bottom: 10px;">
-                            <div style="width: 12px; height: 12px; background: ${status.mqtt_connected && status.ha_mqtt_connected ? '#28a745' : '#dc3545'}; border-radius: 50%; margin-right: 10px;"></div>
-                            <strong>MQTT Status: ${status.mqtt_connected && status.ha_mqtt_connected ? '✅ Beide Broker verbunden' : '❌ Verbindungsfehler'}</strong>
                         </div>
                         <div style="display: flex; align-items: center;">
                             <div style="width: 12px; height: 12px; background: #17a2b8; border-radius: 50%; margin-right: 10px;"></div>
