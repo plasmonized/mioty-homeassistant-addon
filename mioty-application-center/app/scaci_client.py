@@ -56,7 +56,7 @@ class SCACIClient:
         name: str = "mioty Application Center",
         vendor: str = "Sentinum",
         model: str = "BSSCI Add-on",
-        sw_version: str = "1.0.6.4",
+        sw_version: str = "1.0.6.5",
     ):
         self.host = host
         self.port = int(port)
@@ -604,9 +604,24 @@ class SCACIClient:
     # ------------------------------------------------------------------
     @staticmethod
     def _eui_to_hex(eui: Any) -> str:
+        """EUI zu 16-stelligem Hex-String (Großbuchstaben).
+        Unterstützt: Integer (wie Spec vorschreibt), Hex-Strings ('502DF4000056A0BE'),
+        Bytes/Bytearray (8 Byte big-endian).
+        """
         if eui is None:
             return ""
-        return f"{int(eui):016X}"
+        if isinstance(eui, (bytes, bytearray)):
+            return eui.hex().upper().zfill(16)
+        if isinstance(eui, str):
+            s = eui.strip()
+            try:
+                return f"{int(s, 16):016X}"
+            except ValueError:
+                return s.upper().zfill(16)
+        try:
+            return f"{int(eui):016X}"
+        except (TypeError, ValueError):
+            return str(eui).upper()
 
     def get_connection_info(self) -> Dict[str, Any]:
         """Statusinfo für die Web-GUI."""
