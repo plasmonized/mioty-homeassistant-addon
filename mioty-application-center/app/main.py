@@ -331,11 +331,12 @@ class BSSCIAddon:
                 try:
                     status = client.get_status()
                     bs_list = status.get('baseStations', [])
-                    logging.info(f"📊 SCACI statusRsp: rc={status.get('rc')}, "
-                                 f"bsConnected={status.get('bsConnected')}, "
-                                 f"epRegistered={status.get('epRegistered')}, "
-                                 f"BS-Einträge={len(bs_list)}, "
-                                 f"BS-Keys={[list(b.keys()) for b in bs_list[:3]]}")
+                    logging.warning(f"📊 SCACI statusRsp: rc={status.get('rc')}, "
+                                    f"bsConnected={status.get('bsConnected')}, "
+                                    f"epRegistered={status.get('epRegistered')}, "
+                                    f"BS-Einträge={len(bs_list)}")
+                    for i, b in enumerate(bs_list[:3]):
+                        logging.warning(f"📊 SCACI BS[{i}] Keys={list(b.keys())} Werte={b}")
                     for bs in bs_list:
                         bs_eui = bs.get('eui') or bs.get('bsEui')
                         if not bs_eui:
