@@ -296,7 +296,7 @@
                 </div>
                 <div class="stat-card">
                     <span class="stat-number" id="mqtt-status">⚠️</span>
-                    <div class="stat-label">MQTT Status</div>
+                    <div class="stat-label">Service Center</div>
                 </div>
             </div>
             
@@ -857,9 +857,9 @@
                 // Decoder Count setzen
                 document.getElementById('decoder-count').textContent = status.decoder_count || 0;
                 
-                // MQTT Status setzen
+                // Service Center Status setzen
                 const mqttStatusElement = document.getElementById('mqtt-status');
-                if (status.mqtt_connected && status.ha_mqtt_connected) {
+                if (status.service_center_connected) {
                     mqttStatusElement.textContent = '✅';
                     mqttStatusElement.style.color = '#28a745';
                 } else {
