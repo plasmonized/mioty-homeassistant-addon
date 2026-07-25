@@ -327,7 +327,9 @@ class BSSCIAddon:
                 if client is None or client is not bound_client:
                     break
                 if not client.connect_completed:
+                    logging.warning("⚠️ SCACI Status-Poll: connect_completed=False, warte...")
                     continue
+                logging.warning("📊 SCACI Status-Poll: sende status-Anfrage...")
                 try:
                     status = client.get_status()
                     bs_list = status.get('baseStations', [])
@@ -355,7 +357,7 @@ class BSSCIAddon:
                             'source': 'scaci'
                         })
                 except Exception as e:
-                    logging.debug(f"SCACI Status-Abfrage fehlgeschlagen: {e}")
+                    logging.warning(f"⚠️ SCACI Status-Abfrage fehlgeschlagen: {e}")
         
         thread = threading.Thread(target=status_poll, daemon=True, name="scaci-status")
         thread.start()
