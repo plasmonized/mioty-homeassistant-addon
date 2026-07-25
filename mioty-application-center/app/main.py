@@ -357,7 +357,8 @@ class BSSCIAddon:
                             'source': 'scaci'
                         })
                 except Exception as e:
-                    logging.warning(f"⚠️ SCACI Status-Abfrage fehlgeschlagen: {e}")
+                    import traceback
+                    logging.warning(f"⚠️ SCACI Status-Abfrage fehlgeschlagen: {e}\n{traceback.format_exc()}")
         
         thread = threading.Thread(target=status_poll, daemon=True, name="scaci-status")
         thread.start()
@@ -719,7 +720,7 @@ class BSSCIAddon:
             "model": "mioty IoT Sensor",
             "manufacturer": "Unknown",
             "serial_number": sensor_eui,  # ✅ EUI als Seriennummer in Home Assistant anzeigen
-            "sw_version": "1.0.6.5"
+            "sw_version": "1.0.6.6"
         }
         
         # Prüfe manuelle Metadaten zuerst
@@ -759,7 +760,7 @@ class BSSCIAddon:
                                 "name": adapter_name,
                                 "model": iodd_device_info.get('device_name', 'IO-Link Device'),
                                 "manufacturer": iodd_device_info.get('vendor_name', 'IO-Link'),
-                                "sw_version": "1.0.6.5"
+                                "sw_version": "1.0.6.6"
                             })
                             logging.info(f"🔌 IO-Link Adapter {sensor_eui}: {device_info['manufacturer']} - {device_info['model']}")
                             return device_info
@@ -769,7 +770,7 @@ class BSSCIAddon:
                         "name": adapter_name,
                         "model": "mioty-io-link Adapter",
                         "manufacturer": "IO-Link",
-                        "sw_version": "1.0.6.5"
+                        "sw_version": "1.0.6.6"
                     })
                     return device_info
         
@@ -849,7 +850,7 @@ class BSSCIAddon:
             "model": "mioty Base Station",
             "manufacturer": "Unknown",
             "serial_number": bs_eui,  # ✅ EUI als Seriennummer in Home Assistant anzeigen
-            "sw_version": "1.0.6.5"
+            "sw_version": "1.0.6.6"
         }
         
         # Prüfe manuelle Metadaten zuerst
