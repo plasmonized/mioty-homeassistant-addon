@@ -3,6 +3,8 @@ Payload Decoder Engine für mioty Application Center
 Unterstützt mioty Blueprint Decoder und Sentinum .js Files
 """
 
+import ast
+import operator
 import os
 import json
 import logging
@@ -38,6 +40,52 @@ except ImportError as e:
     logging.info("   ℹ️ AES-Entschlüsselung funktioniert trotzdem mit PyCryptodome")
 
 
+_SAFE_BINOPS = {
+    ast.Add: operator.add, ast.Sub: operator.sub, ast.Mult: operator.mul,
+    ast.Div: operator.truediv, ast.FloorDiv: operator.floordiv, ast.Mod: operator.mod,
+    ast.Pow: operator.pow, ast.BitAnd: operator.and_, ast.BitOr: operator.or_,
+    ast.BitXor: operator.xor, ast.LShift: operator.lshift, ast.RShift: operator.rshift,
+}
+_SAFE_UNARYOPS = {ast.UAdd: operator.pos, ast.USub: operator.neg,
+                  ast.Invert: operator.invert, ast.Not: operator.not_}
+_SAFE_CMPOPS = {ast.Eq: operator.eq, ast.NotEq: operator.ne, ast.Lt: operator.lt,
+                ast.LtE: operator.le, ast.Gt: operator.gt, ast.GtE: operator.ge}
+
+
+def safe_eval_expr(expr: str):
+    """Sichere Auswertung arithmetischer/logischer Ausdrücke ohne eval().
+    
+    Erlaubt: Zahlen, +-*/%//**, Bit-Operationen, Vergleiche, and/or/not, Klammern.
+    Verboten: Namen, Funktionsaufrufe, Attribute, Indizierung etc.
+    """
+    def _ev(node):
+        if isinstance(node, ast.Expression):
+            return _ev(node.body)
+        if isinstance(node, ast.Constant) and isinstance(node.value, (int, float, bool)):
+            return node.value
+        if isinstance(node, ast.BinOp) and type(node.op) in _SAFE_BINOPS:
+            return _SAFE_BINOPS[type(node.op)](_ev(node.left), _ev(node.right))
+        if isinstance(node, ast.UnaryOp) and type(node.op) in _SAFE_UNARYOPS:
+            return _SAFE_UNARYOPS[type(node.op)](_ev(node.operand))
+        if isinstance(node, ast.Compare):
+            left = _ev(node.left)
+            for op, comp in zip(node.ops, node.comparators):
+                if type(op) not in _SAFE_CMPOPS:
+                    raise ValueError(f"Operator nicht erlaubt: {type(op).__name__}")
+                right = _ev(comp)
+                if not _SAFE_CMPOPS[type(op)](left, right):
+                    return False
+                left = right
+            return True
+        if isinstance(node, ast.BoolOp):
+            if isinstance(node.op, ast.And):
+                return all(_ev(v) for v in node.values)
+            return any(_ev(v) for v in node.values)
+        raise ValueError(f"Ausdruck nicht erlaubt: {type(node).__name__}")
+    
+    return _ev(ast.parse(expr, mode='eval'))
+
+
 class PayloadDecoder:
     """Payload Decoder Engine für verschiedene Decoder-Formate."""
     
@@ -59,10 +107,36 @@ class PayloadDecoder:
         self.mioty_aes_decoder = MiotyAESDecryption() if AES_AVAILABLE and MiotyAESDecryption is not None else None
         self.secure_key_manager = SecureKeyManager() if SECURE_KEY_MANAGER_AVAILABLE and SecureKeyManager is not None else None
         
+        # Eingebaute Decoder (Sentinum-Blueprints) automatisch installieren
+        self._install_builtin_decoders()
+        
         self.load_decoders()
         
         # Automatische Migration von plaintext keys zu sicherer Speicherung
         self._migrate_plaintext_keys()
+    
+    def _install_builtin_decoders(self):
+        """Kopiere mitgelieferte Decoder (z.B. Sentinum-Blueprints) ins Decoder-Verzeichnis."""
+        try:
+            builtin_dir = Path(__file__).parent / "builtin_decoders"
+            if not builtin_dir.exists():
+                return
+            installed = 0
+            for src in builtin_dir.glob("*"):
+                if not src.is_file() or src.suffix not in ['.js', '.json', '.xml']:
+                    continue
+                dst = self.decoder_dir / src.name
+                # Nur kopieren wenn nicht vorhanden oder mitgelieferte Version neuer ist
+                if not dst.exists() or src.stat().st_mtime > dst.stat().st_mtime:
+                    import shutil
+                    shutil.copy2(src, dst)
+                    # Erzwinge Neu-Analyse in der Registry
+                    self.decoder_files.pop(src.stem, None)
+                    installed += 1
+            if installed:
+                logging.info(f"📦 {installed} eingebaute Decoder installiert/aktualisiert")
+        except Exception as e:
+            logging.error(f"Fehler beim Installieren eingebauter Decoder: {e}")
     
     def _migrate_plaintext_keys(self):
         """Migriere bestehende plaintext application keys zu sicherer Speicherung."""
@@ -155,9 +229,16 @@ class PayloadDecoder:
         """Scanne Decoder-Verzeichnis nach neuen Dateien."""
         for file_path in self.decoder_dir.glob("*"):
             if file_path.is_file() and file_path.suffix in ['.js', '.json', '.xml']:
+                if file_path.name == 'decoder_registry.json':
+                    continue
                 decoder_name = file_path.stem
-                if decoder_name not in self.decoder_files:
-                    # Neuer Decoder gefunden, analysiere ihn
+                existing = self.decoder_files.get(decoder_name)
+                # Neu analysieren wenn unbekannt ODER Datei neuer als Registry-Eintrag
+                needs_analysis = (
+                    existing is None or
+                    file_path.stat().st_mtime > existing.get('created_at', 0)
+                )
+                if needs_analysis:
                     decoder_info = self._analyze_decoder_file(file_path)
                     if decoder_info:
                         self.decoder_files[decoder_name] = decoder_info
@@ -183,12 +264,18 @@ class PayloadDecoder:
         with open(file_path, 'r') as f:
             blueprint = json.load(f)
         
+        meta = blueprint.get('meta', {})
+        name = meta.get('name') or blueprint.get('name', file_path.stem)
+        vendor = meta.get('vendor', '')
+        if vendor and vendor.lower() not in name.lower():
+            name = f"{vendor} {name}"
         return {
             'type': 'blueprint',
             'file_path': str(file_path),
-            'name': blueprint.get('name', file_path.stem),
+            'name': name,
             'version': blueprint.get('version', '1.0'),
-            'description': blueprint.get('description', 'mioty Blueprint Decoder'),
+            'description': meta.get('description') or blueprint.get('description', 'mioty Blueprint Decoder'),
+            'type_eui': blueprint.get('typeEui', ''),
             'supported_devices': blueprint.get('devices', []),
             'payload_format': blueprint.get('payload', {}),
             'created_at': file_path.stat().st_mtime
@@ -682,14 +769,17 @@ class PayloadDecoder:
 
             def apply_func(func_str: str, raw_val) -> float:
                 expr = func_str.replace('$', str(raw_val))
-                return eval(expr, {"__builtins__": {}})
+                return safe_eval_expr(expr)
 
             def eval_condition(cond_str: str, field_vals: dict) -> bool:
                 expr = cond_str
                 for fname, fval in sorted(field_vals.items(), key=lambda x: -len(x[0])):
                     expr = expr.replace(f'${fname}', str(int(fval) if isinstance(fval, float) and fval == int(fval) else fval))
+                # JavaScript-Syntax nach Python übersetzen
+                expr = expr.replace('&&', ' and ').replace('||', ' or ')
+                expr = re.sub(r'!(?!=)', ' not ', expr)
                 try:
-                    return bool(eval(expr, {"__builtins__": {}}))
+                    return bool(safe_eval_expr(expr))
                 except Exception:
                     return False
 
@@ -703,10 +793,16 @@ class PayloadDecoder:
                 if comp is None:
                     continue
 
+                # Bedingte Felder: nur lesen, wenn die Condition erfüllt ist
+                field_condition = field_ref.get('condition')
+                if field_condition and not eval_condition(field_condition, field_values):
+                    continue
+
                 size_bits = comp.get('size', 8)
                 field_type = comp.get('type', 'uint')
                 little_endian = comp.get('littleEndian', False)
-                hidden = comp.get('hidden', False)
+                # hidden kann am Component ODER am Payload-Feld stehen
+                hidden = comp.get('hidden', False) or field_ref.get('hidden', False)
                 unit = comp.get('unit', '')
                 func = comp.get('func', None)
 
@@ -727,7 +823,7 @@ class PayloadDecoder:
                 func = vf.get('func', '1')
 
                 if eval_condition(condition, field_values):
-                    val = eval(func, {"__builtins__": {}})
+                    val = safe_eval_expr(func)
                     if vtype == 'bool':
                         val = bool(val)
                     decoded_data[vname] = {'value': val, 'unit': ''}

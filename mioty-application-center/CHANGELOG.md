@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.0.6.14 — 2026-07-30
+### Neu
+- 📦 **Alle Sentinum-Blueprints fest eingebaut:** Eos, Febris, Aion, Apollon, Hyperion und Juno werden jetzt mit dem Add-on ausgeliefert und beim Start automatisch installiert — kein manueller Upload mehr nötig. Eigene hochgeladene Decoder bleiben unberührt
+
+### Behoben
+- 🔧 **Blueprint-Decoder: bedingte Payload-Felder:** Felder mit `condition` (z. B. `$radar_peaks >= 1` beim Eos) wurden bisher bedingungslos gelesen → „Payload zu kurz"-Fehler. Jetzt werden Bedingungen korrekt ausgewertet und Felder nur bei erfüllter Bedingung gelesen
+- 🔧 **Blueprint-Decoder: JavaScript-Syntax in Bedingungen:** `&&`, `||` und `!` in Blueprint-Bedingungen (Febris, Juno, Apollon, Hyperion) werden jetzt korrekt verstanden
+- 🔧 **Blueprint-Decoder: `hidden` am Payload-Feld:** wird jetzt auch erkannt, wenn es am Feld statt am Component steht (z. B. Febris `fifo_size`)
+- 🏷️ **Decoder-Namen:** Blueprints zeigen jetzt den echten Namen aus den Metadaten inkl. Hersteller (z. B. „Sentinum Eos" statt Dateiname)
+
 ## 1.0.6.13 — 2026-07-30
 ### Behoben
 - 💾 **Sensor-Metadaten verschwinden nach Speichern:** Metadaten (Hersteller, Modell, Gerätename), die über das Dashboard eingegeben wurden, waren beim nächsten Öffnen weg. Ursache: Der Speicher-Endpoint hat EUI-Schlüssel ohne Großschreibung gespeichert (`"fca84a09..."` statt `"FCA84A09..."`), der Lesezugriff suchte aber immer mit Großbuchstaben → kein Treffer → Metadaten unsichtbar. Fix: Schlüssel werden jetzt immer als Uppercase gespeichert, beim Laden normalisiert, und doppelte Alt-Einträge werden bereinigt

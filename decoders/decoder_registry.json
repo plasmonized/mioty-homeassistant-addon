@@ -101,16 +101,6 @@
       ],
       "created_at": 1759135400.0
     },
-    "decoder_registry": {
-      "type": "blueprint",
-      "file_path": "decoders/decoder_registry.json",
-      "name": "decoder_registry",
-      "version": "1.0",
-      "description": "mioty Blueprint Decoder",
-      "supported_devices": [],
-      "payload_format": {},
-      "created_at": 1759135422.2439494
-    },
     "NYX": {
       "type": "javascript",
       "file_path": "decoders/NYX.js",

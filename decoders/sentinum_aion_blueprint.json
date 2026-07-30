@@ -1,0 +1,205 @@
+{
+    "typeEui": "FCA84A000000000A",
+    "meta": {
+        "name": "Aion",
+        "vendor": "Sentinum",
+        "description": "Aion 4-20 mA current-loop adapter data payload mioty blueprint."
+    },
+    "component": {
+        "version": {
+            "littleEndian": false,
+            "size": 4,
+            "type": "uint",
+            "unit": ""
+        },
+        "uplink_counter": {
+            "littleEndian": false,
+            "size": 8,
+            "type": "uint",
+            "unit": ""
+        },
+        "device_id": {
+            "littleEndian": false,
+            "size": 8,
+            "type": "uint",
+            "unit": ""
+        },
+        "temperature_int": {
+            "func": "$ - 128",
+            "littleEndian": false,
+            "size": 8,
+            "type": "uint",
+            "unit": "°C"
+        },
+        "alarm_raw": {
+            "hidden": true,
+            "littleEndian": false,
+            "size": 8,
+            "type": "uint",
+            "unit": ""
+        },
+        "status_raw": {
+            "hidden": true,
+            "littleEndian": false,
+            "size": 8,
+            "type": "uint",
+            "unit": ""
+        },
+        "current_ma": {
+            "func": "$ / 100",
+            "littleEndian": false,
+            "size": 16,
+            "type": "int",
+            "unit": "mA"
+        },
+        "engineering_value": {
+            "func": "$ / 100",
+            "littleEndian": false,
+            "size": 16,
+            "type": "int",
+            "unit": ""
+        }
+    },
+    "uplink": [
+        {
+            "id": 0,
+            "payload": [
+                {
+                    "component": "version",
+                    "name": "base_id"
+                },
+                {
+                    "component": "version",
+                    "name": "major_version"
+                },
+                {
+                    "component": "version",
+                    "name": "minor_version"
+                },
+                {
+                    "component": "version",
+                    "name": "product_version"
+                },
+                {
+                    "component": "uplink_counter",
+                    "name": "uplink_counter"
+                },
+                {
+                    "component": "device_id",
+                    "name": "id"
+                },
+                {
+                    "component": "temperature_int",
+                    "name": "internal_temperature"
+                },
+                {
+                    "component": "alarm_raw",
+                    "name": "alarm_raw"
+                },
+                {
+                    "component": "status_raw",
+                    "name": "status_raw"
+                },
+                {
+                    "component": "current_ma",
+                    "name": "current_ch1_mA"
+                },
+                {
+                    "component": "current_ma",
+                    "name": "current_ch2_mA"
+                },
+                {
+                    "component": "engineering_value",
+                    "name": "lower_ch1"
+                },
+                {
+                    "component": "engineering_value",
+                    "name": "lower_ch2"
+                },
+                {
+                    "component": "engineering_value",
+                    "name": "upper_ch1"
+                },
+                {
+                    "component": "engineering_value",
+                    "name": "upper_ch2"
+                }
+            ],
+            "virtual": [
+                {
+                    "name": "alarm_ch1",
+                    "type": "bool",
+                    "func": "1",
+                    "condition": "($alarm_raw & 0x01) == 0x01"
+                },
+                {
+                    "name": "alarm_ch2",
+                    "type": "bool",
+                    "func": "1",
+                    "condition": "($alarm_raw & 0x02) == 0x02"
+                },
+                {
+                    "name": "status_ch1_ok",
+                    "type": "bool",
+                    "func": "1",
+                    "condition": "($status_raw & 0x07) == 0"
+                },
+                {
+                    "name": "status_ch1_not_connected",
+                    "type": "bool",
+                    "func": "1",
+                    "condition": "($status_raw & 0x07) == 1"
+                },
+                {
+                    "name": "status_ch1_faulty",
+                    "type": "bool",
+                    "func": "1",
+                    "condition": "($status_raw & 0x07) == 2"
+                },
+                {
+                    "name": "status_ch1_overcurrent",
+                    "type": "bool",
+                    "func": "1",
+                    "condition": "($status_raw & 0x07) == 3"
+                },
+                {
+                    "name": "status_ch1_hw_fault",
+                    "type": "bool",
+                    "func": "1",
+                    "condition": "($status_raw & 0x07) == 4"
+                },
+                {
+                    "name": "status_ch2_ok",
+                    "type": "bool",
+                    "func": "1",
+                    "condition": "(($status_raw >> 3) & 0x07) == 0"
+                },
+                {
+                    "name": "status_ch2_not_connected",
+                    "type": "bool",
+                    "func": "1",
+                    "condition": "(($status_raw >> 3) & 0x07) == 1"
+                },
+                {
+                    "name": "status_ch2_faulty",
+                    "type": "bool",
+                    "func": "1",
+                    "condition": "(($status_raw >> 3) & 0x07) == 2"
+                },
+                {
+                    "name": "status_ch2_overcurrent",
+                    "type": "bool",
+                    "func": "1",
+                    "condition": "(($status_raw >> 3) & 0x07) == 3"
+                },
+                {
+                    "name": "status_ch2_hw_fault",
+                    "type": "bool",
+                    "func": "1",
+                    "condition": "(($status_raw >> 3) & 0x07) == 4"
+                }
+            ]
+        }
+    ],
+    "version": "1.0"
+}

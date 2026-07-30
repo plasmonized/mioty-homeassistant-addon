@@ -1,0 +1,223 @@
+{
+    "typeEui": "FCA84A0000000003",
+    "meta": {
+        "name": "Febris",
+        "vendor": "Sentinum",
+        "description": "Febris sensor data payload decoder."
+    },
+    "component": {
+        "version": {
+            "littleEndian": false,
+            "size": 4,
+            "type": "uint",
+            "unit": ""
+        },
+        "uplink_counter": {
+            "littleEndian": false,
+            "size": 8,
+            "type": "uint",
+            "unit": ""
+        },
+        "bat_voltage": {
+            "func": "$ / 1000",
+            "littleEndian": false,
+            "size": 16,
+            "type": "uint",
+            "unit": "V"
+        },
+        "temperature_16": {
+            "func": "($ / 10) - 100",
+            "littleEndian": false,
+            "size": 16,
+            "type": "int",
+            "unit": "°C"
+        },
+        "humidity": {
+            "littleEndian": false,
+            "size": 8,
+            "type": "uint",
+            "unit": "%"
+        },
+        "co2": {
+            "littleEndian": false,
+            "size": 16,
+            "type": "uint",
+            "unit": "ppm"
+        },
+        "pressure": {
+            "littleEndian": false,
+            "size": 16,
+            "type": "uint",
+            "unit": "hPa"
+        },
+        "pressure_v2": {
+            "func": "$ / 10",
+            "littleEndian": false,
+            "size": 16,
+            "type": "uint",
+            "unit": "hPa"
+        },
+        "empty32": {
+            "littleEndian": false,
+            "size": 32,
+            "type": "uint",
+            "unit": ""
+        },
+        "alarm": {
+            "littleEndian": false,
+            "size": 8,
+            "type": "uint",
+            "unit": ""
+        },
+        "fifo_header": {
+            "littleEndian": false,
+            "size": 8,
+            "type": "uint",
+            "unit": ""
+        },
+        "dew_point_8": {
+            "func": "$ - 100",
+            "littleEndian": false,
+            "size": 8,
+            "type": "uint",
+            "unit": "°C"
+        },
+        "dew_point_16": {
+            "func": "($ / 10) - 100",
+            "littleEndian": false,
+            "size": 16,
+            "type": "uint",
+            "unit": "°C"
+        },
+        "temperature_8": {
+            "func": "$  - 100",
+            "littleEndian": false,
+            "size": 8,
+            "type": "uint",
+            "unit": "°C"
+        }
+    },
+    "uplink": [
+        {
+            "id": 0,
+            "payload": [
+                {
+                   "component": "version",
+                         "name": "base_id"
+                },
+                {
+                    "component": "version",
+                    "name": "major_version"
+                },
+                {
+                    "component": "version",
+                    "name": "minor_version"
+                },
+                {
+                    "component": "version",
+                    "name": "product_version"
+                },
+                {
+                    "component": "uplink_counter",
+                    "name": "up_cnt"
+                },
+                {
+                    "component": "bat_voltage",
+                    "name": "battery_voltage"
+                },
+                {
+                   "component": "temperature_16",
+                   "name": "temperature"
+                },
+                {
+                    "component": "humidity",
+                    "name": "humidity"
+                },
+                {
+                    "component": "pressure",
+                    "condition": "(($major_version < 2) && (($product_version & 0x01) == 0x01))",
+                    "name": "pressure"
+                },
+                {
+                    "component": "co2",
+                    "condition": "(($major_version < 2) && (($product_version & 0x01) == 0x01))",
+                    "name": "co2_ppm"
+                },
+                {
+                    "component": "empty32",
+                    "condition": "(($major_version < 2) && (($product_version & 0x01) == 0x00))",
+                    "name": "empty",
+                    "hidden": true
+                },
+                {
+                    "component": "dew_point_16",
+                    "condition": "($major_version >= 2)",
+                    "name": "dew_point"
+                },
+                {
+                    "component": "alarm",
+                    "name": "alarm"
+                },
+                {
+                    "component": "fifo_header",
+                    "name": "fifo_size",
+                    "hidden": true,
+                    "condition": "($major_version < 2)"
+                },
+                {
+                    "component": "fifo_header",
+                    "name": "fifo_period",
+                    "hidden": true,
+                    "condition": "($major_version < 2)"
+                },
+                {
+                    "component": "dew_point_8",
+                    "condition": "($major_version == 1) && ($minor_version == 2)",
+                    "name": "dew_point"
+                },
+                {
+                    "component": "dew_point_16",
+                    "condition": "(($major_version == 1) && ($minor_version >= 3))",
+                    "name": "dew_point"
+                },
+                {
+                    "component": "pressure_v2",
+                    "condition": "(($major_version >= 2) && (($product_version & 0x01) == 0x01))",
+                    "name": "pressure"
+                },
+                {
+                    "component": "co2",
+                    "condition": "(($major_version >= 2) && (($product_version & 0x01) == 0x01))",
+                    "name": "co2_ppm"
+                },
+                {
+                    "component": "temperature_8",
+                    "condition": "(($major_version == 1) && ($minor_version < 3) && (($product_version & 0x04) == 0x04))",
+                    "name": "wall_temperature"
+                },
+                {
+                    "component": "temperature_8",
+                    "condition": "(($major_version == 1) && ($minor_version < 3) && (($product_version & 0x04) == 0x04))",
+                    "name": "therm_temperature"
+                },
+                {
+                    "component": "temperature_16",
+                    "condition": "(($major_version == 1) && ($minor_version >= 3) && (($product_version & 0x04) == 0x04)) || (($major_version >= 2) && (($product_version & 0x04) == 0x04))",
+                    "name": "wall_temperature"
+                },
+                {
+                    "component": "temperature_16",
+                    "condition": "(($major_version == 1) && ($minor_version >= 3) && (($product_version & 0x04) == 0x04)) || (($major_version >= 2) && (($product_version & 0x04) == 0x04))",
+                    "name": "therm_temperature"
+                },
+
+                {
+                    "component": "humidity",
+                    "condition": "($product_version & 0x04) == 0x04",
+                    "name": "wall_humidity"
+                }
+            ]
+        }
+    ],
+    "version": "1.0"
+ }

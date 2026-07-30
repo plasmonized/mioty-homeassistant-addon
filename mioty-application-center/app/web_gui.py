@@ -206,7 +206,7 @@ class WebGUI:
             
             # KRITISCH: Verwende IMMER die aktuelle externe Template-Datei
             if index_exists:
-                logging.info("✅ Verwende AKTUELLE index.html Template-Datei (Version 1.0.6.13)")
+                logging.info("✅ Verwende AKTUELLE index.html Template-Datei (Version 1.0.6.14)")
                 return render_template('index.html', ingress_path=ingress_path)
             else:
                 logging.error("❌ CRITICAL ERROR: index.html Template-Datei nicht gefunden!")
@@ -2259,7 +2259,7 @@ class WebGUI:
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>mioty Application Center für Homeassistant v1.0.6.13</title>
+    <title>mioty Application Center für Homeassistant v1.0.6.14</title>
     <style>
         * {
             margin: 0;
@@ -3295,7 +3295,7 @@ class WebGUI:
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>mioty Application Center Einstellungen v1.0.6.13</title>
+    <title>mioty Application Center Einstellungen v1.0.6.14</title>
     <style>
         * {
             margin: 0;
@@ -3762,7 +3762,7 @@ class WebGUI:
             <div class="section">
                 <h2>ℹ️ Über</h2>
                 <p><strong>mioty Application Center</strong></p>
-                <p>Version: <span class="code" style="font-weight: bold;">1.0.6.13</span></p>
+                <p>Version: <span class="code" style="font-weight: bold;">1.0.6.14</span></p>
                 <p style="color: #666; font-size: 13px;">BSSCI mioty Add-on für Home Assistant • powered by Sentinum</p>
             </div>
         </div>

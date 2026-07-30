@@ -1,0 +1,198 @@
+{
+  "typeEui": "FCA84A0000000009",
+  "meta": {
+    "name": "Juno",
+    "vendor": "Sentinum",
+    "description": "Juno generic mioty blueprint for versions up to 2.2"
+  },
+  "component": {
+    "base_id": {
+      "littleEndian": false,
+      "size": 4,
+      "type": "uint"
+    },
+    "version": {
+      "littleEndian": false,
+      "size": 4,
+      "type": "uint"
+    },
+    "bat_voltage": {
+      "func": "$ / 1000",
+      "littleEndian": false,
+      "size": 16,
+      "type": "uint",
+      "unit": "V"
+    },
+    "humidity": {
+      "littleEndian": false,
+      "size": 8,
+      "type": "uint",
+      "unit": "%"
+    },
+    "int16_t": {
+      "littleEndian": false,
+      "size": 16,
+      "type": "int"
+    },
+    "int32_t": {
+      "littleEndian": false,
+      "size": 32,
+      "type": "uint"
+    },
+    "int8_t": {
+      "littleEndian": false,
+      "size": 8,
+      "type": "int"
+    },
+    "temperature": {
+      "func": "$ / 10 - 100",
+      "littleEndian": false,
+      "size": 16,
+      "type": "uint",
+      "unit": "°C"
+    },
+    "temperature_int": {
+      "func": "$ - 128",
+      "littleEndian": false,
+      "size": 8,
+      "type": "uint",
+      "unit": "°C"
+    },
+    "th_alarms": {
+      "littleEndian": false,
+      "size": 8,
+      "type": "uint"
+    },
+    "uint16_t": {
+      "littleEndian": false,
+      "size": 16,
+      "type": "uint"
+    },
+    "uint32_t": {
+      "littleEndian": false,
+      "size": 32,
+      "type": "uint"
+    },
+    "uint8_t": {
+      "littleEndian": false,
+      "size": 8,
+      "type": "uint"
+    },
+    "uplink_counter": {
+      "littleEndian": false,
+      "size": 8,
+      "type": "uint"
+    }
+  },
+  "uplink": [
+    {
+      "id": 0,
+      "payload": [
+        {
+          "component": "base_id",
+          "name": "base_id"
+        },
+        {
+          "component": "version",
+          "name": "major_version"
+        },
+        {
+          "component": "version",
+          "name": "minor_version"
+        },
+        {
+          "component": "version",
+          "name": "product_version"
+        },
+        {
+          "component": "uplink_counter",
+          "name": "up_cnt"
+        },
+        {
+          "component": "bat_voltage",
+          "name": "battery_voltage"
+        },
+        {
+          "component": "temperature_int",
+          "name": "internal_temperature"
+        },
+        {
+          "component": "th_alarms",
+          "name": "th_alarms",
+          "condition": "($minor_version >= 2 || $major_version >= 2) && (($product_version & 0x01) == 0x01)"
+        },
+        {
+          "component": "temperature",
+          "name": "temperature",
+          "condition": "($product_version & 0x01) == 0x01"
+        },
+        {
+          "component": "humidity",
+          "name": "humidity",
+          "condition": "($product_version & 0x01) == 0x01"
+        },
+        {
+          "component": "uint8_t",
+          "name": "acc_status",
+          "condition": "($minor_version >= 3 || $major_version >= 2) && (($product_version & 0x06) != 0)"
+        },
+        {
+          "component": "uint8_t",
+          "name": "orientation",
+          "condition": "($minor_version >= 2 || $major_version >= 2) && (($product_version & 0x02) == 0x02)"
+        },
+        {
+          "component": "uint8_t",
+          "name": "tilt_angle",
+          "condition": "($minor_version >= 3 || $major_version >= 2) && (($product_version & 0x02) == 0x02)"
+        },
+        {
+          "component": "uint8_t",
+          "name": "is_open",
+          "condition": "($minor_version >= 2 || $major_version >= 2) && (($product_version & 0x02) == 0x02)"
+        },
+        {
+          "component": "uint8_t",
+          "name": "opended_since_sent",
+          "condition": "($minor_version >= 2 || $major_version >= 2) && (($product_version & 0x02) == 0x02)"
+        },
+        {
+          "component": "uint16_t",
+          "name": "opended_since_boot",
+          "condition": "($minor_version >= 2 || $major_version >= 2) && (($product_version & 0x02) == 0x02)"
+        },
+        {
+          "component": "uint32_t",
+          "name": "move_start",
+          "condition": "($minor_version >= 3 || $major_version >= 2) && (($product_version & 0x04) == 0x04)"
+        },
+        {
+          "component": "uint32_t",
+          "name": "move_stop",
+          "condition": "($minor_version >= 3 || $major_version >= 2) && (($product_version & 0x04) == 0x04)"
+        },
+        {
+          "component": "uint8_t",
+          "name": "moving",
+          "condition": "($minor_version >= 3 || $major_version >= 2) && (($product_version & 0x04) == 0x04)"
+        },
+        {
+          "component": "uint16_t",
+          "name": "move_cnt",
+          "condition": "($minor_version >= 3 || $major_version >= 2) && (($product_version & 0x04) == 0x04)"
+        },
+        {
+          "component": "uint8_t",
+          "name": "move_angle",
+          "condition": "($minor_version >= 3 || $major_version >= 2) && (($product_version & 0x04) == 0x04)"
+        },
+        {
+          "component": "uint16_t",
+          "name": "max_g",
+          "condition": "$major_version >= 2 && (($product_version & 0x04) == 0x04)"
+        }
+      ]
+    }
+  ],
+  "version": "2.2"
+}

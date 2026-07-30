@@ -1,0 +1,314 @@
+{
+    "typeEui": "FCA84A0000000001",
+    "meta": {
+        "name": "Apollon",
+        "vendor": "Sentinum",
+        "description": "Apollon sensor data payload decoder."
+    },
+    "component": {
+        "alarm": {
+            "littleEndian": false,
+            "size": 8,
+            "type": "uint",
+            "unit": ""
+        },
+        "amplitude": {
+            "littleEndian": false,
+            "size": 16,
+            "type": "int"
+        },
+        "bat_voltage": {
+            "func": "$ / 1000",
+            "littleEndian": false,
+            "size": 16,
+            "type": "uint",
+            "unit": "V"
+        },
+        "distance": {
+            "littleEndian": false,
+            "size": 16,
+            "type": "uint",
+            "unit": "mm"
+        },
+        "int16_t": {
+            "littleEndian": false,
+            "size": 16,
+            "type": "int"
+        },
+        "int8_t": {
+            "littleEndian": false,
+            "size": 8,
+            "type": "int"
+        },
+        "status": {
+            "littleEndian": false,
+            "size": 8,
+            "type": "uint"
+        },
+        "temperature": {
+            "func": "$  - 128",
+            "littleEndian": false,
+            "size": 8,
+            "type": "uint",
+            "unit": "°C"
+        },
+        "uint16_t": {
+            "littleEndian": false,
+            "size": 16,
+            "type": "uint"
+        },
+        "uint16_t_hidden": {
+            "littleEndian": false,
+            "size": 16,
+            "type": "uint",
+            "hidden": true
+        },
+        "uint8_t": {
+            "littleEndian": false,
+            "size": 8,
+            "type": "uint"
+        },
+        "uint8_t_hidden": {
+            "littleEndian": false,
+            "size": 8,
+            "type": "uint",
+            "hidden": true
+        },
+        "uplink_counter": {
+            "littleEndian": false,
+            "size": 8,
+            "type": "uint",
+            "unit": ""
+        },
+        "version": {
+            "littleEndian": false,
+            "size": 4,
+            "type": "uint",
+            "unit": ""
+        }
+    },
+    "uplink": [
+        {
+            "id": 0,
+            "payload": [
+                {
+                    "component": "version",
+                    "name": "modulecode"
+                },
+                {
+                    "component": "version",
+                    "name": "major_version"
+                },
+                {
+                    "component": "version",
+                    "name": "minor_version"
+                },
+                {
+                    "component": "version",
+                    "name": "product_version"
+                },
+                {
+                    "component": "uplink_counter",
+                    "name": "uplink_counter",
+                    "condition": "($major_version <= 2)"
+                },
+                {
+                    "component": "bat_voltage",
+                    "name": "battery_voltage",
+                    "condition": "($major_version <= 2)"
+                },
+                {
+                    "component": "temperature",
+                    "name": "internal_temperature",
+                    "condition": "($major_version <= 2)"
+                },
+                {
+                    "component": "alarm",
+                    "name": "alarm",
+                    "condition": "($major_version <= 2)"
+                },
+                {
+                    "component": "distance",
+                    "name": "master_value",
+                    "condition": "($major_version <= 2)"
+                },
+                {
+                    "component": "uint8_t",
+                    "condition": "(($major_version <= 2) && (($product_version & 0x01) == 0x01))",
+                    "name": "tof_status"
+                },
+                {
+                    "component": "distance",
+                    "condition": "(($major_version <= 2) && (($product_version & 0x01) == 0x01))",
+                    "name": "tof_distance"
+                },
+                {
+                    "component": "uint8_t_hidden",
+                    "condition": "(($major_version <= 2) && (($product_version & 0x01) == 0x01))",
+                    "name": "tof_index"
+                },
+                {
+                    "component": "uint8_t",
+                    "condition": "(($major_version <= 2) && (($product_version & 0x02) == 0x02))",
+                    "name": "radar_status"
+                },
+                {
+                    "component": "uint8_t",
+                    "condition": "(($major_version <= 2) && (($product_version & 0x02) == 0x02))",
+                    "name": "radar_no_peaks"
+                },
+                {
+                    "component": "distance",
+                    "condition": "(($major_version <= 2) && (($product_version & 0x02) == 0x02) && ($radar_no_peaks >= 1))",
+                    "name": "radar_distance_1"
+                },
+                {
+                    "component": "uint16_t_hidden",
+                    "condition": "(($major_version <= 2) && (($product_version & 0x02) == 0x02) && ($radar_no_peaks < 1))",
+                    "name": "radar_distance_1_unused"
+                },
+                {
+                    "component": "int16_t",
+                    "condition": "(($major_version <= 2) && (($product_version & 0x02) == 0x02) && ($radar_no_peaks >= 1))",
+                    "name": "radar_amplitude_1"
+                },
+                {
+                    "component": "uint16_t_hidden",
+                    "condition": "(($major_version <= 2) && (($product_version & 0x02) == 0x02) && ($radar_no_peaks < 1))",
+                    "name": "radar_amplitude_1_unused"
+                },
+                {
+                    "component": "distance",
+                    "condition": "(($major_version <= 2) && (($product_version & 0x02) == 0x02) && ($radar_no_peaks >= 2))",
+                    "name": "radar_distance_2"
+                },
+                {
+                    "component": "uint16_t_hidden",
+                    "condition": "(($major_version <= 2) && (($product_version & 0x02) == 0x02) && ($radar_no_peaks < 2))",
+                    "name": "radar_distance_2_unused"
+                },
+                {
+                    "component": "int16_t",
+                    "condition": "(($major_version <= 2) && (($product_version & 0x02) == 0x02) && ($radar_no_peaks >= 2))",
+                    "name": "radar_amplitude_2"
+                },
+                {
+                    "component": "uint16_t_hidden",
+                    "condition": "(($major_version <= 2) && (($product_version & 0x02) == 0x02) && ($radar_no_peaks < 2))",
+                    "name": "radar_amplitude_2_unused"
+                },
+                {
+                    "component": "distance",
+                    "condition": "(($major_version <= 2) && (($product_version & 0x02) == 0x02) && ($radar_no_peaks >= 3))",
+                    "name": "radar_distance_3"
+                },
+                {
+                    "component": "uint16_t_hidden",
+                    "condition": "(($major_version <= 2) && (($product_version & 0x02) == 0x02) && ($radar_no_peaks < 3))",
+                    "name": "radar_distance_3_unused"
+                },
+                {
+                    "component": "int16_t",
+                    "condition": "(($major_version <= 2) && (($product_version & 0x02) == 0x02) && ($radar_no_peaks >= 3))",
+                    "name": "radar_amplitude_3"
+                },
+                {
+                    "component": "uint16_t_hidden",
+                    "condition": "(($major_version <= 2) && (($product_version & 0x02) == 0x02) && ($radar_no_peaks < 3))",
+                    "name": "radar_amplitude_3_unused"
+                },
+                {
+                    "component": "uint8_t",
+                    "condition": "(($major_version <= 2) && (($product_version & 0x04) == 0x04))",
+                    "name": "acc_status"
+                },
+                {
+                    "component": "uint8_t",
+                    "condition": "(($major_version <= 2) && (($product_version & 0x04) == 0x04))",
+                    "name": "acc_orientation"
+                },
+                {
+                    "component": "uint8_t",
+                    "condition": "(($major_version <= 2) && (($product_version & 0x04) == 0x04))",
+                    "name": "acc_open"
+                },
+                {
+                    "component": "uint16_t",
+                    "condition": "(($major_version <= 2) && (($product_version & 0x04) == 0x04))",
+                    "name": "acc_open_cnt"
+                },
+                {
+                    "component": "uint8_t",
+                    "condition": "(($major_version <= 2) && (($product_version & 0x04) == 0x04))",
+                    "name": "acc_impact"
+                },
+                {
+                    "component": "uint8_t",
+                    "condition": "(($major_version <= 2) && (($product_version & 0x08) == 0x08))",
+                    "name": "hall_open"
+                },
+                {
+                    "component": "uint16_t",
+                    "condition": "(($major_version <= 2) && (($product_version & 0x08) == 0x08))",
+                    "name": "hall_open_cnt"
+                },
+                {
+                    "component": "uint8_t_hidden",
+                    "condition": "(($major_version <= 2) && (($product_version & 0x01) == 0x01) && (($minor_version) >= 2))",
+                    "name": "histo_type"
+                },
+                {
+                    "component": "uint8_t",
+                    "condition": "(($major_version <= 2) && (($product_version & 0x01) == 0x01) && (($minor_version) >= 2) && (($histo_type) == 0x00))",
+                    "name": "tof_hist_status"
+                },
+                {
+                    "component": "distance",
+                    "condition": "(($major_version <= 2) && (($product_version & 0x01) == 0x01) && (($minor_version) >= 2) && (($histo_type) == 0x00))",
+                    "name": "tof_hist_distance"
+                },
+                {
+                    "component": "uint8_t",
+                    "condition": "(($major_version <= 2) && (($product_version & 0x01) == 0x01) && (($minor_version) >= 2) && (($histo_type) == 0x00))",
+                    "name": "tof_peaks_idx"
+                },
+                {
+                    "component": "uint8_t",
+                    "condition": "(($major_version <= 2) && (($product_version & 0x01) == 0x01) && (($minor_version) >= 2) && (($histo_type) == 0x00))",
+                    "name": "tof_peaks_num"
+                },
+                {
+                    "component": "uint8_t",
+                    "condition": "(($major_version <= 2) && (($product_version & 0x01) == 0x01) && (($minor_version) >= 2) && (($histo_type) == 0x01))",
+                    "name": "tof_nohist_status"
+                },
+                {
+                    "component": "uint16_t",
+                    "condition": "(($major_version <= 2) && (($product_version & 0x01) == 0x01) && (($minor_version) >= 2) && (($histo_type) == 0x01))",
+                    "name": "tof_nohist_distance"
+                },
+                {
+                    "component": "uint8_t",
+                    "condition": "(($major_version <= 2) && (($product_version & 0x01) == 0x01) && (($minor_version) >= 2) && (($histo_type) == 0x01))",
+                    "name": "tof_hist_status"
+                },
+                {
+                    "component": "distance",
+                    "condition": "(($major_version <= 2) && (($product_version & 0x01) == 0x01) && (($minor_version) >= 2) && (($histo_type) == 0x01))",
+                    "name": "tof_hist_distance"
+                },
+                {
+                    "component": "uint8_t",
+                    "condition": "(($major_version <= 2) && (($product_version & 0x01) == 0x01) && (($minor_version) >= 2) && (($histo_type) == 0x01))",
+                    "name": "tof_peaks_idx"
+                },
+                {
+                    "component": "uint8_t",
+                    "condition": "(($major_version <= 2) && (($product_version & 0x01) == 0x01) && (($minor_version) >= 2) && (($histo_type) == 0x01))",
+                    "name": "tof_peaks_num"
+                }
+            ]
+        }
+    ],
+    "version": "1.0"
+}

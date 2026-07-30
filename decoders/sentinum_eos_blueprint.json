@@ -1,0 +1,237 @@
+{
+    "typeEui": "FCA84A000000000B",
+    "meta": {
+        "name": "Eos",
+        "vendor": "Sentinum",
+        "description": "Eos radar level sensor data payload mioty blueprint."
+    },
+    "component": {
+        "version": {
+            "littleEndian": false,
+            "size": 4,
+            "type": "uint",
+            "unit": ""
+        },
+        "uplink_counter": {
+            "littleEndian": false,
+            "size": 8,
+            "type": "uint",
+            "unit": ""
+        },
+        "alarm_raw": {
+            "littleEndian": false,
+            "size": 8,
+            "type": "uint",
+            "unit": "",
+            "hidden": true
+        },
+        "temperature_int": {
+            "func": "$ - 128",
+            "littleEndian": false,
+            "size": 8,
+            "type": "uint",
+            "unit": "°C"
+        },
+        "battery": {
+            "littleEndian": false,
+            "size": 8,
+            "type": "uint",
+            "unit": "%"
+        },
+        "bat_voltage": {
+            "func": "$ / 1000",
+            "littleEndian": false,
+            "size": 16,
+            "type": "uint",
+            "unit": "V"
+        },
+        "radar_status": {
+            "littleEndian": false,
+            "size": 8,
+            "type": "uint",
+            "unit": ""
+        },
+        "radar_peaks": {
+            "littleEndian": false,
+            "size": 8,
+            "type": "uint",
+            "unit": ""
+        },
+        "master_value": {
+            "func": "$ / 1000",
+            "littleEndian": false,
+            "size": 16,
+            "type": "uint",
+            "unit": "m"
+        },
+        "radar_distance": {
+            "func": "$ / 1000",
+            "littleEndian": false,
+            "size": 16,
+            "type": "uint",
+            "unit": "m"
+        },
+        "radar_amplitude": {
+            "littleEndian": false,
+            "size": 16,
+            "type": "int",
+            "unit": "dBsm"
+        },
+        "orientation": {
+            "littleEndian": false,
+            "size": 8,
+            "type": "uint",
+            "unit": ""
+        },
+        "tilt_angle": {
+            "littleEndian": false,
+            "size": 8,
+            "type": "uint",
+            "unit": "°"
+        }
+    },
+    "uplink": [
+        {
+            "id": 0,
+            "payload": [
+                {
+                    "component": "version",
+                    "name": "base_id"
+                },
+                {
+                    "component": "version",
+                    "name": "major_version"
+                },
+                {
+                    "component": "version",
+                    "name": "minor_version"
+                },
+                {
+                    "component": "version",
+                    "name": "product_version"
+                },
+                {
+                    "component": "uplink_counter",
+                    "name": "uplink_counter"
+                },
+                {
+                    "component": "alarm_raw",
+                    "name": "alarm_raw"
+                },
+                {
+                    "component": "temperature_int",
+                    "name": "internal_temperature"
+                },
+                {
+                    "component": "battery",
+                    "name": "battery"
+                },
+                {
+                    "component": "bat_voltage",
+                    "name": "battery_voltage"
+                },
+                {
+                    "component": "radar_status",
+                    "name": "radar_status"
+                },
+                {
+                    "component": "radar_peaks",
+                    "name": "radar_peaks"
+                },
+                {
+                    "component": "master_value",
+                    "name": "master"
+                },
+                {
+                    "component": "radar_distance",
+                    "name": "radar_rd_1",
+                    "condition": "$radar_peaks >= 1"
+                },
+                {
+                    "component": "radar_amplitude",
+                    "name": "radar_ra_1",
+                    "condition": "$radar_peaks >= 1"
+                },
+                {
+                    "component": "radar_distance",
+                    "name": "radar_rd_2",
+                    "condition": "$radar_peaks >= 2"
+                },
+                {
+                    "component": "radar_amplitude",
+                    "name": "radar_ra_2",
+                    "condition": "$radar_peaks >= 2"
+                },
+                {
+                    "component": "radar_distance",
+                    "name": "radar_rd_3",
+                    "condition": "$radar_peaks >= 3"
+                },
+                {
+                    "component": "radar_amplitude",
+                    "name": "radar_ra_3",
+                    "condition": "$radar_peaks >= 3"
+                },
+                {
+                    "component": "orientation",
+                    "name": "orientation"
+                },
+                {
+                    "component": "tilt_angle",
+                    "name": "tilt_angle"
+                }
+            ],
+            "virtual": [
+                {
+                    "name": "openingAlarm",
+                    "type": "bool",
+                    "func": "1",
+                    "condition": "($alarm_raw & 0x01) == 0x01"
+                },
+                {
+                    "name": "vandalAlarm",
+                    "type": "bool",
+                    "func": "1",
+                    "condition": "($alarm_raw & 0x02) == 0x02"
+                },
+                {
+                    "name": "radarDeltaAlarm",
+                    "type": "bool",
+                    "func": "1",
+                    "condition": "($alarm_raw & 0x08) == 0x08"
+                },
+                {
+                    "name": "radarMinAlarm",
+                    "type": "bool",
+                    "func": "1",
+                    "condition": "($alarm_raw & 0x10) == 0x10"
+                },
+                {
+                    "name": "radarMaxAlarm",
+                    "type": "bool",
+                    "func": "1",
+                    "condition": "($alarm_raw & 0x20) == 0x20"
+                },
+                {
+                    "name": "activationAction",
+                    "type": "bool",
+                    "func": "1",
+                    "condition": "(($alarm_raw >> 6) & 0x03) == 1"
+                },
+                {
+                    "name": "configurationAction",
+                    "type": "bool",
+                    "func": "1",
+                    "condition": "(($alarm_raw >> 6) & 0x03) == 2"
+                },
+                {
+                    "name": "triggerAction",
+                    "type": "bool",
+                    "func": "1",
+                    "condition": "(($alarm_raw >> 6) & 0x03) == 3"
+                }
+            ]
+        }
+    ],
+    "version": "1.0"
+}
