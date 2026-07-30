@@ -899,13 +899,7 @@
             clearValidationErrors();
         }
 
-        // Close modal when clicking outside
-        window.onclick = function(event) {
-            const modal = document.getElementById('sensorRegistrationModal');
-            if (event.target === modal) {
-                closeSensorRegistrationModal();
-            }
-        }
+        // Modal schließt NICHT beim Klick außerhalb — nur über den X-Button oder Abbrechen
 
         // HEX VALIDATION FUNCTIONS
         function isValidHex(value, length) {
