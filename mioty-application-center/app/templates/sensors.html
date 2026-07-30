@@ -537,7 +537,7 @@
                                 ${sensor.application_key ? '<span class="status-badge status-active">🔒 AES</span>' : ''}
                                 <button class="btn btn-secondary" onclick="reregisterSensor('${sensor.eui}')" title="Sensor erneut am Service Center registrieren">🔄 Neu anlernen</button>
                                 <button class="btn btn-primary" onclick="editSensor('${sensor.eui}')">✏️ Bearbeiten</button>
-                                ${!sensor.auto_discovered ? `<button class="btn btn-danger" onclick="deleteSensor('${sensor.eui}')">🗑️ Löschen</button>` : ''}
+                                <button class="btn btn-danger" onclick="deleteSensor('${sensor.eui}')">🗑️ Löschen</button>
                             </div>
                         </div>
                         
@@ -689,20 +689,20 @@
         });
 
         async function deleteSensor(eui) {
-            if (!confirm(`Sensor ${eui} wirklich löschen?`)) return;
+            if (!confirm(`Sensor ${eui} wirklich löschen?\n\nDer Sensor wird aus der Konfiguration und dem Arbeitsspeicher entfernt.`)) return;
             
             try {
-                const response = await fetch(BASE_URL + `/api/sensor-config/${eui}`, {
-                    method: 'DELETE'
+                // 1. Aus Konfigurationsdatei löschen (404 ist ok bei auto-discovered Sensoren)
+                await fetch(BASE_URL + `/api/sensor-config/${eui}`, { method: 'DELETE' });
+                
+                // 2. Aus In-Memory-Speicher löschen (wichtig für auto-discovered Sensoren)
+                await fetch(BASE_URL + '/api/sensor/remove', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sensor_eui: eui })
                 });
                 
-                if (response.ok) {
-                    alert('✅ Sensor gelöscht!');
-                    loadSensors();
-                } else {
-                    const result = await response.json();
-                    alert('❌ Fehler: ' + (result.error || 'Unbekannter Fehler'));
-                }
+                loadSensors();
             } catch (error) {
                 alert('❌ Fehler beim Löschen: ' + error.message);
             }
@@ -770,12 +770,7 @@
             }
         }
 
-        window.onclick = function(event) {
-            const modal = document.getElementById('sensorModal');
-            if (event.target === modal) {
-                modal.style.display = 'none';
-            }
-        }
+        // Modal schließt NICHT bei Außenklick — nur über X-Button oder Abbrechen
 
         loadSensors();
     </script>
