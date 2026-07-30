@@ -630,56 +630,109 @@ class PayloadDecoder:
     
     def _decode_with_blueprint(self, decoder_info: Dict[str, Any], 
                               payload_bytes: List[int], metadata: Dict[str, Any]) -> Dict[str, Any]:
-        """Dekodiere mit mioty Blueprint."""
+        """Dekodiere mit mioty Blueprint (echtes Format: bit-granulare Felder, func, virtual).
+        
+        Blueprint-Schema:
+          component: {name: {size (bits), type (uint|int), littleEndian, func, hidden, unit}}
+          uplink[].payload: [{component, name}, ...] — geordnete Bit-Sequenz
+          uplink[].virtual: [{name, type, func, condition}] — berechnete Felder
+        """
         try:
-            # Lade Blueprint
             with open(decoder_info['file_path'], 'r') as f:
                 blueprint = json.load(f)
             
-            payload_config = blueprint.get('payload', {})
-            decoded_data = {}
+            components = blueprint.get('component', {})
+            uplinks = blueprint.get('uplink', [])
             
-            # Einfache Blueprint-Interpretation
-            byte_index = 0
-            for field_name, field_config in payload_config.items():
-                if byte_index >= len(payload_bytes):
-                    break
-                
-                field_type = field_config.get('type', 'uint8')
-                field_length = field_config.get('length', 1)
-                
-                # Extrahiere Bytes für dieses Feld
-                field_bytes = payload_bytes[byte_index:byte_index + field_length]
-                
-                # Konvertiere basierend auf Typ
-                if field_type == 'uint8' and field_length == 1:
-                    value = field_bytes[0] if field_bytes else 0
-                elif field_type == 'uint16' and field_length == 2:
-                    value = (field_bytes[0] << 8 | field_bytes[1]) if len(field_bytes) == 2 else 0
-                elif field_type == 'float' and field_length == 4:
-                    # Vereinfachte Float-Interpretation
-                    import struct
-                    if len(field_bytes) == 4:
-                        value = struct.unpack('>f', bytes(field_bytes))[0]
-                    else:
-                        value = 0.0
-                else:
-                    value = field_bytes
-                
-                # Skalierung anwenden
-                scale = field_config.get('scale', 1.0)
-                offset = field_config.get('offset', 0.0)
-                if isinstance(value, (int, float)):
-                    value = value * scale + offset
-                
-                decoded_data[field_name] = {
-                    'value': value,
-                    'unit': field_config.get('unit', ''),
-                    'description': field_config.get('description', field_name)
-                }
-                
-                byte_index += field_length
+            if not uplinks:
+                raise Exception("Blueprint hat keine Uplink-Definitionen")
             
+            uplink_def = uplinks[0]
+            payload_fields = uplink_def.get('payload', [])
+            virtual_fields = uplink_def.get('virtual', [])
+            
+            total_bits = len(payload_bytes) * 8
+            bit_pos = 0
+
+            def read_bits(n_bits: int, little_endian: bool, signed: bool) -> int:
+                nonlocal bit_pos
+                if bit_pos + n_bits > total_bits:
+                    raise Exception(
+                        f"Payload zu kurz: brauche {bit_pos + n_bits} Bits, habe {total_bits}"
+                    )
+                # MSB-first extraction (littleEndian=false → big-endian)
+                raw = 0
+                for i in range(n_bits):
+                    byte_idx = (bit_pos + i) // 8
+                    bit_idx = 7 - ((bit_pos + i) % 8)
+                    raw = (raw << 1) | ((payload_bytes[byte_idx] >> bit_idx) & 1)
+                bit_pos += n_bits
+
+                if little_endian and n_bits % 8 == 0:
+                    n_bytes = n_bits // 8
+                    raw_bytes_be = [(raw >> (8 * (n_bytes - 1 - j))) & 0xFF for j in range(n_bytes)]
+                    raw_bytes_be.reverse()
+                    raw = 0
+                    for b in raw_bytes_be:
+                        raw = (raw << 8) | b
+
+                if signed and (raw & (1 << (n_bits - 1))):
+                    raw -= (1 << n_bits)
+                return raw
+
+            def apply_func(func_str: str, raw_val) -> float:
+                expr = func_str.replace('$', str(raw_val))
+                return eval(expr, {"__builtins__": {}})
+
+            def eval_condition(cond_str: str, field_vals: dict) -> bool:
+                expr = cond_str
+                for fname, fval in sorted(field_vals.items(), key=lambda x: -len(x[0])):
+                    expr = expr.replace(f'${fname}', str(int(fval) if isinstance(fval, float) and fval == int(fval) else fval))
+                try:
+                    return bool(eval(expr, {"__builtins__": {}}))
+                except Exception:
+                    return False
+
+            field_values: Dict[str, Any] = {}
+            decoded_data: Dict[str, Any] = {}
+
+            for field_ref in payload_fields:
+                comp_name = field_ref.get('component', '')
+                field_name = field_ref.get('name', comp_name)
+                comp = components.get(comp_name)
+                if comp is None:
+                    continue
+
+                size_bits = comp.get('size', 8)
+                field_type = comp.get('type', 'uint')
+                little_endian = comp.get('littleEndian', False)
+                hidden = comp.get('hidden', False)
+                unit = comp.get('unit', '')
+                func = comp.get('func', None)
+
+                signed = (field_type == 'int')
+                raw_val = read_bits(size_bits, little_endian, signed)
+
+                value = apply_func(func, raw_val) if func else raw_val
+
+                field_values[field_name] = value
+
+                if not hidden:
+                    decoded_data[field_name] = {'value': value, 'unit': unit}
+
+            for vf in virtual_fields:
+                vname = vf.get('name', '')
+                vtype = vf.get('type', 'bool')
+                condition = vf.get('condition', '1')
+                func = vf.get('func', '1')
+
+                if eval_condition(condition, field_values):
+                    val = eval(func, {"__builtins__": {}})
+                    if vtype == 'bool':
+                        val = bool(val)
+                    decoded_data[vname] = {'value': val, 'unit': ''}
+                    field_values[vname] = val
+
             return {
                 'decoded': True,
                 'decoder_type': 'blueprint',
@@ -687,9 +740,9 @@ class PayloadDecoder:
                 'data': decoded_data,
                 'raw_data': payload_bytes
             }
-            
+
         except Exception as e:
-            raise Exception(f"Blueprint decoding error: {str(e)}")
+            raise Exception(f"Blueprint-Dekodierungsfehler: {str(e)}")
     
     def _decode_with_javascript(self, decoder_info, 
                                payload_bytes: List[int], metadata: Dict[str, Any]) -> Dict[str, Any]:

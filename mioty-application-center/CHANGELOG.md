@@ -1,10 +1,17 @@
 # Changelog
 
-## 1.0.6.11 — 2026-07-30
+## 1.0.6.12 — 2026-07-30
 ### Behoben
 - 🗑️ **Sensor löschen:** Button war bei automatisch entdeckten Sensoren ausgeblendet — jetzt haben alle Sensoren einen Löschen-Button
 - 🗑️ **Sensor löschen vollständig:** Löschen entfernt den Sensor jetzt sowohl aus der Konfigurationsdatei als auch aus dem Arbeitsspeicher (vorher kehrte der Sensor sofort zurück)
 - 🖱️ **Modal schließt nicht mehr versehentlich:** Eingabemasken (Sensor hinzufügen/bearbeiten) schließen sich nicht mehr bei einem Klick neben das Formular — nur noch über ❌ oder Abbrechen (gilt für Dashboard und Sensoren-Seite)
+- 🔧 **Blueprint-Decoder komplett neu implementiert:** Die bisherige Implementierung hatte ein falsches Schema und konnte keine echten Blueprint-Dateien lesen. Der Decoder versteht jetzt das offizielle mioty Blueprint-Format korrekt:
+  - `size` wird in **Bit** gelesen (nicht Bytes) — ermöglicht 4-Bit-Nibble-Felder wie im Aion-Header
+  - `func`-Formeln werden ausgewertet (`$ - 128`, `$ / 100`, etc.)
+  - `hidden`-Felder werden intern geführt, aber nicht ausgegeben
+  - `virtual`-Felder mit `condition` und `$feldname`-Referenzen (z. B. Alarm- und Status-Bits) werden berechnet
+  - `type: int` (vorzeichenbehaftet) wird korrekt sign-extended
+  - Little-Endian- und Big-Endian-Byte-Reihenfolge je Feld
 
 ## 1.0.6.10 — 2026-07-30
 ### Behoben
