@@ -1,17 +1,43 @@
 # Changelog
 
-## 1.0.6.11
+## 1.0.6.11 — 2026-07-30
+### Behoben
+- 🗑️ **Sensor löschen:** Button war bei automatisch entdeckten Sensoren ausgeblendet — jetzt haben alle Sensoren einen Löschen-Button
+- 🗑️ **Sensor löschen vollständig:** Löschen entfernt den Sensor jetzt sowohl aus der Konfigurationsdatei als auch aus dem Arbeitsspeicher (vorher kehrte der Sensor sofort zurück)
+- 🖱️ **Modal schließt nicht mehr versehentlich:** Eingabemasken (Sensor hinzufügen/bearbeiten) schließen sich nicht mehr bei einem Klick neben das Formular — nur noch über ❌ oder Abbrechen (gilt für Dashboard und Sensoren-Seite)
 
-- ✨ **SCACI Direktverbindung:** Das Add-on kann sich jetzt zusätzlich zu MQTT direkt per TLS mit dem mioty Service Center verbinden (offizieller SCACI-Standard v1.0.0). Konfiguration unter Einstellungen → „🔐 SCACI Direktverbindung": Host, Port (Standard 16017), AC-EUI und optionale TLS-Testoption
-- ✨ **AC-EUI Generator:** Auf Wunsch wird eine Application-Center-EUI aus einem frei wählbaren Namen erzeugt (16 Hex-Zeichen mit „AC"-Präfix)
-- ✨ **Zertifikats-Upload:** ZIP-Datei aus dem Service-Center-Generator (ca_cert.pem, Client-Zertifikat, privater Schlüssel) kann direkt in den Einstellungen hochgeladen werden — Ablage unter certs/ac_&lt;eui&gt;/
-- 🐛 **SCACI Protokoll-Korrekturen (Feldnamen laut Spezifikation):**
-  - `statusRsp`: Basisstationen stehen in `basestations` (komplett lowercase), nicht `baseStations` → Basisstationen werden jetzt korrekt empfangen und angezeigt
-  - `statusRsp`: Felder heißen `rc` (nicht `code`), `uptimeS` (nicht `uptime`), `timeNs` (nicht `time`)
-  - `epStat`: Status-Felder heißen `online` und `attached` (bool), nicht `epStatus` → Online-/Offline-Status der Sensoren wird jetzt korrekt ausgewertet
-  - Fehler-Nachrichten: Feld heißt `rc` (nicht `code`) — Fehlermeldungen werden nun korrekt interpretiert
-- 🐛 **SNR/RSSI aus realem SC-Payload:** Der Uplink-Parser liest SNR, RSSI, Base-Station-EUI und Empfangszeit jetzt sowohl von der obersten Nachrichtenebene als auch aus `rxInfo`; Paketzähler als `cnt` oder `packetCnt`, Nutzdaten als `userData` oder `data`
-- ✨ **Voller SCACI-Funktionsumfang:** Uplink-Empfang (fließt in die normale Sensor-Pipeline inkl. Decoder & Home Assistant Discovery), End-Point-Status, Base-Station-Status-Abfrage (alle 60 s), Registrierung/Deregistrierung, Downlink-Queue, Ping/Keepalive, automatischer Reconnect mit Session-Fortsetzung
+## 1.0.6.10 — 2026-07-30
+### Behoben
+- 🖱️ **Modal-Fix Dashboard:** Sensor-Eingabemaske auf der Startseite schließt sich nicht mehr bei versehentlichem Klick außerhalb
+
+## 1.0.6.9 — 2026-07-30
+### Behoben
+- 🔐 **SCACI TLS mit IP-Adresse:** Verbindung zu Service Center per IP-Adresse (z. B. `192.168.x.x`) schlug mit `UNEXPECTED_EOF_WHILE_READING` fehl — Ursache war SNI (Server Name Indication), das laut RFC 6066 keine IP-Adressen akzeptiert. SNI wird jetzt bei IP-Adressen automatisch deaktiviert
+- 🔐 **TLS 1.2 Minimum:** TLS 1.2 als Mindestversion gesetzt für bessere Kompatibilität mit Embedded-Geräten
+
+## 1.0.6.8 — 2026-07-26
+### Neu
+- 📊 **Service Center Status auf Dashboard:** Neue Statuskachel zeigt „Service Center: ✅ Verbunden" (SCACI oder MQTT) statt „MQTT Status ⚠️"
+- 📡 **Status-Banner auf Startseite:** Kompakter Banner ganz oben zeigt immer den aktuellen Verbindungsstatus inkl. Verbindungsart (SCACI/MQTT) — aktualisiert sich alle 10 Sekunden
+- 🔧 **Einheitlicher `service_center_connected`-Status:** API `/api/status` liefert jetzt ein einheitliches Feld, das SCACI und MQTT zusammenfasst
+
+## 1.0.6.7 — 2026-07-26
+### Behoben
+- 📊 **Base Station CPU/Memory:** SCACI liefert `cpu`/`memory` als Prozentwert (0–100), die GUI erwartete eine Fraktion (0–1) — Werte werden jetzt korrekt umgerechnet und angezeigt
+
+## 1.0.6.6 — 2026-07-25
+### Behoben
+- 🐛 **SCACI EUI als Hex-String:** Service Center sendet Base-Station-EUIs als Hex-String (z. B. `'502DF4000056A0BE'`), nicht als Integer wie in der Spec angegeben — Konvertierung behandelt jetzt beide Formate
+- 🔍 **Besseres Fehler-Logging:** SCACI Status-Abfrage-Fehler zeigen jetzt den vollständigen Python-Traceback für einfachere Diagnose
+
+## 1.0.6.5 — 2026-07-25
+### Neu
+- ✨ **SCACI Direktverbindung:** Direkte TLS-Verbindung zum mioty Service Center (SCACI v1.0.0) als Alternative zu MQTT — Konfiguration unter Einstellungen → „🔐 SCACI Direktverbindung"
+- ✨ **AC-EUI Generator:** Application-Center-EUI aus frei wählbarem Namen erzeugen (16 Hex-Zeichen mit „AC"-Präfix)
+- ✨ **Zertifikats-Upload:** ZIP mit CA, Client-Zertifikat und Schlüssel direkt in den Einstellungen hochladen
+### Behoben
+- 🐛 **SCACI Protokoll-Feldnamen:** `basestations` (lowercase), `rc`, `uptimeS`, `online`/`attached` laut Spezifikation korrigiert
+- 🐛 **SNR/RSSI Parsing:** Uplink-Parser liest Felder jetzt aus oberster Ebene und `rxInfo`
 
 ## 1.0.5.8
 
