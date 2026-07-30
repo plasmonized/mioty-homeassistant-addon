@@ -56,7 +56,7 @@ class SCACIClient:
         name: str = "mioty Application Center",
         vendor: str = "Sentinum",
         model: str = "BSSCI Add-on",
-        sw_version: str = "1.0.6.12",
+        sw_version: str = "1.0.6.13",
     ):
         self.host = host
         self.port = int(port)

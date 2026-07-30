@@ -1,7 +1,8 @@
 # Changelog
 
-## 1.0.6.12 — 2026-07-30
+## 1.0.6.13 — 2026-07-30
 ### Behoben
+- 💾 **Sensor-Metadaten verschwinden nach Speichern:** Metadaten (Hersteller, Modell, Gerätename), die über das Dashboard eingegeben wurden, waren beim nächsten Öffnen weg. Ursache: Der Speicher-Endpoint hat EUI-Schlüssel ohne Großschreibung gespeichert (`"fca84a09..."` statt `"FCA84A09..."`), der Lesezugriff suchte aber immer mit Großbuchstaben → kein Treffer → Metadaten unsichtbar. Fix: Schlüssel werden jetzt immer als Uppercase gespeichert, beim Laden normalisiert, und doppelte Alt-Einträge werden bereinigt
 - 🗑️ **Sensor löschen:** Button war bei automatisch entdeckten Sensoren ausgeblendet — jetzt haben alle Sensoren einen Löschen-Button
 - 🗑️ **Sensor löschen vollständig:** Löschen entfernt den Sensor jetzt sowohl aus der Konfigurationsdatei als auch aus dem Arbeitsspeicher (vorher kehrte der Sensor sofort zurück)
 - 🖱️ **Modal schließt nicht mehr versehentlich:** Eingabemasken (Sensor hinzufügen/bearbeiten) schließen sich nicht mehr bei einem Klick neben das Formular — nur noch über ❌ oder Abbrechen (gilt für Dashboard und Sensoren-Seite)

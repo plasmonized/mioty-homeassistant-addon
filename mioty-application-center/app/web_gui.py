@@ -206,7 +206,7 @@ class WebGUI:
             
             # KRITISCH: Verwende IMMER die aktuelle externe Template-Datei
             if index_exists:
-                logging.info("✅ Verwende AKTUELLE index.html Template-Datei (Version 1.0.6.12)")
+                logging.info("✅ Verwende AKTUELLE index.html Template-Datei (Version 1.0.6.13)")
                 return render_template('index.html', ingress_path=ingress_path)
             else:
                 logging.error("❌ CRITICAL ERROR: index.html Template-Datei nicht gefunden!")
@@ -574,11 +574,13 @@ class WebGUI:
                 config_euis = set()
                 
                 # Lade manuelle Metadaten (von Dashboard eingetragen)
+                # Schlüssel normalisieren: immer uppercase, um Groß-/Kleinschreibungsfehler zu vermeiden
                 manual_metadata = {}
                 if os.path.exists(metadata_file):
                     try:
                         with open(metadata_file, 'r') as f:
-                            manual_metadata = json.load(f)
+                            raw = json.load(f)
+                        manual_metadata = {k.upper(): v for k, v in raw.items()}
                     except:
                         pass
                 
@@ -680,7 +682,8 @@ class WebGUI:
                     if os.path.exists(metadata_file):
                         try:
                             with open(metadata_file, 'r') as f:
-                                manual_metadata = json.load(f)
+                                raw = json.load(f)
+                            manual_metadata = {k.upper(): v for k, v in raw.items()}
                         except:
                             pass
                     meta = manual_metadata.get(eui_upper, {})
@@ -877,18 +880,23 @@ class WebGUI:
                 except FileNotFoundError:
                     pass
                 
-                metadata[eui] = {
+                eui_upper = eui.upper()
+                metadata[eui_upper] = {
                     'manufacturer': manufacturer,
                     'model': model,
                     'name': f"{manufacturer} {model}",
                     'manual': True
                 }
+                # Doppelte Einträge mit alter Groß-/Kleinschreibung entfernen
+                for old_key in list(metadata.keys()):
+                    if old_key != eui_upper and old_key.upper() == eui_upper:
+                        del metadata[old_key]
                 
                 with open(metadata_file, 'w') as f:
                     json.dump(metadata, f, indent=2)
                 
-                logging.info(f"✅ METADATEN GESPEICHERT für {eui}: {manufacturer} {model}")
-                logging.info(f"📝 Manuelle Metadaten für {eui} gespeichert: {manufacturer} - {model}")
+                logging.info(f"✅ METADATEN GESPEICHERT für {eui_upper}: {manufacturer} {model}")
+                logging.info(f"📝 Manuelle Metadaten für {eui_upper} gespeichert: {manufacturer} - {model}")
                 return jsonify({'success': True, 'message': 'Metadaten gespeichert'})
                 
             except Exception as e:
@@ -2251,7 +2259,7 @@ class WebGUI:
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>mioty Application Center für Homeassistant v1.0.6.12</title>
+    <title>mioty Application Center für Homeassistant v1.0.6.13</title>
     <style>
         * {
             margin: 0;
@@ -3287,7 +3295,7 @@ class WebGUI:
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>mioty Application Center Einstellungen v1.0.6.12</title>
+    <title>mioty Application Center Einstellungen v1.0.6.13</title>
     <style>
         * {
             margin: 0;
@@ -3754,7 +3762,7 @@ class WebGUI:
             <div class="section">
                 <h2>ℹ️ Über</h2>
                 <p><strong>mioty Application Center</strong></p>
-                <p>Version: <span class="code" style="font-weight: bold;">1.0.6.12</span></p>
+                <p>Version: <span class="code" style="font-weight: bold;">1.0.6.13</span></p>
                 <p style="color: #666; font-size: 13px;">BSSCI mioty Add-on für Home Assistant • powered by Sentinum</p>
             </div>
         </div>
