@@ -56,7 +56,7 @@ class SCACIClient:
         name: str = "mioty Application Center",
         vendor: str = "Sentinum",
         model: str = "BSSCI Add-on",
-        sw_version: str = "1.0.6.8",
+        sw_version: str = "1.0.6.9",
     ):
         self.host = host
         self.port = int(port)
@@ -163,8 +163,22 @@ class SCACIClient:
             time.sleep(self._reconnect_delay)
             self._reconnect_delay = min(self._reconnect_delay * 2, 60)
 
+    def _is_ip_address(self) -> bool:
+        """Prüft ob self.host eine IP-Adresse ist (kein Hostname)."""
+        import ipaddress
+        try:
+            ipaddress.ip_address(self.host)
+            return True
+        except ValueError:
+            return False
+
     def _build_ssl_context(self) -> ssl.SSLContext:
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        # TLS 1.2 als Minimum für Kompatibilität mit Embedded-Geräten
+        ctx.minimum_version = ssl.TLSVersion.TLSv1_2
+        # Bei IP-Adresse: check_hostname deaktivieren (SNI erfordert FQDN, keine IP)
+        if self._is_ip_address():
+            ctx.check_hostname = False
         if self.ca_cert and os.path.exists(self.ca_cert):
             ctx.load_verify_locations(cafile=self.ca_cert)
         else:
@@ -182,8 +196,10 @@ class SCACIClient:
         ctx = self._build_ssl_context()
         raw = socket.create_connection((self.host, self.port), timeout=15)
         raw.settimeout(30)
-        sock = ctx.wrap_socket(raw, server_hostname=self.host)
-        logging.info(f"🔐 SCACI TLS-Verbindung aufgebaut zu {self.host}:{self.port} ({sock.version()})")
+        # SNI nur bei echtem Hostnamen senden — IP-Adressen sind kein gültiger SNI-Wert (RFC 6066)
+        sni_host = None if self._is_ip_address() else self.host
+        sock = ctx.wrap_socket(raw, server_hostname=sni_host)
+        logging.info(f"🔐 SCACI TLS-Verbindung aufgebaut zu {self.host}:{self.port} ({sock.version()}, SNI={'nein' if sni_host is None else sni_host})")
         with self._sock_lock:
             self._sock = sock
         self.connected = True
