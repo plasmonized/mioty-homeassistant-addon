@@ -19,3 +19,14 @@ checking the current account permissions and newer documentation.
 Sources:
 - https://docs.sentinum.de/en/new-integration-guide
 - https://raw.githack.com/bellaminemo81172/sentinum_documentation/8cf19341ffea6af3d72dbc8f46a07207557abc12/Datahub_User_Guide/Datahub_user_Guide_EN.pdf
+
+## Product scope
+
+The user states: „die sentinumcloud kann alle sensordaten streamen“.
+Do not describe the cloud itself as cellular-only in headings or branding.
+
+**Why:** The user explicitly corrected the cellular-only heading and requested
+the Sentinum logo instead of a generic “S”.
+
+**How to apply:** Distinguish the cloud's capabilities from any currently
+implemented transport filtering; changing branding alone does not expand ingestion.

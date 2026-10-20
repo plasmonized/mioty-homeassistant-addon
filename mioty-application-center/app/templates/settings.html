@@ -1,4 +1,15 @@
 <style>
+    #sentinum-cloud-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    #sentinum-cloud-title .sc-cloud-logo {
+        width: 36px;
+        height: 36px;
+        object-fit: contain;
+        flex-shrink: 0;
+    }
     #sentinum-cloud-section .sc-cloud-intro {
         margin: -8px 0 20px;
         color: #666;
@@ -152,8 +163,8 @@
 <section class="section" id="sentinum-cloud-section" aria-labelledby="sentinum-cloud-title">
     <div class="sc-cloud-heading">
         <div>
-            <h2 id="sentinum-cloud-title"><span class="section-icon">S</span>Sentinum Cloud · Mobilfunk</h2>
-            <p class="sc-cloud-intro">Mobilfunk-Sensoren über MQTT empfangen. Die vorhandenen Decoder bleiben unverändert nutzbar.</p>
+            <h2 id="sentinum-cloud-title"><img class="sc-cloud-logo" src="{{ ingress_path }}/static/images/sentinum-logo.png" alt="Sentinum Logo" width="36" height="36">Sentinum Cloud</h2>
+            <p class="sc-cloud-intro">Sensordaten über MQTT empfangen. Die vorhandenen Decoder bleiben unverändert nutzbar.</p>
         </div>
         <label class="sc-cloud-toggle" for="sc-cloud-enabled">
             <span class="toggle-switch">
