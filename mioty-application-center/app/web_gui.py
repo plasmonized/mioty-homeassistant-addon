@@ -3635,6 +3635,16 @@ class WebGUI:
             <div id="alerts"></div>
             
             <!-- MQTT Konfiguration -->
+            <section class="section" aria-labelledby="appearance-title">
+                <h2 id="appearance-title">Darstellung</h2>
+                <div class="theme-preference">
+                    <div>
+                        <strong id="theme-label">Dunkler Modus</strong>
+                        <p id="theme-preference-note" class="help-text" aria-live="polite">Gilt für alle Seiten und wird in diesem Browser gespeichert.</p>
+                    </div>
+                    <button type="button" id="theme-toggle" role="switch" aria-checked="true" aria-labelledby="theme-label" aria-describedby="theme-preference-note">Dunkel</button>
+                </div>
+            </section>
             <div class="section">
                 <h2>MQTT Broker Konfiguration</h2>
                 <form id="settingsForm">

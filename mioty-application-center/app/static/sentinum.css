@@ -27,6 +27,29 @@
     --font-body: "DM Sans", "Segoe UI", system-ui, sans-serif;
     --font-heading: "Space Grotesk", "DM Sans", "Segoe UI", system-ui, sans-serif;
 }
+/* Explicit opt-in: an absent attribute (or data-theme="dark") keeps the
+   original console unchanged. Semantic aliases above resolve these tokens. */
+:root[data-theme="light"] {
+    color-scheme: light;
+    --brand: #e74b0d;
+    --action: #c93d08;
+    --brand-hover: #aa3106;
+    --brand-text: #b53b0b;
+    --canvas: #edf0f2;
+    --surface: #f9fafb;
+    --surface-raised: #f0f3f5;
+    --surface-inset: #e8edf0;
+    --text: #202934;
+    --secondary: #4e5d6c;
+    --muted: #5b6c7c;
+    --border: #bcc7d0;
+    --success: #206b41;
+    --success-bg: #e4f2e9;
+    --danger: #a52f3c;
+    --danger-bg: #fbe9ec;
+    --warning: #805b13;
+    --warning-bg: #fff0d3;
+}
 * { box-sizing: border-box; }
 html { background: var(--canvas); scroll-padding-top: 20px; }
 body {
@@ -358,6 +381,166 @@ body [style*="solid #e9ecef"] { border-color: var(--border) !important; }
 body [style*="solid #007bff"], body [style*="solid #17a2b8"] { border-color: #a34b29 !important; }
 body [style*="solid #c3e6cb"] { border-color: #365f49 !important; }
 body [style*="solid #ffeaa7"] { border-color: #7e663c !important; }
+/* Theme preference is a normal settings row, not another primary action.
+   aria-checked is controlled by the shared theme script; no CSS changes
+   visibility or interferes with its keyboard/click behavior. */
+body .theme-preference {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px 24px;
+    padding: 18px 20px;
+    margin: 0 0 20px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface-raised);
+    color: var(--text);
+}
+body .theme-preference > :first-child { min-width: 0; }
+body .theme-preference h3, body .theme-preference h4,
+body .theme-preference label { margin: 0; color: var(--text); }
+body #theme-preference-note {
+    display: block;
+    margin: 6px 0 0;
+    color: var(--secondary);
+    font-size: .79rem;
+    line-height: 1.55;
+    max-width: 66ch;
+    overflow-wrap: anywhere;
+}
+body #theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    flex: 0 0 auto;
+    min-height: 44px;
+    padding: 10px 14px;
+    margin: 0;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface-inset);
+    color: var(--text);
+    font-size: .84rem;
+    white-space: nowrap;
+}
+body #theme-toggle::before {
+    content: "";
+    display: block;
+    width: 28px;
+    height: 16px;
+    flex: 0 0 28px;
+    border: 2px solid var(--muted);
+    border-radius: 12px;
+    background: radial-gradient(circle at 6px 6px, var(--muted) 4px, transparent 4.5px);
+}
+body #theme-toggle[aria-checked="true"]::before {
+    border-color: var(--brand-text);
+    background: radial-gradient(circle at 18px 6px, var(--brand-text) 4px, transparent 4.5px);
+}
+body #theme-toggle:hover { background: var(--surface-raised); border-color: var(--brand-text); }
+body #theme-toggle:disabled { opacity: .55; cursor: not-allowed; }
+/* Light-mode exceptions for deliberately hardcoded dark treatments. */
+:root[data-theme="light"] body .container { box-shadow: 0 16px 40px #26394a12; }
+:root[data-theme="light"] .brand-wordmark {
+    background: #101319;
+    border-radius: 5px;
+    padding: 6px 9px;
+    box-sizing: content-box;
+}
+:root[data-theme="light"] body .source-badge {
+    color: var(--brand-text);
+    background: #fff0e8;
+    border-color: #c58c72;
+}
+:root[data-theme="light"] body .sub-nav-item.active {
+    background: #fff0e8;
+    border-color: #bc633d;
+}
+:root[data-theme="light"] body .sub-nav-item:not(.active):hover {
+    background: var(--surface-raised);
+    color: var(--text);
+}
+:root[data-theme="light"] body .btn-secondary:hover { background: #dce4eb; }
+:root[data-theme="light"] body .btn-danger { border-color: #cf8b95; }
+:root[data-theme="light"] body .btn-danger:hover { background: #f4d6dc; }
+:root[data-theme="light"] body .status-active,
+:root[data-theme="light"] body .alert-success { border-color: #8cb69b; }
+:root[data-theme="light"] body .status-inactive,
+:root[data-theme="light"] body .alert-error { border-color: #cf8b95; }
+:root[data-theme="light"] body input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+:root[data-theme="light"] body select,
+:root[data-theme="light"] body textarea { border-color: #8798a8; }
+:root[data-theme="light"] body input[readonly],
+:root[data-theme="light"] body textarea[readonly] {
+    background: #e1e7ec;
+    color: var(--secondary);
+    border-style: dashed;
+}
+:root[data-theme="light"] body input:focus,
+:root[data-theme="light"] body select:focus,
+:root[data-theme="light"] body textarea:focus { border-color: var(--brand-text); }
+:root[data-theme="light"] body :is(a, button, input, select, textarea, [tabindex]):focus-visible {
+    outline-color: #a6380d !important;
+}
+:root[data-theme="light"] body .toggle-slider { background: #6b7c8e; }
+:root[data-theme="light"] body .toggle-slider::before { background: #f9fafb; }
+:root[data-theme="light"] body .toggle-switch input:focus-visible + .toggle-slider { outline-color: #a6380d; }
+:root[data-theme="light"] body .modal { background: #10192399; }
+:root[data-theme="light"] body .modal-content { box-shadow: 0 24px 72px #172f4933; }
+/* Keep semantic inline panels semantic; only neutral/primary legacy colors
+   need a different light treatment. The Cloud logo tile is intentionally
+   not selected here and retains its existing black presentation. */
+:root[data-theme="light"] body [style*="background: #6c757d"] {
+    background: #dce4eb !important;
+    color: var(--text) !important;
+}
+:root[data-theme="light"] body [style*="solid #007bff"],
+:root[data-theme="light"] body [style*="solid #17a2b8"] { border-color: #bc633d !important; }
+:root[data-theme="light"] body [style*="solid #c3e6cb"] { border-color: #8cb69b !important; }
+:root[data-theme="light"] body [style*="solid #ffeaa7"] { border-color: #b69856 !important; }
+/* CSSOM serializes the existing protocol-toggle status colors to rgb().
+   Restrict these adapters to the actual status labels/cards, not all text
+   descendants, so toggling a filter retains accessible semantic contrast. */
+:root[data-theme="light"] body :is(#lora-status-text, #oms-status-text)[style*="rgb(40, 167, 69)"] {
+    color: var(--success) !important;
+}
+:root[data-theme="light"] body :is(#lora-status-text, #oms-status-text)[style*="rgb(220, 53, 69)"] {
+    color: var(--danger) !important;
+}
+:root[data-theme="light"] body :is(#lora-card, #oms-card)[style*="border-color: rgb(40, 167, 69)"] {
+    border-color: var(--success) !important;
+}
+:root[data-theme="light"] body :is(#lora-card, #oms-card)[style*="border-color: rgb(220, 53, 69)"] {
+    border-color: var(--danger) !important;
+}
+/* The legacy white-text adapter normally follows --text. On solid primary
+   fills that would become dark-on-orange in light mode. Preserve the warm
+   light action text explicitly (4.78:1 against --action), including badges
+   and controls produced by the inline dashboard renderers. */
+:root[data-theme="light"] body [style*="background: #007bff"],
+:root[data-theme="light"] body [style*="background: #ff6b35"],
+:root[data-theme="light"] body [style*="background: #17a2b8"],
+:root[data-theme="light"] body button[style*="background: #28a745"] {
+    color: #fff7f3 !important;
+}
+:root[data-theme="light"] body [style*="background: #28a745"]:not(button),
+:root[data-theme="light"] body [style*="background: #d4edda"] { color: var(--success) !important; }
+:root[data-theme="light"] body [style*="background: #f8d7da"],
+:root[data-theme="light"] body [style*="background: #dc3545"] { color: var(--danger) !important; }
+:root[data-theme="light"] body [style*="background: #fff3cd"],
+:root[data-theme="light"] body [style*="background: #fff6e6"] { color: var(--warning) !important; }
+:root[data-theme="light"] body button:disabled,
+:root[data-theme="light"] body .btn:disabled {
+    background: var(--surface-raised) !important;
+    color: var(--muted) !important;
+    border-color: var(--border);
+}
+@media (max-width: 767px) {
+    body .theme-preference { align-items: flex-start; padding: 16px; gap: 14px; }
+    body #theme-toggle { min-width: 136px; max-width: 100%; white-space: normal; }
+}
 @media (max-width: 1000px) {
     body .sensor-header { flex-direction: column; }
     body .sensor-toolbar { align-items: flex-start; }
