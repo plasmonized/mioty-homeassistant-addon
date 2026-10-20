@@ -3696,7 +3696,7 @@ class WebGUI:
                         <p style="color: #666; font-size: 13px;">Basis-Protokoll, kann nicht deaktiviert werden.</p>
                     </div>
                     
-                    <div style="flex: 1; min-width: 200px; background: #f8f9fa; border-radius: 12px; padding: 20px; border: 2px solid #ddd;" id="lora-card">
+                    <div style="flex: 1; min-width: 200px; background: var(--surface-raised); border-radius: 12px; padding: 20px; border: 2px solid var(--border);" id="lora-card">
                         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
                             <div style="display: flex; align-items: center; gap: 12px;">
                                 <span aria-hidden="true" style="color: var(--brand-text);">●</span>
@@ -3713,7 +3713,7 @@ class WebGUI:
                         <p style="color: #666; font-size: 13px;">LoRa-Sensoren im Dashboard und Sensorliste anzeigen.</p>
                     </div>
                     
-                    <div style="flex: 1; min-width: 200px; background: #f8f9fa; border-radius: 12px; padding: 20px; border: 2px solid #ddd;" id="oms-card">
+                    <div style="flex: 1; min-width: 200px; background: var(--surface-raised); border-radius: 12px; padding: 20px; border: 2px solid var(--border);" id="oms-card">
                         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
                             <div style="display: flex; align-items: center; gap: 12px;">
                                 <span aria-hidden="true" style="color: var(--brand-text);">●</span>
