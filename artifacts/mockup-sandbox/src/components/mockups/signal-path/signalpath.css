@@ -48,10 +48,22 @@
 .sp-route-shortcut { display: flex; align-items: center; gap: 9px; margin-left: auto; border: 0; background: transparent; color: var(--sp-ink); font-size: 11px; }
 .sp-route { display: flex; align-items: center; gap: 0; padding: 14px 18px; margin-bottom: 25px; border: 1px solid var(--sp-line); border-radius: 5px; background: #f9f7f2; }
 .sp-route-step { min-width: 0; flex: 1; display: flex; align-items: center; gap: 10px; }
+.sp-route-mark { position: relative; display: grid; place-items: center; width: 39px; height: 39px; flex: none; border: 1px solid #dedbd5; border-radius: 10px; background: #f1eee7; }
+.sp-route-mark.route-mark-0 { background: #f5e4da; border-color: #e9c4b1; }
+.sp-route-mark.route-mark-1 { background: #e8e9e3; border-color: #d8d9d2; }
+.sp-route-mark.route-mark-2 { background: #ece8df; border-color: #ded7c9; }
+.sp-route-mark.route-mark-3 { background: #e8e9e3; border-color: #d6dacf; }
 .sp-route-icon { width: 34px; height: 34px; display: grid; place-items: center; flex: none; border-radius: 50%; color: #545c64; background: #eae7e0; }
 .sp-route-icon.home { color: var(--sp-orange); background: #f5e5dc; }
+.sp-route-mark .sp-route-icon { width: 31px; height: 31px; background: transparent; }
+.sp-route-mark.route-mark-0 .sp-route-icon { color: var(--sp-orange); }
+.sp-route-mark.route-mark-3 .sp-route-icon { color: #6c7c55; }
+.sp-route-mark-dot { position: absolute; right: 2px; bottom: 2px; width: 8px; height: 8px; border: 2px solid #f9f7f2; border-radius: 50%; background: #67846b; }
 .sp-route-step strong, .sp-route-step small { display: block; }
-.sp-route-step strong { font-size: 11px; font-weight: 600; }
+.sp-route-copy { min-width: 0; }
+.sp-route-step strong { display: flex; align-items: center; gap: 5px; white-space: nowrap; font-size: 11px; font-weight: 600; }
+.sp-route-step strong em { padding: 2px 4px; border: 1px solid #e4bba4; border-radius: 3px; color: #a83b0c; font: 700 7px 'IBM Plex Mono', monospace; font-style: normal; letter-spacing: .2px; }
+.sp-route-step strong em.ha-mark { border-color: #c9d2c1; color: #5a7049; }
 .sp-route-step small { margin-top: 3px; color: var(--sp-muted); font-size: 9px; }
 .sp-route-arrow { margin: 0 14px; color: #a8a39c; flex: none; }
 .sp-route-open { width: 28px; height: 28px; display: none; place-items: center; border: 1px solid var(--sp-line); border-radius: 50%; background: transparent; }
@@ -149,6 +161,7 @@
   .sp-route-step:first-child { flex: 1; }
   .sp-route-step:first-child:after { content: 'Datenweg bis Home Assistant'; color: var(--sp-muted); font-size: 10px; }
   .sp-route-step:first-child small { display: none; }
+.sp-route-step:first-child:after { margin-left: 2px; }
   .sp-route-arrow { display: none; }
   .sp-route-open { display: grid; }
   .sp-focus { grid-template-columns: 1fr; gap: 20px; }

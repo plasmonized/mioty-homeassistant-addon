@@ -87,8 +87,14 @@ export function SignalPath() {
 
       <section className="sp-route" aria-label="Datenweg vom Sensor nach Hause">
         {routeStages.map(({ label, detail, Icon }, index) => <div className="sp-route-step" key={label}>
-          <span className={`sp-route-icon ${index === 3 ? 'home' : ''}`}><Icon size={18} strokeWidth={1.65} /></span>
-          <span><strong>{label}</strong><small>{index === 0 ? `${sensors.length} Geräte · mioty` : detail}</small></span>
+          <span className={`sp-route-mark route-mark-${index}`} aria-hidden="true">
+            <span className={`sp-route-icon ${index === 3 ? 'home' : ''}`}><Icon size={19} strokeWidth={1.7} /></span>
+            <i className="sp-route-mark-dot" />
+          </span>
+          <span className="sp-route-copy">
+            <strong>{index === 0 ? <><span>Sensor</span><em>mioty</em></> : index === 3 ? <><span>Zuhause</span><em className="ha-mark">HA</em></> : <><span>{label}</span><em>{index === 1 ? 'IOT' : 'DATA'}</em></>}</strong>
+            <small>{index === 0 ? `${sensors.length} Geräte · mioty` : detail}</small>
+          </span>
           {index < routeStages.length - 1 && <ArrowRight className="sp-route-arrow" size={15} />}
         </div>)}
         <button className="sp-route-open" aria-label="Datenweg im Detail öffnen" onClick={() => setPanel('network')}><ChevronRight size={16} /></button>
