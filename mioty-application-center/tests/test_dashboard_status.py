@@ -132,6 +132,24 @@ class DashboardTests(unittest.TestCase):
         gui.addon = None
         self.assertEqual(web.get("/api/dashboard").status_code, 503)
 
+    def test_replit_preview_allows_trusted_iframe_parents_only(self):
+        with patch("web_gui.SettingsManager", return_value=self.settings):
+            gui = WebGUI(addon_instance=self.addon)
+        web = gui.app.test_client()
+        for route in ("/", "/sensors", "/settings", "/decoders"):
+            with self.subTest(route=route):
+                response = web.get(route, base_url="https://example.replit.dev")
+                self.assertEqual(response.status_code, 200)
+                self.assertNotIn("X-Frame-Options", response.headers)
+                self.assertEqual(response.headers["Content-Security-Policy"],
+                                 "frame-ancestors 'self' https://replit.com https://*.replit.com")
+                self.assertIn("no-store", response.headers["Cache-Control"])
+        for host in ("https://homeassistant.local:8123", "https://example.com",
+                     "https://replit.dev.attacker.invalid"):
+            with self.subTest(host=host):
+                response = web.get("/", base_url=host)
+                self.assertEqual(response.headers["X-Frame-Options"], "SAMEORIGIN")
+
 
 if __name__ == "__main__":
     unittest.main()

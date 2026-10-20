@@ -100,11 +100,21 @@ class WebGUI:
                          'hassio_ingress' in request.headers.get('Referer', '') or
                          'homeassistant' in request.headers.get('User-Agent', '').lower())
             
-            if hasattr(request, 'path') and request.path and (request.path.endswith(('.html', '.css', '.js')) or request.path in ['/', '/settings', '/decoders']):
+            if hasattr(request, 'path') and request.path and (request.path.endswith(('.html', '.css', '.js')) or request.path in ['/', '/settings', '/sensors', '/decoders']):
                 response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0, private'
                 response.headers['Pragma'] = 'no-cache'
                 response.headers['Expires'] = '0'
-                response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+                # Replit embeds the development URL in a cross-origin iframe.
+                # SAMEORIGIN blocks that embed even when all API calls succeed.
+                # Restrict allowed parents to Replit, not arbitrary websites.
+                is_replit_preview = request.host.partition(':')[0].lower().endswith('.replit.dev')
+                if is_replit_preview:
+                    response.headers.pop('X-Frame-Options', None)
+                    response.headers['Content-Security-Policy'] = (
+                        "frame-ancestors 'self' https://replit.com https://*.replit.com"
+                    )
+                else:
+                    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
                 response.headers['Vary'] = '*'
                 # Eindeutige ETag für jeden Request
                 import time
