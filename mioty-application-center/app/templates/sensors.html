@@ -86,6 +86,128 @@
             border-radius: 10px;
             border-left: 4px solid #ff6b35;
         }
+
+        .technology-group {
+            margin: 26px 0 34px;
+        }
+
+        .technology-group-header {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 12px;
+            margin: 0 0 12px;
+            padding: 0 2px 10px;
+            border-bottom: 1px solid #e2e5e8;
+            color: #343a40;
+        }
+
+        .technology-group-header h3 {
+            font-size: 1.2rem;
+        }
+
+        .group-count {
+            color: #6c757d;
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+
+        .technology-badge, .source-badge {
+            display: inline-block;
+            padding: 4px 9px;
+            border: 1px solid #d5dce2;
+            border-radius: 20px;
+            background: #fff;
+            color: #3d4b57;
+            font-size: 12px;
+            font-weight: 700;
+            line-height: 1.25;
+            white-space: nowrap;
+        }
+
+        .source-badge {
+            border-color: #f2c9b6;
+            background: #fff3ed;
+            color: #87442b;
+        }
+
+        .sensor-identifiers {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .sensor-details-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 20px;
+        }
+
+        .sensor-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .sensor-toolbar-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        @media (max-width: 700px) {
+            .sensor-toolbar, .sensor-toolbar-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .sensor-toolbar-actions .add-sensor-btn {
+                width: 100%;
+            }
+
+            .nav {
+                flex-wrap: wrap;
+            }
+
+            .nav .nav-item {
+                flex: 1 1 45%;
+                min-width: 0;
+                padding: 12px;
+            }
+
+            .sensor-identifiers {
+                overflow-wrap: anywhere;
+                min-width: 0;
+            }
+
+            .sensor-header {
+                align-items: flex-start;
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .sensor-actions {
+                width: 100%;
+                flex-wrap: wrap;
+            }
+
+            .sensor-actions .btn {
+                flex: 1 1 auto;
+            }
+
+            .sensor-details-grid {
+                grid-template-columns: 1fr;
+                gap: 0;
+            }
+
+            .technology-group-header {
+                align-items: flex-start;
+                flex-direction: column;
+                gap: 4px;
+            }
+        }
         
         .sensor-header {
             display: flex;
@@ -356,10 +478,10 @@
         </div>
         
         <div class="content">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <div class="sensor-toolbar">
                 <h2 class="section-title" style="margin: 0; border: none;">🔑 Registrierte Sensoren</h2>
-                <div style="display: flex; gap: 10px;">
-                    <button class="add-sensor-btn" id="bulkReregisterBtn" onclick="reregisterAll()" style="background: #6c757d; margin-bottom: 0;">🔄 Alle neu anlernen</button>
+                <div class="sensor-toolbar-actions">
+                    <button class="add-sensor-btn" id="bulkReregisterBtn" onclick="reregisterAll()" style="background: #6c757d; margin-bottom: 0;">Alle mioty-Sensoren neu anlernen</button>
                     <button class="add-sensor-btn" onclick="showAddSensorModal()" style="margin-bottom: 0;">+ Neuer Sensor</button>
                 </div>
             </div>
@@ -388,30 +510,30 @@
                 
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="sensor_eui">EUI (16 Hex-Zeichen) *</label>
+                        <label id="sensor_eui_label" for="sensor_eui">EUI (16 Hex-Zeichen) *</label>
                         <input type="text" id="sensor_eui" name="sensor_eui" maxlength="23" placeholder="z.B. FCA84A0700000001" required>
                         <small>Eindeutige Sensor-ID</small>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" id="miotyShortAddressField">
                         <label for="short_addr">Short Address (4 Hex-Zeichen)</label>
                         <input type="text" id="short_addr" name="short_addr" maxlength="5" placeholder="z.B. 0001">
                         <small>Kurzadresse im mioty-Netzwerk</small>
                     </div>
                 </div>
 
-                <div class="form-group">
+                <div class="form-group" id="miotyNetworkKeyField">
                     <label for="network_key">🔐 Network Key (32 Hex-Zeichen) *</label>
                     <input type="text" id="network_key" name="network_key" maxlength="47" placeholder="z.B. 000102030405060708090a0b0c0d0e0f">
                     <small>Netzwerkschlüssel für die mioty-Kommunikation</small>
                 </div>
 
-                <div class="form-group">
+                <div class="form-group" id="miotyApplicationKeyField">
                     <label for="application_key">🔒 Application Key (32 Hex-Zeichen, optional)</label>
                     <input type="text" id="application_key" name="application_key" maxlength="47" placeholder="z.B. ABCDABCDABCDABCDABCDABCDABCDABCD">
                     <small>Optionaler Schlüssel für AES-verschlüsselte Payloads</small>
                 </div>
 
-                <div class="form-group">
+                <div class="form-group" id="miotyBidirectionalField">
                     <label for="bidirectional">Bidirektionale Kommunikation</label>
                     <select id="bidirectional" name="bidirectional">
                         <option value="false">Nein - Nur Uplink</option>
@@ -475,7 +597,7 @@
     </div>
 
     <script>
-        const BASE_URL = '{{ ingress_path }}' || '';
+        const BASE_URL = {{ ingress_path|tojson }} || '';
         
         function getCacheBusterURL(path) {
             const timestamp = Date.now();
@@ -498,16 +620,54 @@
         }
 
         let allSensorEuis = [];
+        let editingSensorProtocol = 'mioty';
+        const technologyGroups = [
+            { key: 'mioty', label: 'mioty' },
+            { key: 'lora', label: 'LoRaWAN' },
+            { key: 'oms', label: 'OMS / Wireless M-Bus' },
+            { key: 'cellular', label: 'Mobilfunk' },
+            { key: 'unknown', label: 'Unbekannt' }
+        ];
+        const germanCollator = new Intl.Collator('de', { sensitivity: 'base', numeric: true });
+
+        function escapeHTML(value) {
+            return String(value ?? '').replace(/[&<>"']/g, character => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            })[character]);
+        }
+
+        function getTechnology(sensor) {
+            const protocol = String(sensor.protocol_type ?? '').trim().toLowerCase();
+            if (!protocol) return 'mioty';
+            if (protocol === 'mioty') return 'mioty';
+            if (protocol === 'lora' || protocol === 'lorawan' || protocol === 'lora wan') return 'lora';
+            if (protocol === 'oms' || protocol === 'wireless m-bus' || protocol === 'wmbus') return 'oms';
+            if (protocol === 'cellular' || protocol === 'mobilfunk') return 'cellular';
+            return 'unknown';
+        }
+
+        function safeNumber(value) {
+            if (value === null || value === undefined || value === '') return null;
+            const number = Number(value);
+            return Number.isFinite(number) ? number : null;
+        }
 
         async function loadSensors() {
             try {
                 const response = await fetch(getCacheBusterURL('/api/sensor-config/list'));
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const sensors = await response.json();
-                
-                allSensorEuis = (sensors || []).map(s => s.eui);
+                const sensorRecords = Array.isArray(sensors) ? sensors : [];
+                allSensorEuis = sensorRecords
+                    .filter(sensor => getTechnology(sensor) === 'mioty' && sensor.eui)
+                    .map(sensor => String(sensor.eui));
                 const sensorsList = document.getElementById('sensors-list');
                 
-                if (!sensors || sensors.length === 0) {
+                if (sensorRecords.length === 0) {
                     sensorsList.innerHTML = `
                         <div class="no-sensors">
                             <p>Keine Sensoren registriert.</p>
@@ -516,97 +676,121 @@
                     `;
                     return;
                 }
-                
-                sensorsList.innerHTML = sensors.map(sensor => {
+
+                const groups = new Map(technologyGroups.map(group => [group.key, []]));
+                sensorRecords.forEach(sensor => groups.get(getTechnology(sensor)).push(sensor));
+                const renderInfoRow = (label, value) => `
+                    <div class="info-row">
+                        <span class="info-label">${escapeHTML(label)}</span>
+                        <span class="info-value">${escapeHTML(value || 'Unbekannt')}</span>
+                    </div>`;
+                const renderCard = sensor => {
+                    const technology = getTechnology(sensor);
+                    const technologyLabel = technologyGroups.find(group => group.key === technology).label;
+                    const identifierLabel = technology === 'cellular' ? 'IMEI' : 'EUI';
+                    const identifier = escapeHTML(sensor.eui || sensor.cloud_device_id || 'Nicht angegeben');
+                    const encodedEui = encodeURIComponent(String(sensor.eui ?? ''));
                     const lastSeenText = sensor.last_seen ? formatTimeAgo(sensor.last_seen) : 'Nie';
-                    const onlineClass = sensor.online ? 'status-active' : 'status-inactive';
-                    const onlineText = sensor.online ? '🟢 Online' : '⚫ Offline';
-                    const autoDiscovered = sensor.auto_discovered ? '<span class="status-badge" style="background: #17a2b8; color: white;">🔍 Auto</span>' : '';
-                    
+                    const coordinates = `${safeNumber(sensor.latitude)?.toFixed(6) ?? ''}, ${safeNumber(sensor.longitude)?.toFixed(6) ?? ''}`;
+                    const hasCoordinates = safeNumber(sensor.latitude) !== null && safeNumber(sensor.longitude) !== null;
+                    const miotyDetails = technology === 'mioty' ? `
+                        ${renderInfoRow('Short Address:', sensor.short_addr || 'N/A')}
+                        <div class="info-row"><span class="info-label">Network Key:</span><span class="key-display">${sensor.network_key ? `${escapeHTML(String(sensor.network_key).substring(0, 8))}...` : 'Nicht gesetzt'}</span></div>
+                    ` : '';
+                    const miotyActions = technology === 'mioty' ? `
+                        ${sensor.bidirectional ? '<span class="status-badge status-bidi">BiDi</span>' : ''}
+                        ${sensor.application_key ? '<span class="status-badge status-active">AES</span>' : ''}
+                        <button class="btn btn-secondary" data-action="reregister" data-eui="${escapeHTML(encodedEui)}" title="Sensor erneut am Service Center registrieren">Neu anlernen</button>
+                    ` : '';
+                    const autoDiscovered = sensor.auto_discovered ? '<span class="status-badge" style="background: #17a2b8; color: white;">Auto</span>' : '';
+                    const sourceBadge = sensor.source === 'sentinum_cloud' ? '<span class="source-badge">Sentinum Cloud</span>' : '';
                     return `
-                    <div class="sensor-card" style="border-left-color: ${sensor.online ? '#28a745' : '#6c757d'};">
-                        <div class="sensor-header">
-                            <div>
-                                <span class="sensor-eui">📡 ${sensor.eui}</span>
-                                ${sensor.device_name ? `<span style="color: #666; margin-left: 10px;">(${sensor.device_name})</span>` : ''}
-                                <span class="status-badge ${onlineClass}" style="margin-left: 10px;">${onlineText}</span>
-                            </div>
-                            <div class="sensor-actions">
-                                ${autoDiscovered}
-                                ${sensor.bidirectional ? '<span class="status-badge status-bidi">↔️ BiDi</span>' : ''}
-                                ${sensor.application_key ? '<span class="status-badge status-active">🔒 AES</span>' : ''}
-                                <button class="btn btn-secondary" onclick="reregisterSensor('${sensor.eui}')" title="Sensor erneut am Service Center registrieren">🔄 Neu anlernen</button>
-                                <button class="btn btn-primary" onclick="editSensor('${sensor.eui}')">✏️ Bearbeiten</button>
-                                <button class="btn btn-danger" onclick="deleteSensor('${sensor.eui}')">🗑️ Löschen</button>
-                            </div>
-                        </div>
-                        
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                            <div>
-                                <div class="info-row">
-                                    <span class="info-label">Letztes Signal:</span>
-                                    <span class="info-value">${lastSeenText}</span>
+                        <article class="sensor-card" style="border-left-color: ${sensor.online ? '#28a745' : '#6c757d'};">
+                            <div class="sensor-header">
+                                <div class="sensor-identifiers">
+                                    <span class="sensor-eui">${identifierLabel}: ${identifier}</span>
+                                    ${sensor.device_name ? `<span style="color:#666;">${escapeHTML(sensor.device_name)}</span>` : ''}
+                                    <span class="technology-badge">Technologie: ${escapeHTML(technologyLabel)}</span>
+                                    ${sourceBadge}
+                                    <span class="status-badge ${sensor.online ? 'status-active' : 'status-inactive'}">${sensor.online ? 'Online' : 'Offline'}</span>
                                 </div>
-                                <div class="info-row">
-                                    <span class="info-label">Signalqualität:</span>
-                                    <span class="info-value">${sensor.signal_quality || 'Unbekannt'}</span>
-                                </div>
-                                <div class="info-row">
-                                    <span class="info-label">Hersteller:</span>
-                                    <span class="info-value">${sensor.manufacturer || 'Unbekannt'}</span>
-                                </div>
-                                <div class="info-row">
-                                    <span class="info-label">Modell:</span>
-                                    <span class="info-value">${sensor.model || 'Unbekannt'}</span>
+                                <div class="sensor-actions">
+                                    ${autoDiscovered}
+                                    ${miotyActions}
+                                    <button class="btn btn-primary" data-action="edit" data-eui="${escapeHTML(encodedEui)}">Bearbeiten</button>
+                                    <button class="btn btn-danger" data-action="delete" data-eui="${escapeHTML(encodedEui)}">Löschen</button>
                                 </div>
                             </div>
-                            <div>
-                                <div class="info-row">
-                                    <span class="info-label">Short Address:</span>
-                                    <span class="info-value">${sensor.short_addr || 'N/A'}</span>
+                            <div class="sensor-details-grid">
+                                <div>
+                                    ${renderInfoRow('Letztes Signal:', lastSeenText)}
+                                    ${renderInfoRow('Signalqualität:', sensor.signal_quality ?? 'Unbekannt')}
+                                    ${renderInfoRow('Hersteller:', sensor.manufacturer || 'Unbekannt')}
+                                    ${renderInfoRow('Modell:', sensor.model || 'Unbekannt')}
+                                    ${sensor.description ? renderInfoRow('Beschreibung:', sensor.description) : ''}
+                                    ${sensor.cloud_device_id ? renderInfoRow('Cloud-Geräte-ID:', sensor.cloud_device_id) : ''}
                                 </div>
-                                <div class="info-row">
-                                    <span class="info-label">Standort:</span>
-                                    <span class="info-value">${sensor.location_name || 'Nicht angegeben'}</span>
-                                </div>
-                                ${sensor.latitude && sensor.longitude ? `
-                                <div class="info-row">
-                                    <span class="info-label">Koordinaten:</span>
-                                    <span class="info-value">${sensor.latitude.toFixed(6)}, ${sensor.longitude.toFixed(6)}</span>
-                                </div>
-                                ` : ''}
-                                <div class="info-row">
-                                    <span class="info-label">Network Key:</span>
-                                    <span class="key-display">${sensor.network_key ? sensor.network_key.substring(0, 8) + '...' : 'Nicht gesetzt'}</span>
+                                <div>
+                                    ${miotyDetails}
+                                    ${renderInfoRow('Standort:', sensor.location_name || 'Nicht angegeben')}
+                                    ${hasCoordinates ? renderInfoRow('Koordinaten:', coordinates) : ''}
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                `}).join('');
+                        </article>`;
+                };
+                sensorsList.innerHTML = technologyGroups
+                    .filter(group => groups.get(group.key).length > 0)
+                    .map(group => {
+                        const sortedSensors = groups.get(group.key).slice().sort((a, b) =>
+                            germanCollator.compare(String(a.device_name || ''), String(b.device_name || '')) ||
+                            germanCollator.compare(String(a.eui || a.cloud_device_id || ''), String(b.eui || b.cloud_device_id || ''))
+                        );
+                        return `
+                            <section class="technology-group" aria-label="${escapeHTML(group.label)}">
+                                <header class="technology-group-header">
+                                    <h3>${escapeHTML(group.label)}</h3>
+                                    <span class="group-count">${sortedSensors.length} ${sortedSensors.length === 1 ? 'Sensor' : 'Sensoren'}</span>
+                                </header>
+                                ${sortedSensors.map(renderCard).join('')}
+                            </section>`;
+                    }).join('');
             } catch (error) {
                 console.error('Fehler beim Laden der Sensoren:', error);
                 document.getElementById('sensors-list').innerHTML = `
                     <div class="no-sensors">
                         <p style="color: #dc3545;">Fehler beim Laden der Sensoren</p>
-                        <p><small>${error.message}</small></p>
+                        <p><small>${escapeHTML(error.message)}</small></p>
                     </div>
                 `;
             }
         }
 
         function showAddSensorModal() {
+            editingSensorProtocol = 'mioty';
             document.getElementById('modalTitle').textContent = '📡 Neuer Sensor';
             document.getElementById('sensor_mode').value = 'add';
             document.getElementById('sensorForm').reset();
+            document.getElementById('sensor_eui_label').textContent = 'EUI (16 Hex-Zeichen) *';
+            document.getElementById('miotyShortAddressField').style.display = '';
+            document.getElementById('miotyNetworkKeyField').style.display = '';
+            document.getElementById('miotyApplicationKeyField').style.display = '';
+            document.getElementById('miotyBidirectionalField').style.display = '';
             document.getElementById('sensor_eui').disabled = false;
             document.getElementById('sensorModal').style.display = 'block';
         }
 
         async function editSensor(eui) {
             try {
-                const response = await fetch(getCacheBusterURL(`/api/sensor-config/${eui}`));
+                const response = await fetch(getCacheBusterURL(`/api/sensor-config/${encodeURIComponent(eui)}`));
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const sensor = await response.json();
-                
+                editingSensorProtocol = getTechnology(sensor);
+                const isMioty = editingSensorProtocol === 'mioty';
+                document.getElementById('sensor_eui_label').textContent = isMioty ? 'EUI (16 Hex-Zeichen) *' : (editingSensorProtocol === 'cellular' ? 'IMEI *' : 'Geräte-ID *');
+                document.getElementById('miotyShortAddressField').style.display = isMioty ? '' : 'none';
+                document.getElementById('miotyNetworkKeyField').style.display = isMioty ? '' : 'none';
+                document.getElementById('miotyApplicationKeyField').style.display = isMioty ? '' : 'none';
+                document.getElementById('miotyBidirectionalField').style.display = isMioty ? '' : 'none';
                 document.getElementById('modalTitle').textContent = '✏️ Sensor bearbeiten';
                 document.getElementById('sensor_mode').value = 'edit';
                 
@@ -640,12 +824,15 @@
             const mode = document.getElementById('sensor_mode').value;
             const eui = document.getElementById('sensor_eui').value.replace(/[:\s]/g, '').toUpperCase();
             
+            const isMioty = mode === 'add' || editingSensorProtocol === 'mioty';
             const data = {
                 eui: eui,
-                short_addr: document.getElementById('short_addr').value.replace(/[:\s]/g, '').toUpperCase(),
-                network_key: document.getElementById('network_key').value.replace(/[:\s]/g, ''),
-                application_key: document.getElementById('application_key').value.replace(/[:\s]/g, '') || null,
-                bidirectional: document.getElementById('bidirectional').value === 'true',
+                ...(isMioty ? {
+                    short_addr: document.getElementById('short_addr').value.replace(/[:\s]/g, '').toUpperCase(),
+                    network_key: document.getElementById('network_key').value.replace(/[:\s]/g, ''),
+                    application_key: document.getElementById('application_key').value.replace(/[:\s]/g, '') || null,
+                    bidirectional: document.getElementById('bidirectional').value === 'true'
+                } : {}),
                 manufacturer: document.getElementById('manufacturer').value || null,
                 model: document.getElementById('model').value || null,
                 device_name: document.getElementById('device_name').value || null,
@@ -663,7 +850,7 @@
                     method = 'POST';
                     body = JSON.stringify({ ...data, sensor_eui: eui });
                 } else {
-                    url = `/api/sensor-config/${eui}`;
+                    url = `/api/sensor-config/${encodeURIComponent(eui)}`;
                     method = 'PUT';
                     body = JSON.stringify(data);
                 }
@@ -693,7 +880,7 @@
             
             try {
                 // 1. Aus Konfigurationsdatei löschen (404 ist ok bei auto-discovered Sensoren)
-                await fetch(BASE_URL + `/api/sensor-config/${eui}`, { method: 'DELETE' });
+                await fetch(BASE_URL + `/api/sensor-config/${encodeURIComponent(eui)}`, { method: 'DELETE' });
                 
                 // 2. Aus In-Memory-Speicher löschen (wichtig für auto-discovered Sensoren)
                 await fetch(BASE_URL + '/api/sensor/remove', {
@@ -752,23 +939,39 @@
 
         async function reregisterAll() {
             if (!allSensorEuis || allSensorEuis.length === 0) {
-                alert('Keine Sensoren vorhanden.');
+                alert('Keine mioty-Sensoren vorhanden.');
                 return;
             }
-            if (!confirm(`Alle ${allSensorEuis.length} Sensoren jetzt neu am Service Center anlernen?`)) return;
+            if (!confirm(`Alle ${allSensorEuis.length} mioty-Sensoren jetzt neu am Service Center anlernen?`)) return;
             
             const btn = document.getElementById('bulkReregisterBtn');
             btn.disabled = true;
-            btn.textContent = '🔄 Anlernen läuft...';
+            btn.textContent = 'Anlernen läuft...';
             try {
                 await doReregister(allSensorEuis, (done, total) => {
-                    btn.textContent = `🔄 Anlernen läuft... (${done}/${total})`;
+                    btn.textContent = `Anlernen läuft... (${done}/${total})`;
                 });
             } finally {
                 btn.disabled = false;
-                btn.textContent = '🔄 Alle neu anlernen';
+                btn.textContent = 'Alle mioty-Sensoren neu anlernen';
             }
         }
+
+        document.getElementById('sensors-list').addEventListener('click', event => {
+            const button = event.target.closest('[data-action][data-eui]');
+            if (!button) return;
+            let eui;
+            try {
+                eui = decodeURIComponent(button.dataset.eui);
+            } catch (error) {
+                console.error('Ungültige Sensor-ID:', error);
+                return;
+            }
+            if (!eui) return;
+            if (button.dataset.action === 'edit') editSensor(eui);
+            if (button.dataset.action === 'delete') deleteSensor(eui);
+            if (button.dataset.action === 'reregister') reregisterSensor(eui);
+        });
 
         // Modal schließt NICHT bei Außenklick — nur über X-Button oder Abbrechen
 

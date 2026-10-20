@@ -643,10 +643,15 @@ class WebGUI:
                             config['last_seen'] = sensor_data.get('last_seen', config.get('last_seen', 0))
                             config['signal_quality'] = sensor_data.get('signal_quality', 'Unknown')
                             config['online'] = True
-                            config['protocol_type'] = sensor_data.get('type', 'mioty').lower()
+                            config['protocol_type'] = (sensor_data.get('type') or config.get('protocol_type') or 'mioty').lower()
+                            config['source'] = sensor_data.get('source')
+                            config['cloud_device_id'] = sensor_data.get('cloud_device_id')
+                            if config['source'] == 'sentinum_cloud':
+                                config['manufacturer'] = config.get('manufacturer') or 'Sentinum'
+                                config['model'] = config.get('model') or sensor_data.get('cloud_product', '').capitalize()
                         else:
                             config['online'] = False
-                            config['protocol_type'] = config.get('protocol_type', 'mioty')
+                            config['protocol_type'] = (config.get('protocol_type') or config.get('type') or 'mioty').lower()
                 
                 # Protokoll-Filter anwenden
                 show_lora = self.settings.get_setting('show_lora', True) if self.settings else True
@@ -705,7 +710,10 @@ class WebGUI:
                         'latitude': None,
                         'longitude': None,
                         'location_name': None,
-                        'auto_discovered': True
+                        'auto_discovered': True,
+                        'protocol_type': (sensor_data.get('type') or 'mioty').lower(),
+                        'source': sensor_data.get('source'),
+                        'cloud_device_id': sensor_data.get('cloud_device_id')
                     })
                 
                 return jsonify({'error': 'Sensor nicht gefunden'}), 404
@@ -781,6 +789,7 @@ class WebGUI:
                 for i, config in enumerate(configs):
                     if config.get('eui', '').upper() == eui.upper():
                         configs[i] = {
+                            **{key: config[key] for key in ('protocol_type', 'source', 'cloud_device_id') if key in config},
                             'eui': eui.upper(),
                             'short_addr': data.get('short_addr', config.get('short_addr', '')).upper(),
                             'network_key': data.get('network_key', config.get('network_key', '')),
@@ -819,6 +828,16 @@ class WebGUI:
                     configs.append(new_config)
                     logging.info(f"📡 Auto-discovered Sensor konfiguriert: {eui}")
                 
+                # Keep the detected technology/source when editing metadata, so
+                # an offline cloud/LoRa/OMS sensor is not relabelled as mioty.
+                known_sensor = getattr(self.addon, 'sensors', {}).get(eui.upper(), {})
+                if known_sensor:
+                    for config in configs:
+                        if config.get('eui', '').upper() == eui.upper():
+                            config['protocol_type'] = (known_sensor.get('type') or 'mioty').lower()
+                            config['source'] = known_sensor.get('source')
+                            config['cloud_device_id'] = known_sensor.get('cloud_device_id')
+
                 with open(config_file, 'w') as f:
                     json.dump(configs, f, indent=2)
                 

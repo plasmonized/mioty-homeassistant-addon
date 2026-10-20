@@ -1,6 +1,7 @@
 """Offline regression tests: no real MQTT credentials or network connections."""
 
 import base64
+from contextlib import chdir
 import json
 import os
 import sys
@@ -275,6 +276,34 @@ class PipelineAndApiTests(unittest.TestCase):
         self.assertEqual(self.addon.sensors[identity]["decoded_data"]["data"]["temperature"]["value"], 25)
         self.assertEqual(self.addon._get_device_info_from_decoder(identity, "test")["manufacturer"], "Sentinum")
         self.assertTrue(self.addon.mqtt_manager.ha_client.publish.called)
+
+    def test_sensor_config_radio_types_source_and_offline_metadata_edit(self):
+        identity, data = normalize_message(TOPIC, flat_cloud_message())
+        self.assertTrue(self.addon._handle_sentinum_cloud_data(identity, data))
+        for sensor_id, radio in (("ABCDEF0000000001", "mioty"), ("ABCDEF0000000002", "lora"),
+                                 ("ABCDEF0000000003", "oms"), ("ABCDEF0000000004", None)):
+            self.addon.sensors[sensor_id] = {"type": radio, "last_seen": 1}
+        with chdir(self.temp.name):
+            sensors = {s["eui"]: s for s in self.web.get("/api/sensor-config/list").get_json()}
+            self.assertEqual(sensors[identity]["protocol_type"], "cellular")
+            self.assertEqual(sensors[identity]["source"], "sentinum_cloud")
+            self.assertEqual(sensors[identity]["model"], "Eos")
+            self.assertEqual(sensors["ABCDEF0000000002"]["protocol_type"], "lora")
+            self.assertEqual(sensors["ABCDEF0000000003"]["protocol_type"], "oms")
+            self.assertEqual(sensors["ABCDEF0000000004"]["protocol_type"], "mioty")
+            self.settings.set_setting("show_lora", False)
+            self.settings.set_setting("show_oms", False)
+            filtered = {s["eui"] for s in self.web.get("/api/sensor-config/list").get_json()}
+            self.assertIn(identity, filtered)
+            self.assertNotIn("ABCDEF0000000002", filtered)
+            self.assertNotIn("ABCDEF0000000003", filtered)
+            self.assertEqual(self.web.put(f"/api/sensor-config/{identity}", json={"device_name": "Cloud test"}).status_code, 200)
+            self.addon.sensors.clear()
+            self.assertEqual(self.web.put(f"/api/sensor-config/{identity}", json={"device_name": "Offline test"}).status_code, 200)
+            stored = self.web.get("/api/sensor-config/list").get_json()[0]
+            self.assertFalse(stored["online"])
+            self.assertEqual(stored["protocol_type"], "cellular")
+            self.assertEqual(stored["source"], "sentinum_cloud")
 
     def test_native_flat_message_reaches_dashboard_live_and_ha_without_decoder(self):
         identity, data = normalize_message(TOPIC, flat_cloud_message())
