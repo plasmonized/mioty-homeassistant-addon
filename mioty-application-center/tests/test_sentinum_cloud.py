@@ -15,7 +15,7 @@ from unittest.mock import MagicMock, patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "app"))
 
 from sentinum_cloud import (DEFAULTS, PREFIX, SentinumCloudClient, cloud_settings,
-                            normalize_message, validate_settings)
+                            normalize_message, validate_settings, telemetry_topic)
 from settings_manager import SettingsManager
 from main import BSSCIAddon
 from decoder_manager import DecoderManager
@@ -153,6 +153,25 @@ class LifecycleTests(unittest.TestCase):
         self.assertEqual(validate_settings({"password": "***"}, current)["password"], "offline-test")
         self.assertFalse(validate_settings({"enabled": False}, DEFAULTS)["enabled"])
 
+    def test_customer_topics_expand_to_telemetry_only(self):
+        cases = {
+            "devices/example/#": "devices/example/+/+/+/up",
+            "datahub/example/#": "datahub/example/+/+/+/up",
+            "devices/example": "devices/example/+/+/+/up",
+            "devices/example/eos/#": "devices/example/eos/+/+/up",
+            "datahub/example/eos/eos/eos_cellular_012345678901236/#": TOPIC,
+            TOPIC: TOPIC,
+        }
+        for supplied, expected in cases.items():
+            with self.subTest(topic=supplied):
+                self.assertEqual(telemetry_topic(supplied), expected)
+                self.assertEqual(validate_settings({"topic": supplied}, DEFAULTS)["topic"], expected)
+        for supplied in ("#", "devices/#", "datahub/+/#", "devices/example/#/up",
+                         "devices/example/eos/eos/device/update_shadow",
+                         "devices/example/eos/eos/device/reported_shadow/#"):
+            with self.subTest(topic=supplied), self.assertRaises(ValueError):
+                telemetry_topic(supplied)
+
 
 class PipelineAndApiTests(unittest.TestCase):
     def setUp(self):
@@ -227,6 +246,21 @@ class PipelineAndApiTests(unittest.TestCase):
             response = self.web.post("/api/sentinum-cloud", json={"username": "new"})
             self.assertEqual(response.status_code, 500)
         self.assertEqual(self.settings.get_setting(PREFIX + "username", ""), "")
+
+    def test_save_hash_topic_and_subscribe_without_global_wildcard(self):
+        with patch("sentinum_cloud.mqtt.Client") as factory:
+            factory.return_value.subscribe.return_value = (0, 1)
+            response = self.web.post("/api/sentinum-cloud", json={
+                "enabled": True, "username": "example", "password": "offline-test",
+                "topic": "devices/example/#",
+            })
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.get_json()["topic"], "devices/example/+/+/+/up")
+            self.assertEqual(self.web.get("/api/sentinum-cloud").get_json()["topic"], "devices/example/+/+/+/up")
+            self.addon.sentinum_cloud._on_connect(factory.return_value, None, {}, 0)
+            factory.return_value.subscribe.assert_called_once_with("devices/example/+/+/+/up", qos=1)
+            self.addon.sentinum_cloud._on_subscribe(factory.return_value, None, 1, [1])
+            self.assertEqual(self.web.get("/api/sentinum-cloud/status").get_json()["state"], "connected")
 
     def test_settings_page_keeps_existing_integrations_and_ingress(self):
         response = self.web.get("/settings", headers={"X-Ingress-Path": "/api/hassio_ingress/test"})

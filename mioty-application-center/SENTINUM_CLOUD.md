@@ -2,7 +2,7 @@
 
 ## Einrichtung
 
-Unter **Einstellungen → Sentinum Cloud · Mobilfunk**:
+Unter **Einstellungen → Sentinum Cloud**:
 
 1. Die Verbindung aktivieren.
 2. Broker `broker.sentinum.de`, Port `8883` sowie die von Sentinum bereitgestellten
@@ -12,6 +12,9 @@ Unter **Einstellungen → Sentinum Cloud · Mobilfunk**:
 4. Falls erforderlich, das konkrete Kunden-Topic eintragen, etwa
    `datahub/meine_firma/+/+/+/up`. Für den Legacy-Mirror:
    `devices/meine_firma/+/+/+/up`.
+   Auch Kunden-Präfixe wie `devices/meine_firma/#` oder `datahub/meine_firma`
+   sind möglich. Sie werden automatisch auf die zugehörigen `/up`-Sensordaten
+   eingegrenzt; der tatsächlich gespeicherte Filter erscheint nach dem Speichern.
 5. Speichern. Die Verbindung wird ohne Add-on-Neustart aufgebaut.
 
 TLS mit Prüfung des Serverzertifikats ist immer aktiv. Nach erfolgreicher

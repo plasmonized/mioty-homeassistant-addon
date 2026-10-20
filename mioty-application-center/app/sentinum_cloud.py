@@ -33,6 +33,26 @@ def cloud_settings(settings):
     return {key: settings.get(PREFIX + key, default) for key, default in DEFAULTS.items()}
 
 
+def telemetry_topic(topic):
+    """Expand customer prefixes and trailing # to the read-only telemetry filter."""
+    if not topic:
+        return ""
+    if "\0" in topic or len(topic.encode("utf-8")) > 65535:
+        raise ValueError("Ungültiges MQTT-Topic.")
+    parts = topic.split("/")
+    if parts[-1] == "#":
+        parts.pop()
+    if (not 2 <= len(parts) <= 6 or parts[0] not in ("devices", "datahub")
+            or parts[1] in ("", "+", "#")
+            or any(not part or "#" in part or ("+" in part and part != "+") for part in parts)):
+        raise ValueError("Topic muss zu einem festen Kunden gehören, z. B. devices/<Kunde>/# oder datahub/<Kunde>/+/+/+/up.")
+    if len(parts) < 6:
+        parts += ["+"] * (5 - len(parts)) + ["up"]
+    if parts[-1] != "up":
+        raise ValueError("Nur Sensordaten-Topics mit /up werden unterstützt, keine Steuer- oder Konfigurations-Topics.")
+    return "/".join(parts)
+
+
 def validate_settings(data, current):
     """Validate before persistence. The password sentinel means 'unchanged'."""
     if not isinstance(data, dict) or set(data) - set(DEFAULTS):
@@ -59,13 +79,7 @@ def validate_settings(data, current):
         raise ValueError("Broker als Hostname ohne mqtts:// oder Pfad eingeben.")
     topic = result["topic"]
     if topic:
-        if "\0" in topic or len(topic.encode("utf-8")) > 65535:
-            raise ValueError("Ungültiges MQTT-Topic.")
-        parts = topic.split("/")
-        if (len(parts) != 6 or parts[0] not in ("devices", "datahub")
-                or parts[-1] != "up" or parts[1] in ("", "+", "#")
-                or any(not p or "#" in p or ("+" in p and p != "+") for p in parts)):
-            raise ValueError("Topic: datahub/<Kunde>/+/+/+/up oder devices/<Kunde>/+/+/+/up.")
+        result["topic"] = telemetry_topic(topic)
     elif result["enabled"] and any(c in result["username"] for c in "/+#\0"):
         raise ValueError("Für diesen Benutzernamen bitte ein explizites Kunden-Topic eingeben.")
     if result["enabled"] and not all(result[k] for k in ("broker", "username", "password")):
@@ -211,7 +225,7 @@ class SentinumCloudClient:
         self._active = True
         self._status.update(enabled=True, state="connecting")
         try:
-            validate_settings(self.settings, self.settings)
+            self.settings = validate_settings(self.settings, self.settings)
             # VERSION1 callbacks support both paho 1.x and 2.x already used here.
             self.client = mqtt.Client(client_id="sentinum-ha-" + uuid.uuid4().hex[:16])
             self.client.username_pw_set(self.settings["username"], self.settings["password"])

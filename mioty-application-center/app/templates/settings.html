@@ -208,7 +208,7 @@
             <div class="form-group sc-cloud-full">
                 <label for="sc-cloud-topic">Topic-Override (optional):</label>
                 <input type="text" id="sc-cloud-topic" name="topic" placeholder="Leer = automatisch">
-                <small class="sc-cloud-help">Leer lassen für das automatische Topic. Für ältere Konten können Sie z. B. <code>devices/&lt;username&gt;/+/+/+/up</code> eintragen.</small>
+            <small class="sc-cloud-help">Leer lassen für das automatische Topic. Auch Kunden-Topics wie <code>devices/&lt;Kunde&gt;/#</code> sind möglich; abonniert werden nur Sensordaten (<code>/up</code>).</small>
                 <output class="sc-cloud-topic-preview" id="sc-cloud-topic-preview" aria-live="polite">Automatisch: datahub/&lt;username&gt;/+/+/+/up</output>
             </div>
         </div>
@@ -388,6 +388,10 @@
                 });
                 const result = await readJson(response);
                 if (!result.success) throw new Error(result.error || 'Speichern fehlgeschlagen.');
+                if (typeof result.topic === 'string') {
+                    get('sc-cloud-topic').value = result.topic;
+                    updateTopicPreview();
+                }
                 passwordConfigured = clearPasswordInput.checked ? false : (Boolean(suppliedPassword) || passwordConfigured);
                 passwordInput.value = '';
                 clearPasswordInput.checked = false;

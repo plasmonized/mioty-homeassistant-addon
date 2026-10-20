@@ -15,6 +15,8 @@ is available alongside the newer `datahub` topic tree.
 **How to apply:** Keep subscriptions limited to customer telemetry `/up`.
 Do not weaken TLS or broaden subscriptions to fix a login/topic error without
 checking the current account permissions and newer documentation.
+Accept customer-scoped topic shortcuts from onboarding instructions, but resolve
+them to telemetry-only subscriptions rather than passing broad `#` filters through.
 
 Sources:
 - https://docs.sentinum.de/en/new-integration-guide

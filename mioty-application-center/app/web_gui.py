@@ -1525,7 +1525,10 @@ class WebGUI:
                     return jsonify({"error": "Cloud-Einstellungen konnten nicht gespeichert werden."}), 500
                 self.addon.config.update(changes)
                 self.addon.restart_sentinum_cloud()
-                return jsonify({"success": True, "status": self.addon.sentinum_cloud.status()})
+                return jsonify({
+                    "success": True, "status": self.addon.sentinum_cloud.status(),
+                    "topic": updated["topic"],
+                })
 
         @self.app.route('/api/sentinum-cloud/status')
         def sentinum_cloud_status():
