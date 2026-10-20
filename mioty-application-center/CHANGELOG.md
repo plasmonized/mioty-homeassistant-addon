@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.0.6.16 — 2026-10-20
+### Neu
+- Sensorübersicht nach Funktechnologie gruppiert: mioty, LoRaWAN, OMS / Wireless M-Bus und Mobilfunk, mit Kennzeichnung und Anzahl je Gruppe.
+- Sentinum Cloud als separate Datenquelle gekennzeichnet; Mobilfunkgeräte werden mit ihrer IMEI angezeigt.
+- Native, bereits dekodierte Cloud-Nachrichten direkt auf JSON-Root-Ebene unterstützt. Messwerte werden ohne erneute Dekodierung oder Skalierung in Live-Daten und Home-Assistant-MQTT übernommen.
+- Geräte-ID und Sensorserie werden aus dem MQTT-Topic ermittelt; optionale Geräte-IDs im JSON werden auf Widersprüche geprüft.
+
+### Verbessert
+- Sentinum-Logo und allgemeine Cloud-Überschrift; Broker und TLS-Port sind fest vorgegeben.
+- Kunden-Topic-Kurzformen werden automatisch in erlaubte `/up`-Telemetrie-Abonnements umgewandelt.
+- Cloud-Metadaten werden von Messwerten getrennt; Nullwerte und präzise Millisekunden-Zeitstempel bleiben erhalten. RSRP/RSRQ bleiben eigene Signalwerte.
+- mioty-spezifische Anlern-Funktionen werden nur für mioty-Sensoren angeboten. Funktechnologie und Datenquelle bleiben beim Bearbeiten von Metadaten erhalten.
+- Responsive Sensorübersicht und zusätzliche Offline-Prüfungen für Cloud-Datenverarbeitung und Technologie-Gruppierung.
+
 ## 1.0.6.15 — 2026-10-20
 ### Neu
 - Sentinum Cloud / Datahub für Mobilfunk-Sensoren über eine separate MQTT-Verbindung mit verpflichtender TLS-Zertifikatsprüfung.
