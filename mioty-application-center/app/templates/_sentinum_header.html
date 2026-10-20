@@ -1,0 +1,22 @@
+<header class="header">
+    <div class="header-identity">
+        <h1>mioty Application Center</h1>
+        <p>{{ page_subtitle | default('Sensorbetrieb · Home Assistant Integration') }}</p>
+    </div>
+    <div class="header-brand">
+        <img class="brand-wordmark" src="{{ ingress_path }}/static/images/sentinum-wordmark.png" alt="Sentinum" width="156" height="42">
+    </div>
+</header>
+<nav class="nav" aria-label="Hauptnavigation">
+    {% for path, key, label, icon in [
+        ('/', 'dashboard', 'Dashboard', 'M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h7v7h-7z'),
+        ('/sensors', 'sensors', 'Sensoren', 'M12 19v2 M8 17a6 6 0 0 1 0-8 M16 17a6 6 0 0 0 0-8 M5 20a10 10 0 0 1 0-14 M19 20a10 10 0 0 0 0-14 M11 13h2'),
+        ('/decoders', 'decoders', 'Decoder', 'm8 6-6 6 6 6 M16 6l6 6-6 6 M14 3l-4 18'),
+        ('/settings', 'settings', 'Einstellungen', 'M4 7h16 M4 17h16 M8 4v6 M16 14v6')
+    ] %}
+    <a id="nav-{{ key }}" href="{{ ingress_path }}{{ path }}" class="nav-item{% if active_page == key %} active{% endif %}"{% if active_page == key %} aria-current="page"{% endif %}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{ icon }}"></path></svg>
+        <span>{{ label }}</span>
+    </a>
+    {% endfor %}
+</nav>

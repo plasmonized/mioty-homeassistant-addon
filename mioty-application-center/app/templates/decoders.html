@@ -77,45 +77,38 @@
         
         .sentinum-footer { text-align: center; margin-top: 30px; padding: 15px; background: #f8f9fa; border-radius: 10px; color: #6c757d; font-size: 0.9em; }
     </style>
+    {% include '_sentinum_head.html' %}
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>🔧 mioty Application Center</h1>
-            <p>Decoder & IO-Link Verwaltung</p>
-        </div>
-        
-        <div class="nav">
-            <a class="nav-item" onclick="navigateTo('/')">🏠 Dashboard</a>
-            <a class="nav-item" onclick="navigateTo('/sensors')">📡 Sensoren</a>
-            <a class="nav-item active" onclick="navigateTo('/decoders')">🔧 Decoder</a>
-            <a class="nav-item" onclick="navigateTo('/settings')">⚙️ Einstellungen</a>
-        </div>
+        {% set active_page = 'decoders' %}
+        {% set page_subtitle = 'Decoder · IO-Link Adapter & IODD-Dateien' %}
+        {% include '_sentinum_header.html' %}
         
         <div class="sub-nav">
-            <div class="sub-nav-item active" onclick="showSection('decoders')">📝 Decoder</div>
-            <div class="sub-nav-item" onclick="showSection('adapters')">🔌 IO-Link Adapter</div>
-            <div class="sub-nav-item" onclick="showSection('iodds')">📋 IODD-Dateien</div>
+            <button type="button" class="sub-nav-item active" onclick="showSection('decoders')">Decoder</button>
+            <button type="button" class="sub-nav-item" onclick="showSection('adapters')">IO-Link Adapter</button>
+            <button type="button" class="sub-nav-item" onclick="showSection('iodds')">IODD-Dateien</button>
         </div>
         
         <div class="content">
             <div id="alerts"></div>
             
             <div id="section-decoders" class="section active">
-                <h2>📤 Decoder hochladen</h2>
+                <h2>Decoder hochladen</h2>
                 <form id="uploadDecoderForm" enctype="multipart/form-data">
                     <div class="form-group">
                         <label>Decoder-Datei:</label>
                         <input type="file" id="decoderFile" accept=".js,.json" required>
                         <div class="help-text">Unterstützte Formate: <span class="code">.json</span> (mioty Blueprint) und <span class="code">.js</span> (Sentinum JavaScript)</div>
                     </div>
-                    <button type="submit" class="btn">📤 Decoder hochladen</button>
+                    <button type="submit" class="btn">Decoder hochladen</button>
                 </form>
                 
-                <h2 style="margin-top: 40px;">📝 Verfügbare Decoder</h2>
+                <h2 style="margin-top: 40px;">Verfügbare Decoder</h2>
                 <div id="decoder-list" class="empty-state">Lade Decoder...</div>
                 
-                <h2 style="margin-top: 40px;">📌 Decoder zuweisen</h2>
+                <h2 style="margin-top: 40px;">Decoder zuweisen</h2>
                 <form id="assignDecoderForm">
                     <div class="form-group">
                         <label>Sensor auswählen:</label>
@@ -133,13 +126,13 @@
                         <label>Decoder auswählen:</label>
                         <select id="assignDecoder" required></select>
                     </div>
-                    <button type="submit" class="btn btn-success">📌 Zuweisen</button>
+                    <button type="submit" class="btn btn-success">Zuweisen</button>
                 </form>
                 
                 <h3 style="margin: 30px 0 20px 0;">Aktive Zuweisungen</h3>
                 <div id="assignment-list" class="empty-state">Lade Zuweisungen...</div>
                 
-                <h2 style="margin-top: 40px;">🧪 Decoder testen</h2>
+                <h2 style="margin-top: 40px;">Decoder testen</h2>
                 <form id="testDecoderForm">
                     <div class="form-group">
                         <label>Decoder auswählen:</label>
@@ -149,19 +142,19 @@
                         <label>Test-Payload (Hex):</label>
                         <input type="text" id="testPayload" placeholder="z.B. A1B2C3D4E5F6" required>
                     </div>
-                    <button type="submit" class="btn">🧪 Testen</button>
+                    <button type="submit" class="btn">Testen</button>
                 </form>
                 <div id="test-result"></div>
             </div>
             
             <div id="section-adapters" class="section">
-                <h2>🔌 IO-Link Adapter verwalten</h2>
+                <h2>IO-Link Adapter verwalten</h2>
                 <div class="alert alert-info">
                     <strong>Hinweis:</strong> Registrieren Sie hier mioty-io-link Adapter und weisen Sie ihnen IODD-Dateien zur automatischen Prozessdaten-Dekodierung zu.
                 </div>
                 
                 <div style="margin-bottom: 20px;">
-                    <button class="btn btn-success" onclick="showRegisterAdapterModal()">➕ Adapter registrieren</button>
+                    <button class="btn btn-success" onclick="showRegisterAdapterModal()">+ Adapter registrieren</button>
                 </div>
                 
                 <h3 style="margin: 20px 0;">Registrierte Adapter</h3>
@@ -169,7 +162,7 @@
             </div>
             
             <div id="section-iodds" class="section">
-                <h2>📋 IODD-Dateien verwalten</h2>
+                <h2>IODD-Dateien verwalten</h2>
                 <div class="alert alert-info">
                     <strong>Info:</strong> IODD-Dateien (IO Device Description) beschreiben die Struktur von IO-Link Sensor-Prozessdaten. Laden Sie hier IODDs hoch, um Daten von IO-Link Geräten automatisch zu interpretieren.
                 </div>
@@ -180,13 +173,13 @@
                         <input type="file" id="ioddFile" accept=".xml" required>
                         <div class="help-text">IODD-Dateien können von <a href="https://ioddfinder.io-link.com" target="_blank">ioddfinder.io-link.com</a> heruntergeladen werden.</div>
                     </div>
-                    <button type="submit" class="btn">📤 IODD hochladen</button>
+                    <button type="submit" class="btn">IODD hochladen</button>
                 </form>
                 
                 <h3 style="margin: 30px 0 20px 0;">Verfügbare IODD-Dateien</h3>
                 <div id="iodd-list" class="empty-state">Lade IODDs...</div>
                 
-                <h3 style="margin: 30px 0 20px 0;">🧪 IODD testen</h3>
+                <h3 style="margin: 30px 0 20px 0;">IODD testen</h3>
                 <form id="testIoddForm">
                     <div class="form-group">
                         <label>IODD auswählen:</label>
@@ -196,7 +189,7 @@
                         <label>Test-Payload (Hex):</label>
                         <input type="text" id="testIoddPayload" placeholder="z.B. 001A2B3C4D5E6F...">
                     </div>
-                    <button type="submit" class="btn">🧪 IODD testen</button>
+                    <button type="submit" class="btn">IODD testen</button>
                 </form>
                 <div id="iodd-test-result"></div>
             </div>
@@ -210,8 +203,8 @@
     <div id="registerAdapterModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>🔌 IO-Link Adapter registrieren</h3>
-                <span class="modal-close" onclick="closeModal('registerAdapterModal')">&times;</span>
+                <h3>IO-Link Adapter registrieren</h3>
+                <button type="button" class="modal-close" onclick="closeModal('registerAdapterModal')" aria-label="Dialog schließen">&times;</button>
             </div>
             <form id="registerAdapterForm">
                 <div class="form-group">
@@ -242,7 +235,7 @@
                     <label>Beschreibung (optional):</label>
                     <input type="text" id="adapterDescription" placeholder="z.B. Temperatur-Monitoring Produktionslinie">
                 </div>
-                <button type="submit" class="btn btn-success">✅ Registrieren</button>
+                <button type="submit" class="btn btn-success">Registrieren</button>
             </form>
         </div>
     </div>
@@ -250,8 +243,8 @@
     <div id="assignIoddModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>📋 IODD zuweisen</h3>
-                <span class="modal-close" onclick="closeModal('assignIoddModal')">&times;</span>
+                <h3>IODD zuweisen</h3>
+                <button type="button" class="modal-close" onclick="closeModal('assignIoddModal')" aria-label="Dialog schließen">&times;</button>
             </div>
             <form id="assignIoddForm">
                 <input type="hidden" id="assignAdapterEui">
@@ -259,7 +252,7 @@
                     <label>IODD-Datei auswählen:</label>
                     <select id="assignIoddSelect" required></select>
                 </div>
-                <button type="submit" class="btn btn-success">✅ Zuweisen</button>
+                <button type="submit" class="btn btn-success">Zuweisen</button>
             </form>
         </div>
     </div>
@@ -333,7 +326,7 @@
                         const label = name ? `${s.eui} — ${name}` : s.eui;
                         return `<option value="${s.eui}">${label}</option>`;
                     }).join('') +
-                    '<option value="__manual__">✏️ EUI manuell eingeben...</option>';
+                    '<option value="__manual__">EUI manuell eingeben...</option>';
                 
                 select.onchange = () => {
                     if (select.value === '__manual__') {
@@ -390,7 +383,7 @@
                             </div>
                             <p style="margin-top: 10px; color: #666;">${d.description || 'Keine Beschreibung'}</p>
                             <div class="action-buttons">
-                                <button class="btn btn-small btn-danger" onclick="deleteDecoder('${d.name}')">🗑️ Löschen</button>
+                                <button class="btn btn-small btn-danger" onclick="deleteDecoder('${d.name}')">Löschen</button>
                             </div>
                         </div>
                     `).join('');
@@ -415,10 +408,10 @@
                                 <div class="info-grid">
                                     <div class="info-item"><span class="info-label">Decoder</span><span class="info-value">${a.decoder_name}</span></div>
                                     <div class="info-item"><span class="info-label">Zugewiesen</span><span class="info-value">${a.assigned_at ? new Date(a.assigned_at * 1000).toLocaleString() : 'Unbekannt'}</span></div>
-                                    ${a.has_application_key ? '<div class="info-item"><span class="info-label">Verschlüsselung</span><span class="info-value">🔐 AES aktiv</span></div>' : ''}
+                                    ${a.has_application_key ? '<div class="info-item"><span class="info-label">Verschlüsselung</span><span class="info-value">AES aktiv</span></div>' : ''}
                                 </div>
                                 <div class="action-buttons">
-                                    <button class="btn btn-small btn-danger" onclick="unassignDecoder('${eui}')">🗑️ Zuweisung entfernen</button>
+                                    <button class="btn btn-small btn-danger" onclick="unassignDecoder('${eui}')">Zuweisung entfernen</button>
                                 </div>
                             </div>
                         `;
@@ -491,14 +484,14 @@
                         <div class="info-grid">
                             <div class="info-item"><span class="info-label">EUI</span><span class="info-value code">${a.eui}</span></div>
                             <div class="info-item"><span class="info-label">Gerätetyp</span><span class="info-value">${a.device_type === 'ifm_eio240' ? 'ifm EIO240' : 'Sentinum AION'}</span></div>
-                            <div class="info-item"><span class="info-label">IODD</span><span class="info-value">${a.assigned_iodd || '<span style="color: #ffc107;">⚠️ Nicht zugewiesen</span>'}</span></div>
+                            <div class="info-item"><span class="info-label">IODD</span><span class="info-value">${a.assigned_iodd || '<span style="color: #ffc107;">Nicht zugewiesen</span>'}</span></div>
                             <div class="info-item"><span class="info-label">Registriert</span><span class="info-value">${a.registered_at ? new Date(a.registered_at).toLocaleString() : 'Unbekannt'}</span></div>
                         </div>
                         ${a.description ? `<p style="margin-top: 10px; color: #666;">${a.description}</p>` : ''}
                         <div class="action-buttons">
-                            <button class="btn btn-small btn-success" onclick="showAssignIoddModal('${a.eui}')">📋 IODD zuweisen</button>
-                            ${a.assigned_iodd ? `<button class="btn btn-small btn-secondary" onclick="unassignIodd('${a.eui}')">🔓 IODD entfernen</button>` : ''}
-                            <button class="btn btn-small btn-danger" onclick="unregisterAdapter('${a.eui}')">🗑️ Entfernen</button>
+                            <button class="btn btn-small btn-success" onclick="showAssignIoddModal('${a.eui}')">IODD zuweisen</button>
+                            ${a.assigned_iodd ? `<button class="btn btn-small btn-secondary" onclick="unassignIodd('${a.eui}')">IODD entfernen</button>` : ''}
+                            <button class="btn btn-small btn-danger" onclick="unregisterAdapter('${a.eui}')">Entfernen</button>
                         </div>
                     </div>
                 `).join('');
@@ -538,10 +531,10 @@
                             <div class="info-item"><span class="info-label">Vendor ID</span><span class="info-value">${i.vendor_id || 'N/A'}</span></div>
                             <div class="info-item"><span class="info-label">Device ID</span><span class="info-value">${i.device_id || 'N/A'}</span></div>
                         </div>
-                        ${i.error ? `<p style="margin-top: 10px; color: #dc3545;">⚠️ ${i.error}</p>` : ''}
+                        ${i.error ? `<p style="margin-top: 10px; color: #dc3545;">${i.error}</p>` : ''}
                         <div class="action-buttons">
-                            <button class="btn btn-small" onclick="viewIoddInfo('${i.filename}')">ℹ️ Details</button>
-                            <button class="btn btn-small btn-danger" onclick="deleteIodd('${i.filename}')">🗑️ Löschen</button>
+                            <button class="btn btn-small" onclick="viewIoddInfo('${i.filename}')">Details</button>
+                            <button class="btn btn-small btn-danger" onclick="deleteIodd('${i.filename}')">Löschen</button>
                         </div>
                     </div>
                 `).join('');

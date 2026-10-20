@@ -3623,27 +3623,20 @@ class WebGUI:
             margin-top: 5px;
         }
     </style>
+    {% include '_sentinum_head.html' %}
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1><span class="logo-icon">⚡</span> mioty Application Center</h1>
-            <p>Einstellungen <span style="opacity: 0.6; font-size: 0.8em;">• powered by Sentinum</span></p>
-        </div>
-        
-        <div class="nav">
-            <a id="nav-dashboard" href="#" class="nav-item" onclick="navigateTo('/')">🏠 Dashboard</a>
-            <a id="nav-sensors" href="#" class="nav-item" onclick="navigateTo('/sensors')">📡 Sensoren</a>
-            <a id="nav-decoders" href="#" class="nav-item" onclick="navigateTo('/decoders')">🔧 Decoder</a>
-            <a id="nav-settings" href="#" class="nav-item active" onclick="navigateTo('/settings')">⚙️ Einstellungen</a>
-        </div>
+        {% set active_page = 'settings' %}
+        {% set page_subtitle = 'Einstellungen · Verbindungen & Integration' %}
+        {% include '_sentinum_header.html' %}
         
         <div class="content">
             <div id="alerts"></div>
             
             <!-- MQTT Konfiguration -->
             <div class="section">
-                <h2>🔌 MQTT Broker Konfiguration</h2>
+                <h2>MQTT Broker Konfiguration</h2>
                 <form id="settingsForm">
                     <div class="form-group">
                         <label for="mqtt_broker">MQTT Broker:</label>
@@ -3683,18 +3676,18 @@ class WebGUI:
                         <div class="help-text">Neue Sensoren automatisch in Home Assistant registrieren</div>
                     </div>
                     
-                    <button type="submit" class="btn">💾 Einstellungen speichern</button>
+                    <button type="submit" class="btn">Einstellungen speichern</button>
                 </form>
             </div>
             
             <div class="section">
-                <h2 class="section-title">📡 Protokoll-Filter</h2>
+                <h2 class="section-title">Protokoll-Filter</h2>
                 <p style="color: #666; margin-bottom: 20px;">Wähle welche Sensor-Technologien im Dashboard und in der Sensorliste angezeigt werden sollen. Deaktivierte Protokolle werden komplett ausgeblendet.</p>
                 
                 <div style="display: flex; gap: 20px; flex-wrap: wrap;">
                     <div style="flex: 1; min-width: 200px; background: #f8f9fa; border-radius: 12px; padding: 20px; border: 2px solid #ddd;">
                         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
-                            <span style="font-size: 28px;">📶</span>
+                            <span aria-hidden="true" style="color: var(--brand-text);">●</span>
                             <div>
                                 <strong style="font-size: 16px;">mioty</strong><br>
                                 <span style="color: #28a745; font-size: 12px;">● Immer aktiv</span>
@@ -3706,7 +3699,7 @@ class WebGUI:
                     <div style="flex: 1; min-width: 200px; background: #f8f9fa; border-radius: 12px; padding: 20px; border: 2px solid #ddd;" id="lora-card">
                         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
                             <div style="display: flex; align-items: center; gap: 12px;">
-                                <span style="font-size: 28px;">🌐</span>
+                                <span aria-hidden="true" style="color: var(--brand-text);">●</span>
                                 <div>
                                     <strong style="font-size: 16px;">LoRa / LoRaWAN</strong><br>
                                     <span id="lora-status-text" style="font-size: 12px; color: #28a745;">● Aktiv</span>
@@ -3723,7 +3716,7 @@ class WebGUI:
                     <div style="flex: 1; min-width: 200px; background: #f8f9fa; border-radius: 12px; padding: 20px; border: 2px solid #ddd;" id="oms-card">
                         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
                             <div style="display: flex; align-items: center; gap: 12px;">
-                                <span style="font-size: 28px;">🔌</span>
+                                <span aria-hidden="true" style="color: var(--brand-text);">●</span>
                                 <div>
                                     <strong style="font-size: 16px;">OMS / Zähler</strong><br>
                                     <span id="oms-status-text" style="font-size: 12px; color: #28a745;">● Aktiv</span>
@@ -3739,15 +3732,15 @@ class WebGUI:
                 </div>
                 
                 <div style="margin-top: 20px;">
-                    <button class="btn" onclick="saveProtocolFilter()">💾 Filter speichern</button>
-                    <span id="protocol-save-msg" style="margin-left: 15px; color: #28a745; display: none;">✅ Gespeichert</span>
+                    <button class="btn" onclick="saveProtocolFilter()">Filter speichern</button>
+                    <span id="protocol-save-msg" style="margin-left: 15px; color: #28a745; display: none;">Gespeichert</span>
                 </div>
             </div>
             
             
             <!-- Home Assistant MQTT Konfiguration -->
             <div class="section">
-                <h2>🏠 Home Assistant MQTT Broker</h2>
+                <h2>Home Assistant MQTT Broker</h2>
                 <form id="haSettingsForm">
                     <div class="form-group">
                         <label for="ha_mqtt_broker">HA MQTT Broker:</label>
@@ -3773,8 +3766,8 @@ class WebGUI:
                         <div class="help-text">Home Assistant MQTT Passwort (Leer lassen um nicht zu ändern)</div>
                     </div>
                     
-                    <button type="submit" class="btn">💾 HA MQTT speichern</button>
-                    <button type="button" class="btn btn-secondary" onclick="loadSettings()">🔄 Neu laden</button>
+                    <button type="submit" class="btn">HA MQTT speichern</button>
+                    <button type="button" class="btn btn-secondary" onclick="loadSettings()">Neu laden</button>
                 </form>
             </div>
             
@@ -3782,7 +3775,7 @@ class WebGUI:
 
             <!-- SCACI Direktverbindung -->
             <div class="section">
-                <h2>🔐 SCACI Direktverbindung (TLS)</h2>
+                <h2>SCACI Direktverbindung (TLS)</h2>
                 <p style="color: #666; font-size: 13px; margin-bottom: 15px;">
                     Direkte TLS-Verbindung zum mioty Service Center nach dem offiziellen SCACI-Standard v1.0.0
                     (zusätzlich zu MQTT). Benötigt ein CA-signiertes Client-Zertifikat.
@@ -3817,7 +3810,7 @@ class WebGUI:
                         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                             <input type="text" id="scaci_ac_eui" name="scaci_ac_eui" placeholder="aabbccddeeff0011" maxlength="16" pattern="[0-9a-fA-F]{16}" style="flex: 1; min-width: 200px; font-family: monospace;">
                             <input type="text" id="scaci_eui_name" placeholder="Name (z.B. Zuhause)" style="flex: 1; min-width: 140px;">
-                            <button type="button" class="btn btn-secondary" onclick="generateScaciEui()">🎲 EUI generieren</button>
+                            <button type="button" class="btn btn-secondary" onclick="generateScaciEui()">EUI generieren</button>
                         </div>
                         <div class="help-text">16 Hex-Zeichen ohne Trennzeichen. „EUI generieren" erstellt eine EUI mit AC-Präfix aus dem Namen + Zufallsteil.</div>
                     </div>
@@ -3829,31 +3822,31 @@ class WebGUI:
                         </label>
                     </div>
                     
-                    <button type="submit" class="btn">💾 SCACI speichern & verbinden</button>
+                    <button type="submit" class="btn">SCACI speichern & verbinden</button>
                 </form>
                 
                 <div style="margin-top: 25px; padding-top: 20px; border-top: 1px solid #eee;">
-                    <h3 style="margin-bottom: 10px;">🔑 Client-Zertifikate</h3>
+                    <h3 style="margin-bottom: 10px;">Client-Zertifikate</h3>
                     <p style="color: #666; font-size: 13px; margin-bottom: 10px;">
                         ZIP-Datei aus dem Service-Center-Generator hochladen (enthält ca_cert.pem, Zertifikat und privaten Schlüssel).
                         Speicherung unter certs/ac_&lt;eui&gt;/. Bitte zuerst die AC-EUI speichern.
                     </p>
                     <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                         <input type="file" id="scaciCertFile" accept=".zip">
-                        <button type="button" class="btn" onclick="uploadScaciCerts()">📤 Zertifikate hochladen</button>
+                        <button type="button" class="btn" onclick="uploadScaciCerts()">Zertifikate hochladen</button>
                     </div>
                 </div>
             </div>
             
             <!-- Verbindungsstatus -->
             <div class="section">
-                <h2>📡 Verbindungsstatus</h2>
+                <h2>Verbindungsstatus</h2>
                 <div id="connectionStatus" class="loading">Lade Verbindungsstatus...</div>
             </div>
             
             <!-- Über -->
             <div class="section">
-                <h2>ℹ️ Über</h2>
+                <h2>Über</h2>
                 <p><strong>mioty Application Center</strong></p>
                 <p>Version: <span class="code" style="font-weight: bold;">1.0.6.16</span></p>
                 <p style="color: #666; font-size: 13px;">BSSCI mioty Add-on für Home Assistant • powered by Sentinum</p>
@@ -4119,12 +4112,12 @@ class WebGUI:
                 let scLabel = '';
                 if (scOk) {
                     if (status.sc_connected) {
-                        scLabel = `Service Center: ✅ Verbunden via SCACI (${status.sc_host || 'TLS'})`;
+                        scLabel = `Service Center: Verbunden via SCACI (${status.sc_host || 'TLS'})`;
                     } else {
-                        scLabel = `Service Center: ✅ Verbunden via MQTT (${status.mqtt_broker || ''})`;
+                        scLabel = `Service Center: Verbunden via MQTT (${status.mqtt_broker || ''})`;
                     }
                 } else {
-                    scLabel = 'Service Center: ❌ Nicht verbunden';
+                    scLabel = 'Service Center: Nicht verbunden';
                 }
                 
                 const haMqttColor = status.ha_mqtt_connected ? '#28a745' : '#dc3545';
@@ -4170,12 +4163,12 @@ class WebGUI:
                 const s = await response.json();
                 const box = document.getElementById('scaciStatusBox');
                 if (!s.enabled) {
-                    box.innerHTML = '<span style="color: #666;">⚪ SCACI ist deaktiviert — Daten kommen über MQTT.</span>';
+                    box.innerHTML = '<span style="color: #666;">SCACI ist deaktiviert — Daten kommen über MQTT.</span>';
                     return;
                 }
                 const connColor = s.connected ? '#28a745' : '#dc3545';
                 const connText = s.connected ? 'Verbunden' : 'Nicht verbunden';
-                const certText = s.certs_present ? '✅ Zertifikate vorhanden' : '⚠️ Zertifikate fehlen';
+                const certText = s.certs_present ? 'Zertifikate vorhanden' : 'Zertifikate fehlen';
                 box.innerHTML = `
                     <div style="display: flex; align-items: center; margin-bottom: 6px;">
                         <div style="width: 12px; height: 12px; background: ${connColor}; border-radius: 50%; margin-right: 10px;"></div>

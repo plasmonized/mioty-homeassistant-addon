@@ -15,3 +15,14 @@ these operational priorities instead of its decoder-focused counters.
 **How to apply:** Preserve this hierarchy when extending the dashboard. Overall
 activity must include all technologies rather than silently becoming a mioty-only
 or list-filtered count.
+
+The user approved the compact refreshed dashboard hierarchy, but rejected
+restyling only its upper area while leaving the rest of the application visually
+inconsistent. All pages must share Sentinum's orange and dark-gray color world.
+
+**Why:** The user explicitly requested the colors of sentinum.de and consistency
+across the whole interface, not isolated dashboard styling.
+
+**How to apply:** Extend future visual changes to related tables, forms,
+navigation, dialogs and lower-page content. Preserve the operational hierarchy
+and functional behavior rather than introducing unrelated dashboard concepts.

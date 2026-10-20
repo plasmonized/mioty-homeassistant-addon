@@ -462,24 +462,17 @@
             font-weight: bold;
         }
     </style>
+    {% include '_sentinum_head.html' %}
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>📡 Sensor-Verwaltung</h1>
-            <p>mioty Application Center</p>
-        </div>
-        
-        <div class="nav">
-            <a href="javascript:void(0)" onclick="navigateTo('/')" class="nav-item">🏠 Dashboard</a>
-            <a href="javascript:void(0)" onclick="navigateTo('/sensors')" class="nav-item active">📡 Sensoren</a>
-            <a href="javascript:void(0)" onclick="navigateTo('/decoders')" class="nav-item">🔧 Decoder</a>
-            <a href="javascript:void(0)" onclick="navigateTo('/settings')" class="nav-item">⚙️ Einstellungen</a>
-        </div>
+        {% set active_page = 'sensors' %}
+        {% set page_subtitle = 'Sensorverwaltung · Registrierung & Konfiguration' %}
+        {% include '_sentinum_header.html' %}
         
         <div class="content">
             <div class="sensor-toolbar">
-                <h2 class="section-title" style="margin: 0; border: none;">🔑 Registrierte Sensoren</h2>
+                <h2 class="section-title" style="margin: 0; border: none;">Registrierte Sensoren</h2>
                 <div class="sensor-toolbar-actions">
                     <button class="add-sensor-btn" id="bulkReregisterBtn" onclick="reregisterAll()" style="background: #6c757d; margin-bottom: 0;">Alle mioty-Sensoren neu anlernen</button>
                     <button class="add-sensor-btn" onclick="showAddSensorModal()" style="margin-bottom: 0;">+ Neuer Sensor</button>
@@ -501,8 +494,8 @@
     <div id="sensorModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 id="modalTitle">📡 Sensor bearbeiten</h2>
-                <span class="close" onclick="closeSensorModal()">&times;</span>
+                <h2 id="modalTitle">Sensor bearbeiten</h2>
+                <button type="button" class="close" onclick="closeSensorModal()" aria-label="Dialog schließen">&times;</button>
             </div>
             
             <form id="sensorForm">
@@ -522,13 +515,13 @@
                 </div>
 
                 <div class="form-group" id="miotyNetworkKeyField">
-                    <label for="network_key">🔐 Network Key (32 Hex-Zeichen) *</label>
+                    <label for="network_key">Network Key (32 Hex-Zeichen) *</label>
                     <input type="text" id="network_key" name="network_key" maxlength="47" placeholder="z.B. 000102030405060708090a0b0c0d0e0f">
                     <small>Netzwerkschlüssel für die mioty-Kommunikation</small>
                 </div>
 
                 <div class="form-group" id="miotyApplicationKeyField">
-                    <label for="application_key">🔒 Application Key (32 Hex-Zeichen, optional)</label>
+                    <label for="application_key">Application Key (32 Hex-Zeichen, optional)</label>
                     <input type="text" id="application_key" name="application_key" maxlength="47" placeholder="z.B. ABCDABCDABCDABCDABCDABCDABCDABCD">
                     <small>Optionaler Schlüssel für AES-verschlüsselte Payloads</small>
                 </div>
@@ -543,7 +536,7 @@
                 </div>
 
                 <div class="metadata-section">
-                    <h4>📋 Metadaten</h4>
+                    <h4>Metadaten</h4>
                     
                     <div class="form-row">
                         <div class="form-group">
@@ -567,7 +560,7 @@
                         <input type="text" id="description" name="description" placeholder="z.B. Stromzähler im Hauptgebäude">
                     </div>
 
-                    <h4 style="margin-top: 20px;">📍 Standort</h4>
+                    <h4 style="margin-top: 20px;">Standort</h4>
                     
                     <div class="coordinates-row">
                         <div class="form-group">
@@ -589,7 +582,7 @@
                 </div>
 
                 <div style="margin-top: 25px; display: flex; gap: 10px;">
-                    <button type="submit" class="btn btn-success" style="flex: 1;">💾 Speichern</button>
+                    <button type="submit" class="btn btn-success" style="flex: 1;">Speichern</button>
                     <button type="button" class="btn btn-secondary" onclick="closeSensorModal()">Abbrechen</button>
                 </div>
             </form>
@@ -767,7 +760,7 @@
 
         function showAddSensorModal() {
             editingSensorProtocol = 'mioty';
-            document.getElementById('modalTitle').textContent = '📡 Neuer Sensor';
+            document.getElementById('modalTitle').textContent = 'Neuer Sensor';
             document.getElementById('sensor_mode').value = 'add';
             document.getElementById('sensorForm').reset();
             document.getElementById('sensor_eui_label').textContent = 'EUI (16 Hex-Zeichen) *';
@@ -791,7 +784,7 @@
                 document.getElementById('miotyNetworkKeyField').style.display = isMioty ? '' : 'none';
                 document.getElementById('miotyApplicationKeyField').style.display = isMioty ? '' : 'none';
                 document.getElementById('miotyBidirectionalField').style.display = isMioty ? '' : 'none';
-                document.getElementById('modalTitle').textContent = '✏️ Sensor bearbeiten';
+                document.getElementById('modalTitle').textContent = 'Sensor bearbeiten';
                 document.getElementById('sensor_mode').value = 'edit';
                 
                 document.getElementById('sensor_eui').value = sensor.eui || '';
@@ -864,14 +857,14 @@
                 const result = await response.json();
                 
                 if (response.ok) {
-                    alert(mode === 'add' ? '✅ Sensor erfolgreich hinzugefügt!' : '✅ Sensor erfolgreich aktualisiert!');
+                    alert(mode === 'add' ? 'Sensor erfolgreich hinzugefügt!' : 'Sensor erfolgreich aktualisiert!');
                     closeSensorModal();
                     loadSensors();
                 } else {
-                    alert('❌ Fehler: ' + (result.error || 'Unbekannter Fehler'));
+                    alert('Fehler: ' + (result.error || 'Unbekannter Fehler'));
                 }
             } catch (error) {
-                alert('❌ Fehler beim Speichern: ' + error.message);
+                alert('Fehler beim Speichern: ' + error.message);
             }
         });
 
@@ -891,7 +884,7 @@
                 
                 loadSensors();
             } catch (error) {
-                alert('❌ Fehler beim Löschen: ' + error.message);
+                alert('Fehler beim Löschen: ' + error.message);
             }
         }
 
@@ -921,14 +914,14 @@
                 const succeeded = allResults.filter(r => r.success).length;
                 const failed = allResults.filter(r => !r.success);
                 if (failed.length === 0) {
-                    alert(`✅ ${succeeded} Sensor(en) erfolgreich neu angelernt (vom Broker bestätigt)!`);
+                    alert(`${succeeded} Sensor(en) erfolgreich neu angelernt (vom Broker bestätigt)!`);
                 } else {
                     const details = failed.map(r => `• ${r.eui}: ${r.error}`).join('\n');
-                    alert(`⚠️ ${succeeded} von ${allResults.length} Sensor(en) neu angelernt.\n\nFehlgeschlagen:\n${details}`);
+                    alert(`${succeeded} von ${allResults.length} Sensor(en) neu angelernt.\n\nFehlgeschlagen:\n${details}`);
                 }
                 loadSensors();
             } catch (error) {
-                alert('❌ Fehler beim Neu-Anlernen: ' + error.message);
+                alert('Fehler beim Neu-Anlernen: ' + error.message);
             }
         }
 
