@@ -1,6 +1,6 @@
 # Overview
 
-Current add-on release: **1.0.6.16**. Includes Sentinum Cloud native decoded-message
+Current add-on release: **1.0.6.17**. Adds a unified orange/dark-gray UI and active-sensor, base-station and connection overview. Includes Sentinum Cloud native decoded-message
 support and the sensor list grouped and labelled by radio technology.
 
 The BSSCI mioty Home Assistant Integration bridges mioty IoT sensors with Home Assistant via MQTT, implementing the BSSCI protocol v1.0.0.0. Its purpose is to enable real-time sensor data collection, base station monitoring, and device management within the Home Assistant ecosystem. Key capabilities include automatic sensor discovery, bidirectional communication, and a German-localized user interface, aiming for seamless integration of mioty IoT networks into smart home environments.

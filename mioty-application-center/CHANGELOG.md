@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.0.6.17 — 2026-10-20
+### Oberfläche
+- Einheitliche Gestaltung in Orange und Dunkelgrau für Dashboard, Sensoren, Decoder und Einstellungen, inklusive Formularen und Dialogen.
+- Dashboard mit aktiven Sensoren über alle Funktechnologien, aktiven mioty-/LoRaWAN-Basisstationen und Status von Service Center, mioty-MQTT, Home-Assistant-MQTT und Sentinum Cloud.
+- Sentinum-Logo aus der Kopfzeile entfernt; Cloud-Anbindung mit weiß-orangefarbenem Logo auf schwarzem Hintergrund.
+- Auto-Kennzeichnung unter Sensoren horizontal und vertikal zentriert; OMS- und LoRa-Kacheln in den Einstellungen mit dunklem Hintergrund.
+- Gemeinsame Navigation und mobil angepasste Darstellung.
+
+### Behoben
+- Einbettungsfreigabe für die Replit-Entwicklungsvorschau angepasst; Schutz der regulären Add-on-Oberfläche bleibt erhalten.
+
 ## 1.0.6.16 — 2026-10-20
 ### Neu
 - Sensorübersicht nach Funktechnologie gruppiert: mioty, LoRaWAN, OMS / Wireless M-Bus und Mobilfunk, mit Kennzeichnung und Anzahl je Gruppe.
