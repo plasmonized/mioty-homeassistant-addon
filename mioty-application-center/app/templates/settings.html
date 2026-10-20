@@ -1,0 +1,403 @@
+<style>
+    #sentinum-cloud-section .sc-cloud-intro {
+        margin: -8px 0 20px;
+        color: #666;
+        line-height: 1.5;
+    }
+    #sentinum-cloud-section .sc-cloud-heading {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 18px;
+    }
+    #sentinum-cloud-section .sc-cloud-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        white-space: nowrap;
+        color: #555;
+        font-weight: 600;
+    }
+    #sentinum-cloud-section .sc-cloud-notice {
+        margin: 18px 0 22px;
+        padding: 13px 15px;
+        border-left: 4px solid #d7942b;
+        border-radius: 7px;
+        color: #5d4b2e;
+        background: #fff6e6;
+        line-height: 1.55;
+    }
+    #sentinum-cloud-section .sc-cloud-notice strong { color: #46391f; }
+    #sentinum-cloud-section .sc-cloud-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0 18px;
+    }
+    #sentinum-cloud-section .sc-cloud-full { grid-column: 1 / -1; }
+    #sentinum-cloud-section .sc-cloud-help {
+        display: block;
+        margin-top: 5px;
+        color: #666;
+        font-size: .9em;
+        line-height: 1.45;
+    }
+    #sentinum-cloud-section .sc-cloud-tls { color: #28754f; }
+    #sentinum-cloud-section .sc-cloud-clear {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        margin-top: 9px;
+        color: #667078;
+        font-size: .9em;
+        line-height: 1.4;
+    }
+    #sentinum-cloud-section .sc-cloud-clear input {
+        flex: 0 0 auto;
+        margin: 2px 0 0;
+    }
+    #sentinum-cloud-section .sc-cloud-topic-preview {
+        display: block;
+        margin-top: 7px;
+        color: #28754f;
+        font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+        font-size: .88em;
+        overflow-wrap: anywhere;
+    }
+    #sentinum-cloud-section .sc-cloud-status {
+        margin: 18px 0;
+        padding: 16px;
+        border: 1px solid #dce4e1;
+        border-radius: 10px;
+        background: #f5f8f6;
+    }
+    #sentinum-cloud-section .sc-cloud-status-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+    }
+    #sentinum-cloud-section .sc-cloud-status-head h3 {
+        margin: 0;
+        color: #39444a;
+        font-size: 1.05em;
+    }
+    #sentinum-cloud-section .sc-cloud-state {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 5px 10px;
+        border-radius: 20px;
+        color: #606b70;
+        background: #e6e9e9;
+        font-size: .83em;
+        font-weight: 700;
+    }
+    #sentinum-cloud-section .sc-cloud-state::before {
+        content: "";
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: currentColor;
+    }
+    #sentinum-cloud-section .sc-cloud-state.connected { color: #28754f; background: #e4f2e9; }
+    #sentinum-cloud-section .sc-cloud-state.connecting { color: #9a6b13; background: #fff0cc; }
+    #sentinum-cloud-section .sc-cloud-state.error { color: #a33d36; background: #fae7e4; }
+    #sentinum-cloud-section .sc-cloud-status-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px 20px;
+        margin-top: 15px;
+    }
+    #sentinum-cloud-section .sc-cloud-status-item { color: #707a80; font-size: .9em; }
+    #sentinum-cloud-section .sc-cloud-status-item strong {
+        display: block;
+        margin-top: 4px;
+        color: #374249;
+        font-size: 1.05em;
+    }
+    #sentinum-cloud-section .sc-cloud-error {
+        display: none;
+        margin: 13px 0 0;
+        padding: 10px 12px;
+        border-radius: 6px;
+        color: #8f312b;
+        background: #fce9e6;
+        line-height: 1.45;
+        overflow-wrap: anywhere;
+    }
+    #sentinum-cloud-section .sc-cloud-error.visible { display: block; }
+    #sentinum-cloud-section .sc-cloud-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    #sentinum-cloud-section .sc-cloud-message { color: #28754f; font-size: .92em; }
+    #sentinum-cloud-section .sc-cloud-message.error { color: #a33d36; }
+    #sentinum-cloud-section .sc-cloud-status-retry { margin: 12px 0 0; }
+    #sentinum-cloud-section input:disabled { opacity: .65; cursor: not-allowed; }
+    #sentinum-cloud-section button:disabled { opacity: .65; cursor: wait; }
+    #sentinum-cloud-section input:focus-visible,
+    #sentinum-cloud-section button:focus-visible {
+        outline: 3px solid rgba(255, 107, 53, .38);
+        outline-offset: 2px;
+    }
+    @media (max-width: 620px) {
+        #sentinum-cloud-section .sc-cloud-heading { flex-direction: column; }
+        #sentinum-cloud-section .sc-cloud-grid { grid-template-columns: 1fr; }
+        #sentinum-cloud-section .sc-cloud-full { grid-column: auto; }
+        #sentinum-cloud-section .sc-cloud-actions { align-items: flex-start; flex-direction: column; }
+    }
+</style>
+
+<section class="section" id="sentinum-cloud-section" aria-labelledby="sentinum-cloud-title">
+    <div class="sc-cloud-heading">
+        <div>
+            <h2 id="sentinum-cloud-title"><span class="section-icon">S</span>Sentinum Cloud · Mobilfunk</h2>
+            <p class="sc-cloud-intro">Mobilfunk-Sensoren über MQTT empfangen. Die vorhandenen Decoder bleiben unverändert nutzbar.</p>
+        </div>
+        <label class="sc-cloud-toggle" for="sc-cloud-enabled">
+            <span class="toggle-switch">
+                <input type="checkbox" id="sc-cloud-enabled" aria-label="Sentinum Cloud aktivieren">
+                <span class="toggle-slider"></span>
+            </span>
+            Aktiv
+        </label>
+    </div>
+
+    <div class="sc-cloud-notice">
+        <strong>MQTT-Zugangsdaten erforderlich.</strong>
+        Benutzername und Passwort werden von Sentinum separat für MQTT ausgestellt. Sie sind nicht Ihre Zugangsdaten für <em>my.sentinum</em>.
+        Diese Integration verwendet immer TLS; der Standardport ist 8883.
+    </div>
+
+    <form id="sentinum-cloud-form">
+        <div class="sc-cloud-grid">
+            <div class="form-group sc-cloud-full">
+                <label for="sc-cloud-broker">Broker:</label>
+                <input type="text" id="sc-cloud-broker" name="broker" value="broker.sentinum.de" autocomplete="url" required>
+            </div>
+            <div class="form-group">
+                <label for="sc-cloud-port">TLS-Port:</label>
+                <input type="number" id="sc-cloud-port" name="port" value="8883" min="1" max="65535" inputmode="numeric" required>
+                <small class="sc-cloud-help sc-cloud-tls">TLS ist für diese Verbindung immer aktiviert.</small>
+            </div>
+            <div class="form-group">
+                <label for="sc-cloud-username">MQTT-Benutzername:</label>
+                <input type="text" id="sc-cloud-username" name="username" autocomplete="username">
+            </div>
+            <div class="form-group sc-cloud-full">
+                <label for="sc-cloud-password">MQTT-Passwort:</label>
+                <input type="password" id="sc-cloud-password" name="password" autocomplete="new-password" placeholder="Unverändert lassen">
+                <small class="sc-cloud-help" id="sc-cloud-password-help">Das gespeicherte Passwort wird nicht angezeigt. Leer lassen, um es beizubehalten.</small>
+                <label class="sc-cloud-clear" for="sc-cloud-clear-password">
+                    <input type="checkbox" id="sc-cloud-clear-password">
+                    <span>Gespeichertes Passwort ausdrücklich löschen</span>
+                </label>
+            </div>
+            <div class="form-group sc-cloud-full">
+                <label for="sc-cloud-topic">Topic-Override (optional):</label>
+                <input type="text" id="sc-cloud-topic" name="topic" placeholder="Leer = automatisch">
+                <small class="sc-cloud-help">Leer lassen für das automatische Topic. Für ältere Konten können Sie z. B. <code>devices/&lt;username&gt;/+/+/+/up</code> eintragen.</small>
+                <output class="sc-cloud-topic-preview" id="sc-cloud-topic-preview" aria-live="polite">Automatisch: datahub/&lt;username&gt;/+/+/+/up</output>
+            </div>
+        </div>
+
+        <div class="sc-cloud-status" aria-labelledby="sc-cloud-status-title">
+            <div class="sc-cloud-status-head">
+                <h3 id="sc-cloud-status-title">Verbindungsstatus</h3>
+                <span class="sc-cloud-state" id="sc-cloud-state" role="status">Wird geladen</span>
+            </div>
+            <div class="sc-cloud-status-grid">
+                <div class="sc-cloud-status-item">Verbindung<strong id="sc-cloud-connected">—</strong></div>
+                <div class="sc-cloud-status-item">Empfangene Nachrichten<strong id="sc-cloud-messages">—</strong></div>
+                <div class="sc-cloud-status-item">Letzte Nachricht<strong id="sc-cloud-last-message">—</strong></div>
+                <div class="sc-cloud-status-item">Aktualisiert<strong id="sc-cloud-checked">—</strong></div>
+            </div>
+            <p class="sc-cloud-error" id="sc-cloud-status-error" role="alert"></p>
+            <button type="button" class="btn btn-secondary sc-cloud-status-retry" id="sc-cloud-retry-status">Status erneut laden</button>
+        </div>
+        <div class="sc-cloud-actions">
+            <button type="submit" class="btn" id="sc-cloud-save">Sentinum-Einstellungen speichern</button>
+            <span class="sc-cloud-message" id="sc-cloud-form-message" role="status" aria-live="polite"></span>
+        </div>
+    </form>
+</section>
+
+<script>
+    (() => {
+        const root = document.getElementById('sentinum-cloud-section');
+        if (!root) return;
+
+        const baseUrl = '{{ ingress_path }}' || '';
+        const apiUrl = (path) => `${baseUrl}${path}`;
+        const cacheBusterUrl = (path) => `${apiUrl(path)}?cb=${Date.now()}`;
+        const get = (id) => root.querySelector(`#${id}`);
+        const form = get('sentinum-cloud-form');
+        const enabledInput = get('sc-cloud-enabled');
+        const passwordInput = get('sc-cloud-password');
+        const clearPasswordInput = get('sc-cloud-clear-password');
+        const formMessage = get('sc-cloud-form-message');
+        let passwordConfigured = false;
+        let statusRequestInFlight = false;
+        let pollTimer = null;
+
+        function setFormDisabled(disabled) {
+            ['sc-cloud-broker', 'sc-cloud-port', 'sc-cloud-username', 'sc-cloud-password', 'sc-cloud-topic']
+                .forEach((id) => { get(id).disabled = disabled; });
+        }
+
+        function updateEnabledFields() {
+            setFormDisabled(!enabledInput.checked);
+        }
+
+        function updateTopicPreview() {
+            const topic = get('sc-cloud-topic').value.trim();
+            get('sc-cloud-topic-preview').textContent = topic
+                ? `Aktiver Override: ${topic}`
+                : 'Automatisch: datahub/<username>/+/+/+/up';
+        }
+
+        async function readJson(response) {
+            let body;
+            try { body = await response.json(); } catch (_) { body = {}; }
+            if (!response.ok) throw new Error(body.error || body.message || `HTTP ${response.status}`);
+            return body;
+        }
+
+        function showStatus(status) {
+            const state = status?.state || (status?.enabled ? 'connecting' : 'disabled');
+            const badge = get('sc-cloud-state');
+            const labels = { disabled: 'Deaktiviert', connecting: 'Verbindet', connected: 'Verbunden', error: 'Fehler' };
+            badge.className = `sc-cloud-state ${['connected', 'connecting', 'error'].includes(state) ? state : ''}`;
+            badge.textContent = labels[state] || 'Unbekannt';
+            get('sc-cloud-connected').textContent = status?.connected
+                ? 'Verbunden'
+                : (status?.enabled ? 'Nicht verbunden' : 'Deaktiviert');
+            get('sc-cloud-messages').textContent = Number.isFinite(Number(status?.messages_received))
+                ? String(status.messages_received)
+                : '0';
+            const lastMessage = status?.last_message ? new Date(status.last_message) : null;
+            get('sc-cloud-last-message').textContent = lastMessage && !Number.isNaN(lastMessage.getTime())
+                ? lastMessage.toLocaleString('de-DE')
+                : 'Noch keine Nachricht';
+            get('sc-cloud-checked').textContent = new Date().toLocaleTimeString('de-DE');
+            const error = get('sc-cloud-status-error');
+            if (status?.error) {
+                error.textContent = `Verbindungsfehler: ${status.error}`;
+                error.classList.add('visible');
+            } else {
+                error.textContent = '';
+                error.classList.remove('visible');
+            }
+        }
+
+        async function loadStatus() {
+            if (statusRequestInFlight) return;
+            statusRequestInFlight = true;
+            try {
+                const response = await fetch(cacheBusterUrl('/api/sentinum-cloud/status'), {
+                    credentials: 'include',
+                    headers: { 'Cache-Control': 'no-cache', 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                showStatus(await readJson(response));
+            } catch (error) {
+                const badge = get('sc-cloud-state');
+                badge.className = 'sc-cloud-state error';
+                badge.textContent = 'Status nicht verfügbar';
+                const statusError = get('sc-cloud-status-error');
+                statusError.textContent = `Status konnte nicht geladen werden: ${error.message}`;
+                statusError.classList.add('visible');
+            } finally {
+                statusRequestInFlight = false;
+            }
+        }
+
+        async function loadSettings() {
+            const retryButton = get('sc-cloud-retry-status');
+            retryButton.disabled = true;
+            try {
+                const response = await fetch(cacheBusterUrl('/api/sentinum-cloud'), {
+                    credentials: 'include',
+                    headers: { 'Cache-Control': 'no-cache', 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                const settings = await readJson(response);
+                enabledInput.checked = Boolean(settings.enabled);
+                get('sc-cloud-broker').value = settings.broker || 'broker.sentinum.de';
+                get('sc-cloud-port').value = settings.port || 8883;
+                get('sc-cloud-username').value = settings.username || '';
+                passwordConfigured = Boolean(settings.password);
+                passwordInput.value = '';
+                passwordInput.placeholder = passwordConfigured ? 'Gespeichertes Passwort vorhanden' : 'Passwort eingeben';
+                get('sc-cloud-password-help').textContent = passwordConfigured
+                    ? 'Passwort vorhanden, aber verborgen. Leer lassen, um es beizubehalten.'
+                    : 'MQTT-Zugangsdaten werden separat von Sentinum ausgestellt.';
+                get('sc-cloud-topic').value = settings.topic || '';
+                updateTopicPreview();
+                updateEnabledFields();
+                formMessage.textContent = '';
+                await loadStatus();
+            } catch (error) {
+                formMessage.textContent = `Einstellungen konnten nicht geladen werden: ${error.message}`;
+                formMessage.className = 'sc-cloud-message error';
+            } finally {
+                retryButton.disabled = false;
+            }
+        }
+
+        enabledInput.addEventListener('change', updateEnabledFields);
+        get('sc-cloud-topic').addEventListener('input', updateTopicPreview);
+        clearPasswordInput.addEventListener('change', () => {
+            if (clearPasswordInput.checked) passwordInput.value = '';
+        });
+        passwordInput.addEventListener('input', () => {
+            if (passwordInput.value) clearPasswordInput.checked = false;
+        });
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const saveButton = get('sc-cloud-save');
+            saveButton.disabled = true;
+            formMessage.className = 'sc-cloud-message';
+            formMessage.textContent = 'Wird gespeichert …';
+            const suppliedPassword = passwordInput.value;
+            const payload = {
+                enabled: enabledInput.checked,
+                broker: get('sc-cloud-broker').value.trim(),
+                port: Number(get('sc-cloud-port').value),
+                username: get('sc-cloud-username').value.trim(),
+                password: clearPasswordInput.checked ? '' : (suppliedPassword || (passwordConfigured ? '***' : '')),
+                topic: get('sc-cloud-topic').value.trim()
+            };
+            try {
+                const response = await fetch(apiUrl('/api/sentinum-cloud'), {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache, no-store', 'X-Requested-With': 'XMLHttpRequest' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await readJson(response);
+                if (!result.success) throw new Error(result.error || 'Speichern fehlgeschlagen.');
+                passwordConfigured = clearPasswordInput.checked ? false : (Boolean(suppliedPassword) || passwordConfigured);
+                passwordInput.value = '';
+                clearPasswordInput.checked = false;
+                passwordInput.placeholder = passwordConfigured ? 'Gespeichertes Passwort vorhanden' : 'Passwort eingeben';
+                formMessage.textContent = 'Sentinum-Cloud-Einstellungen gespeichert.';
+                if (result.status) showStatus(result.status);
+                await loadStatus();
+            } catch (error) {
+                formMessage.textContent = `Speichern fehlgeschlagen: ${error.message}`;
+                formMessage.className = 'sc-cloud-message error';
+            } finally {
+                saveButton.disabled = false;
+            }
+        });
+
+        get('sc-cloud-retry-status').addEventListener('click', loadStatus);
+        updateEnabledFields();
+        loadSettings();
+        pollTimer = window.setInterval(loadStatus, 15000);
+        window.addEventListener('pagehide', () => {
+            if (pollTimer !== null) window.clearInterval(pollTimer);
+        }, { once: true });
+    })();
+</script>

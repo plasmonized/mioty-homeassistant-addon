@@ -3,3 +3,4 @@
 - [SCACI protocol quirks](scaci-protocol.md) — framing "MIOTYA01"+LE size, con uses opId 0, dlDataRes is answered by txDataResRsp, 3-way req/Rsp/Cmp handshake.
 - [mioty Blueprint format](mioty-blueprint-format.md) — sizes in BITS, conditions use JS syntax (&&/||/!) needing translation, payload fields can carry condition/hidden; never eval decoder strings — use AST-based safe_eval_expr.
 - [Dual sensor metadata stores](sensor-metadata-stores.md) — metadata lives in sensor_configs.json (sensors page) AND manual_sensor_metadata.json (dashboard); EUI keys must be uppercased on save AND load.
+- [Sentinum Datahub docs](sentinum-datahub-docs.md) — older MQTT web examples conflict with the newer TLS-only Datahub 2.0 guide; subscribe only to permitted telemetry topics.

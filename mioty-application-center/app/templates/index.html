@@ -425,6 +425,17 @@
             return `${BASE_URL}${path}?cb=${timestamp}&t=${random}`;
         }
 
+        function escapeHtml(value) {
+            return String(value).replace(/[&<>"']/g, character => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            })[character]);
+        }
+
+        function sensorTypeLabel(sensor) {
+            const type = String(sensor?.type || sensor?.sensor_type || '').toLowerCase();
+            return type === 'cellular' ? 'Mobilfunk / Sentinum Cloud' : (sensor?.sensor_type || sensor?.type || 'Unbekannt');
+        }
+
         // Daten laden
         async function loadSensors() {
             try {
@@ -439,7 +450,7 @@
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <div>
                                 <strong>EUI:</strong> ${sensor.eui}<br>
-                                <strong>Typ:</strong> ${sensor.sensor_type}
+                                <strong>Typ:</strong> ${sensorTypeLabel(sensor)}
                             </div>
                             <button onclick="toggleMetadata('sensor-${sensor.eui}')" style="border: none; background: #28a745; color: white; padding: 5px 10px; border-radius: 3px; cursor: pointer;">📋 Metadaten</button>
                         </div>
@@ -553,7 +564,7 @@
             const sensorHtml = `
                 <div style="background: #f8f9fa; padding: 15px; margin: 10px 0; border-radius: 8px; border-left: 4px solid #28a745;">
                     <strong>EUI:</strong> ${demoSensor.eui}<br>
-                    <strong>Typ:</strong> ${demoSensor.sensor_type}<br>
+                    <strong>Typ:</strong> ${sensorTypeLabel(demoSensor)}<br>
                     <strong>Letztes Update:</strong> ${demoSensor.last_update}<br>
                     <div style="margin-top: 10px; padding: 8px; background: #d4edda; border-radius: 4px; border-left: 3px solid #28a745;">
                         <small><strong>✅ Demo-Sensor:</strong> Metadaten erfolgreich gesetzt</small>
@@ -790,6 +801,9 @@
                             <div style="display: flex; justify-content: space-between; align-items: center;">
                                 <div>
                                     <strong style="font-size: 1.1em; color: #007bff;">📡 ${sensor.eui}</strong>
+                                    ${(String(sensor.type || sensor.sensor_type || '').toLowerCase() === 'cellular') ? `
+                                        <span style="background: #e8f3ef; color: #25634b; padding: 3px 8px; border-radius: 10px; font-size: 0.8em; margin-left: 8px;">Mobilfunk / Sentinum Cloud</span>
+                                    ` : ''}
                                     <span style="background: #007bff; color: white; padding: 2px 6px; border-radius: 10px; font-size: 0.8em; margin-left: 10px;">
                                         ${sensor.message_count} Nachrichten
                                     </span>
@@ -821,7 +835,7 @@
                                     <div style="background: #d4edda; padding: 8px; border-radius: 4px; border: 1px solid #c3e6cb;">
                                         <div style="font-size: 0.85em; color: #155724;">
                                             <strong>📊 Interpretierte Daten:</strong><br>
-                                            <pre style="margin: 5px 0 0 0; white-space: pre-wrap; font-family: monospace; font-size: 0.8em;">${JSON.stringify(msg.decoded_data, null, 2)}</pre>
+                                            <pre style="margin: 5px 0 0 0; white-space: pre-wrap; font-family: monospace; font-size: 0.8em;">${escapeHtml(JSON.stringify(msg.decoded_data, null, 2))}</pre>
                                         </div>
                                     </div>
                                 ` : `

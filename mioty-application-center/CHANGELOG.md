@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.0.6.15 — 2026-10-20
+### Neu
+- Sentinum Cloud / Datahub für Mobilfunk-Sensoren über eine separate MQTT-Verbindung mit verpflichtender TLS-Zertifikatsprüfung.
+- Einstellungen für Aktivierung, Broker, Port, Benutzername, Passwort und Kunden-Topic direkt in der bestehenden Oberfläche; Änderungen greifen ohne Add-on-Neustart.
+- Vollständiges Deaktivieren ohne Cloud-Client oder Hintergrundverbindung; mioty-, SCACI- und Home-Assistant-Verbindungen bleiben unabhängig.
+- Mobilfunksensoren erscheinen mit ihrer IMEI in der Sensorübersicht und den Live-Daten; Rohdaten nutzen die vorhandenen Sentinum-Decoder mit automatischer Produktzuordnung. Manuelle Zuweisungen bleiben erhalten.
+- Verbindungs-/Abonnementstatus, Fehlermeldungen, Nachrichtenanzahl und letzter Empfang sichtbar.
+- Datahub-2.0-Topics und Legacy-Telemetrie-Topics unterstützt; LoRa-/mioty-Geräte desselben Cloud-Kontos werden nicht doppelt importiert.
+
+### Sicherheit und Tests
+- Cloud-Passwörter werden in API-Antworten maskiert und nicht protokolliert. Einstellungsdateien werden atomar mit Dateirechten 0600 gespeichert.
+- Offline-Regressionstests für MQTT-Lebenszyklus, TLS, Validierung, Passworterhalt, Abschalten, Eos-Dekodierung sowie Dashboard-/Home-Assistant-Ausgabe.
+
 ## 1.0.6.14 — 2026-07-30
 ### Neu
 - 📦 **Alle Sentinum-Blueprints fest eingebaut:** Eos, Febris, Aion, Apollon, Hyperion und Juno werden jetzt mit dem Add-on ausgeliefert und beim Start automatisch installiert — kein manueller Upload mehr nötig. Eigene hochgeladene Decoder bleiben unberührt

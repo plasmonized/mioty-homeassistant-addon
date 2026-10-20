@@ -7,10 +7,12 @@ import logging
 import json
 import os
 import time
+import threading
 from typing import Any, Dict
 from flask import Flask, render_template, render_template_string, request, jsonify, redirect, url_for
 from flask_cors import CORS
 from settings_manager import SettingsManager
+from sentinum_cloud import cloud_settings, validate_settings, PREFIX as CLOUD_PREFIX
 from service_center_api import create_service_center_client, ServiceCenterClient
 
 
@@ -21,6 +23,7 @@ class WebGUI:
         """Initialisiere Web GUI."""
         self.port = port
         self.addon = addon_instance
+        self._cloud_settings_lock = threading.Lock()
         
         # REPARIERT: Absoluter Pfad für Add-on Umgebung
         # Persistente Speicherung in /data für Home Assistant Add-on
@@ -206,7 +209,7 @@ class WebGUI:
             
             # KRITISCH: Verwende IMMER die aktuelle externe Template-Datei
             if index_exists:
-                logging.info("✅ Verwende AKTUELLE index.html Template-Datei (Version 1.0.6.14)")
+                logging.info("✅ Verwende AKTUELLE index.html Template-Datei (Version 1.0.6.15)")
                 return render_template('index.html', ingress_path=ingress_path)
             else:
                 logging.error("❌ CRITICAL ERROR: index.html Template-Datei nicht gefunden!")
@@ -320,7 +323,8 @@ class WebGUI:
 
                 sensor_info = {
                     'eui': eui,
-                    'sensor_type': 'mioty IoT Sensor',
+                    'sensor_type': 'Mobilfunk / Sentinum Cloud' if sensor_type == 'cellular' else 'mioty IoT Sensor',
+                    'type': sensor_type,
                     'last_update': self._format_timestamp(data.get('last_seen', 0)),
                     'snr': snr_display,
                     'rssi': rssi_display,
@@ -464,8 +468,8 @@ class WebGUI:
                         'time_ago': self._get_time_ago(msg.get('timestamp', 0)),
                         'decoder': msg.get('decoder_name', 'No Decoder'),
                         'signal_quality': msg.get('signal_quality', 'Unknown'),
-                        'rssi': f"{msg.get('rssi', 'N/A')} dBm" if msg.get('rssi') != 'N/A' else 'N/A',
-                        'snr': f"{msg.get('snr', 'N/A')} dB" if msg.get('snr') != 'N/A' else 'N/A',
+                        'rssi': f"{msg['rssi']} dBm" if msg.get('rssi') not in (None, 'N/A') else 'N/A',
+                        'snr': f"{msg['snr']} dB" if msg.get('snr') not in (None, 'N/A') else 'N/A',
                         'raw_data': msg.get('raw_data', []),
                         'raw_hex': ''.join([f'{b:02X}' for b in msg.get('raw_data', [])]) if msg.get('raw_data') else '',
                         'decoded_data': msg.get('decoded_data'),
@@ -475,6 +479,7 @@ class WebGUI:
                 
                 formatted_result['sensors'].append({
                     'eui': sensor_data.get('eui', 'Unknown'),
+                    'type': sensor_type,
                     'message_count': sensor_data.get('message_count', 0),
                     'messages': formatted_messages
                 })
@@ -1495,12 +1500,52 @@ class WebGUI:
                     'ha_mqtt_password': ''
                 }
                 logging.warning("⚠️ SETTINGS: Fallback zu Standard-Einstellungen")
+            settings[CLOUD_PREFIX + 'password'] = '***' if settings.get(CLOUD_PREFIX + 'password') else ''
             return jsonify(settings)
+
+        @self.app.route('/api/sentinum-cloud', methods=['GET', 'POST'])
+        def sentinum_cloud_settings():
+            """Manage only the optional cloud transport, without restarting mioty."""
+            with self._cloud_settings_lock:
+                current = cloud_settings(self.settings.get_all_settings())
+                if request.method == 'GET':
+                    current['password'] = '***' if current['password'] else ''
+                    response = jsonify(current)
+                    response.headers['Cache-Control'] = 'no-store'
+                    return response
+                data = request.get_json(silent=True)
+                try:
+                    updated = validate_settings(data, current)
+                except ValueError as exc:
+                    return jsonify({"error": str(exc)}), 400
+                if not self.addon or not hasattr(self.addon, 'restart_sentinum_cloud'):
+                    return jsonify({"error": "Add-on nicht verfügbar."}), 503
+                changes = {CLOUD_PREFIX + key: value for key, value in updated.items()}
+                if not self.settings.update_settings(changes):
+                    return jsonify({"error": "Cloud-Einstellungen konnten nicht gespeichert werden."}), 500
+                self.addon.config.update(changes)
+                self.addon.restart_sentinum_cloud()
+                return jsonify({"success": True, "status": self.addon.sentinum_cloud.status()})
+
+        @self.app.route('/api/sentinum-cloud/status')
+        def sentinum_cloud_status():
+            cloud = getattr(self.addon, 'sentinum_cloud', None)
+            status = cloud.status() if cloud else {
+                'enabled': False, 'connected': False, 'state': 'disabled',
+                'error': None, 'messages_received': 0, 'last_message': None,
+            }
+            response = jsonify(status)
+            response.headers['Cache-Control'] = 'no-store'
+            return response
         
         @self.app.route('/api/settings', methods=['POST'])
         def update_settings():
             """API: Einstellungen aktualisieren."""
             data = request.get_json()
+            if not isinstance(data, dict):
+                return jsonify({"error": "Einstellungen müssen ein JSON-Objekt sein."}), 400
+            # Cloud settings have their own validation and lifecycle endpoint.
+            data = {k: v for k, v in data.items() if not k.startswith(CLOUD_PREFIX)}
             
             # Validierung
             required_fields = ['mqtt_broker', 'mqtt_port', 'base_topic']
@@ -2259,7 +2304,7 @@ class WebGUI:
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>mioty Application Center für Homeassistant v1.0.6.14</title>
+    <title>mioty Application Center für Homeassistant v1.0.6.15</title>
     <style>
         * {
             margin: 0;
@@ -3295,7 +3340,7 @@ class WebGUI:
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>mioty Application Center Einstellungen v1.0.6.14</title>
+    <title>mioty Application Center Einstellungen v1.0.6.15</title>
     <style>
         * {
             margin: 0;
@@ -3687,6 +3732,8 @@ class WebGUI:
                 </form>
             </div>
             
+            {% include 'settings.html' %}
+
             <!-- SCACI Direktverbindung -->
             <div class="section">
                 <h2>🔐 SCACI Direktverbindung (TLS)</h2>
@@ -3762,7 +3809,7 @@ class WebGUI:
             <div class="section">
                 <h2>ℹ️ Über</h2>
                 <p><strong>mioty Application Center</strong></p>
-                <p>Version: <span class="code" style="font-weight: bold;">1.0.6.14</span></p>
+                <p>Version: <span class="code" style="font-weight: bold;">1.0.6.15</span></p>
                 <p style="color: #666; font-size: 13px;">BSSCI mioty Add-on für Home Assistant • powered by Sentinum</p>
             </div>
         </div>

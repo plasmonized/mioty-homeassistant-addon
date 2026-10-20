@@ -6,6 +6,8 @@ Verwaltet lokale Konfigurationseinstellungen
 import json
 import logging
 import os
+import tempfile
+import threading
 from typing import Dict, Any, Optional
 
 
@@ -22,6 +24,7 @@ class SettingsManager:
                 config_file = 'settings.json'  # Fallback für Entwicklung
         self.config_file = config_file
         self.settings = {}
+        self._lock = threading.RLock()
         self.load_settings()
     
     def load_settings(self):
@@ -67,18 +70,30 @@ class SettingsManager:
     
     def save_settings(self):
         """Speichere Einstellungen in Datei."""
+        temporary_path = None
         try:
             # Verzeichnis erstellen falls es nicht existiert (nur wenn Verzeichnis vorhanden)
             if os.path.dirname(self.config_file):
                 os.makedirs(os.path.dirname(self.config_file), exist_ok=True)
             
-            with open(self.config_file, 'w') as f:
-                json.dump(self.settings, f, indent=2)
+            # Credentials belong only to the add-on user. Atomic replacement
+            # prevents a failed save from truncating all integration settings.
+            with self._lock:
+                directory = os.path.dirname(os.path.abspath(self.config_file))
+                fd, temporary_path = tempfile.mkstemp(prefix='.settings-', suffix='.tmp', dir=directory)
+                with os.fdopen(fd, 'w') as f:
+                    json.dump(self.settings, f, indent=2)
+                    f.flush()
+                    os.fsync(f.fileno())
+                os.replace(temporary_path, self.config_file)
             logging.info("Einstellungen gespeichert")
             return True
         except Exception as e:
             logging.error(f"Fehler beim Speichern der Einstellungen: {e}")
             return False
+        finally:
+            if temporary_path and os.path.exists(temporary_path):
+                os.unlink(temporary_path)
     
     def get_setting(self, key: str, default=None):
         """Hole einzelne Einstellung."""
@@ -86,13 +101,17 @@ class SettingsManager:
     
     def set_setting(self, key: str, value: Any):
         """Setze einzelne Einstellung."""
-        self.settings[key] = value
-        return self.save_settings()
+        return self.update_settings({key: value})
     
     def update_settings(self, new_settings: Dict[str, Any]):
         """Aktualisiere mehrere Einstellungen."""
-        self.settings.update(new_settings)
-        return self.save_settings()
+        with self._lock:
+            previous = self.settings.copy()
+            self.settings.update(new_settings)
+            if self.save_settings():
+                return True
+            self.settings = previous
+            return False
     
     def get_all_settings(self) -> Dict[str, Any]:
         """Hole alle Einstellungen."""

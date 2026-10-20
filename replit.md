@@ -10,6 +10,17 @@ Preferred communication style: Simple, everyday language.
 
 # System Architecture
 
+## Sentinum Cloud (release 1.0.6.15)
+
+Optional independent MQTT/TLS input for cellular sensors, configured on the existing
+settings page. See `mioty-application-center/SENTINUM_CLOUD.md` for setup,
+supported messages and offline tests. Defaults to disabled, with no cloud client or
+worker running. Existing mioty/SCACI/HA connections are unaffected.
+
+The user confirms that cellular Sentinum sensors use the same payload and decoders
+as their LoRa/mioty equivalents. Reuse the existing decoder engine rather than
+creating separate cellular decoders. Preserve manual decoder assignments.
+
 ## Add-on Architecture
 - **Docker Containerization**: Implemented as a Home Assistant Add-on with Docker.
 - **Flask Web Application**: Modern web-based GUI with an orange/gray color scheme for all management tasks.

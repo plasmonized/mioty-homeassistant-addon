@@ -20,6 +20,7 @@ from bssci_client import BSSCIClient
 from web_gui import WebGUI
 from decoder_manager import DecoderManager
 from settings_manager import SettingsManager
+from sentinum_cloud import SentinumCloudClient, cloud_settings, PREFIX as CLOUD_PREFIX
 
 class BSSCIAddon:
     """Hauptklasse für das BSSCI mioty Add-on."""
@@ -33,6 +34,8 @@ class BSSCIAddon:
         self.mqtt_manager = None
         self.bssci_client = None
         self.scaci_client = None
+        self.sentinum_cloud = None
+        self._cloud_lifecycle_lock = threading.Lock()
         self.web_gui = None
         self.decoder_manager = None
         
@@ -99,6 +102,7 @@ class BSSCIAddon:
                 'scaci_ac_eui': saved_settings.get('scaci_ac_eui', ''),
                 'scaci_tls_insecure': bool(saved_settings.get('scaci_tls_insecure', False))
             }
+            config.update({CLOUD_PREFIX + key: value for key, value in cloud_settings(saved_settings).items()})
             return config
         except Exception as e:
             logging.warning(f"Konnte gespeicherte Einstellungen nicht laden: {e}, verwende Environment Variables")
@@ -159,6 +163,7 @@ class BSSCIAddon:
             
             # MQTT verbinden
             self.mqtt_manager.connect()
+            self.restart_sentinum_cloud()
             
             # Web GUI in separatem Thread starten
             web_thread = threading.Thread(target=self.web_gui.run, daemon=True)
@@ -191,6 +196,26 @@ class BSSCIAddon:
         finally:
             self.shutdown()
     
+    def restart_sentinum_cloud(self):
+        """Apply cloud settings independently from the existing MQTT connections."""
+        with self._cloud_lifecycle_lock:
+            if self.sentinum_cloud:
+                self.sentinum_cloud.stop()
+            self.sentinum_cloud = SentinumCloudClient(
+                cloud_settings(self.config), self._handle_sentinum_cloud_data)
+            self.sentinum_cloud.start()
+
+    def _handle_sentinum_cloud_data(self, sensor_id, data):
+        """Reuse manually assigned decoders; otherwise select the built-in product decoder."""
+        if self.decoder_manager and data.get("data"):
+            assignments = self.decoder_manager.get_sensor_assignments().get('assignments', {})
+            decoder_name = f"sentinum_{data['cloud_product']}_blueprint"
+            available = self.decoder_manager.payload_decoder.decoder_files
+            if sensor_id not in assignments and decoder_name in available:
+                if not self.decoder_manager.assign_decoder_to_sensor(sensor_id, decoder_name):
+                    return False
+        return self.handle_sensor_data(sensor_id, data)
+
     def get_scaci_cert_paths(self) -> Dict[str, str]:
         """Ermittle Zertifikatspfade für SCACI (certs/ac_<eui>/)."""
         import re
@@ -468,7 +493,7 @@ class BSSCIAddon:
             # Signal Quality berechnen
             rssi = data.get('rssi', 0)
             snr = data.get('snr', 0)
-            signal_quality = self.get_signal_quality(snr, rssi)
+            signal_quality = self.get_signal_quality(snr, rssi) if snr is not None and rssi is not None else 'Unbekannt'
             
             # Payload dekodieren - Prüfe verschiedene Formate
             raw_payload = ""
@@ -492,7 +517,7 @@ class BSSCIAddon:
                 raw_payload = ''.join(f'{b:02X}' for b in payload_bytes)
                 logging.info(f"   📦 Payload-Format: payload array")
             
-            decoded_payload = None
+            decoded_payload = data.get('cloud_decoded')
             
             logging.info(f"📊 ✅ SENSOR-DATEN EMPFANGEN: {sensor_eui}")
             logging.info(f"   📡 RSSI: {rssi} dBm, SNR: {snr} dB")
@@ -547,7 +572,10 @@ class BSSCIAddon:
                 'timestamp': current_timestamp,
                 'last_seen': current_time,
                 'status': 'active',
-                'type': (data.get('type') or 'mioty').lower()
+                'type': (data.get('type') or 'mioty').lower(),
+                'source': data.get('source'),
+                'cloud_device_id': data.get('cloud_device_id'),
+                'cloud_product': data.get('cloud_product')
             }
             
             # Home Assistant Discovery/Update
@@ -572,14 +600,17 @@ class BSSCIAddon:
                 'snr': snr,
                 'signal_quality': signal_quality
             }
+            live_message['type'] = self.sensors[sensor_eui]['type']
             
             # Thread-safe Live-Message speichern
             self._add_live_message(sensor_eui, live_message)
             
             logging.info(f"💾 Live-Nachricht für {sensor_eui} gespeichert (Sensoren: {len(self.live_sensors)})")
+            return True
             
         except Exception as e:
             logging.error(f"Fehler beim Verarbeiten der Sensor-Daten für {sensor_eui}: {e}")
+            return False
     
     def handle_sensor_data_old(self, sensor_eui: str, data: Dict[str, Any]):
         """Alte handle_sensor_data Methode (Backup)."""
@@ -725,8 +756,16 @@ class BSSCIAddon:
             "model": "mioty IoT Sensor",
             "manufacturer": "Unknown",
             "serial_number": sensor_eui,  # ✅ EUI als Seriennummer in Home Assistant anzeigen
-            "sw_version": "1.0.6.14"
+            "sw_version": "1.0.6.15"
         }
+        sensor = self.sensors.get(sensor_eui, {})
+        if sensor.get('source') == 'sentinum_cloud':
+            product = sensor.get('cloud_product', 'Sensor').capitalize()
+            device_info.update({
+                "manufacturer": "Sentinum",
+                "model": product,
+                "name": f"Sentinum {product} {sensor_eui}",
+            })
         
         # Prüfe manuelle Metadaten zuerst
         try:
@@ -765,7 +804,7 @@ class BSSCIAddon:
                                 "name": adapter_name,
                                 "model": iodd_device_info.get('device_name', 'IO-Link Device'),
                                 "manufacturer": iodd_device_info.get('vendor_name', 'IO-Link'),
-                                "sw_version": "1.0.6.14"
+                                "sw_version": "1.0.6.15"
                             })
                             logging.info(f"🔌 IO-Link Adapter {sensor_eui}: {device_info['manufacturer']} - {device_info['model']}")
                             return device_info
@@ -775,7 +814,7 @@ class BSSCIAddon:
                         "name": adapter_name,
                         "model": "mioty-io-link Adapter",
                         "manufacturer": "IO-Link",
-                        "sw_version": "1.0.6.14"
+                        "sw_version": "1.0.6.15"
                     })
                     return device_info
         
@@ -855,7 +894,7 @@ class BSSCIAddon:
             "model": "mioty Base Station",
             "manufacturer": "Unknown",
             "serial_number": bs_eui,  # ✅ EUI als Seriennummer in Home Assistant anzeigen
-            "sw_version": "1.0.6.14"
+            "sw_version": "1.0.6.15"
         }
         
         # Prüfe manuelle Metadaten zuerst
@@ -1436,7 +1475,7 @@ class BSSCIAddon:
             "value_template": "{{ value_json.snr }}"
         }
         sensor_configs["eui"] = {
-            "name": "EUI (Serial Number)",
+            "name": "IMEI (Serial Number)" if data.get('type') == 'cellular' else "EUI (Serial Number)",
             "icon": "mdi:identifier",
             "value_template": "{{ value_json.sensor_eui }}"
         }
@@ -1505,6 +1544,9 @@ class BSSCIAddon:
             "receive_time": self.format_timestamp(data.get('rxTime')),
             "message_counter": data.get('cnt'),
             "decoder_used": decoded_payload.get('decoder_name', 'Generic mioty'),
+            "source": data.get('source'),
+            "protocol": data.get('type'),
+            "cloud_device_id": data.get('cloud_device_id'),
             **decoded_data  # Alle dekodierten Messwerte hinzufügen
         }
         
@@ -1533,6 +1575,8 @@ class BSSCIAddon:
             # Neue Settings laden
             old_config = self.config.copy()
             self.config = self.load_config()
+            if cloud_settings(old_config) != cloud_settings(self.config):
+                self.restart_sentinum_cloud()
             
             # Prüfen ob MQTT Settings geändert wurden
             mqtt_changed = (
@@ -1730,6 +1774,8 @@ class BSSCIAddon:
         logging.info("Beende BSSCI mioty Add-on...")
         
         self.running = False
+        if self.sentinum_cloud:
+            self.sentinum_cloud.stop()
         
         if self.mqtt_manager:
             self.mqtt_manager.disconnect()
