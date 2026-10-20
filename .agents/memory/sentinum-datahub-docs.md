@@ -32,3 +32,14 @@ the Sentinum logo instead of a generic “S”.
 
 **How to apply:** Distinguish the cloud's capabilities from any currently
 implemented transport filtering; changing branding alone does not expand ingestion.
+
+## Fixed connection address
+
+The user wants the Sentinum broker and TLS port to be fixed, not editable;
+only credentials and the customer topic should be entered.
+
+**Why:** The user states that Sentinum has one cloud address and requested
+non-editable broker and TLS-port fields.
+
+**How to apply:** Keep the endpoint `broker.sentinum.de:8883` fixed in the
+configuration UI and server validation.

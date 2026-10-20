@@ -102,6 +102,13 @@ class NormalizationTests(unittest.TestCase):
 
 
 class LifecycleTests(unittest.TestCase):
+    def test_cloud_endpoint_is_fixed(self):
+        settings = cloud_settings({PREFIX + "broker": "old.example", PREFIX + "port": 1883})
+        self.assertEqual((settings["broker"], settings["port"]), ("broker.sentinum.de", 8883))
+        for overrides in ({"broker": "other.example"}, {"port": 1883}):
+            with self.subTest(overrides=overrides), self.assertRaises(ValueError):
+                validate_settings(overrides, DEFAULTS)
+
     def test_disabled_creates_no_client_or_network(self):
         with patch("sentinum_cloud.mqtt.Client") as factory:
             client = SentinumCloudClient(DEFAULTS, MagicMock())
@@ -266,6 +273,8 @@ class PipelineAndApiTests(unittest.TestCase):
         response = self.web.get("/settings", headers={"X-Ingress-Path": "/api/hassio_ingress/test"})
         self.assertEqual(response.status_code, 200)
         html = response.get_data(as_text=True)
+        for field in ("broker", "port"):
+            self.assertRegex(html, rf'<input[^>]+id="sc-cloud-{field}"[^>]+readonly')
         for token in ("sentinum-cloud-form", "scaciSettingsForm", "haSettingsForm",
                       "/api/hassio_ingress/test"):
             self.assertIn(token, html)

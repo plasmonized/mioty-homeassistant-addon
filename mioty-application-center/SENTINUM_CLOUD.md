@@ -5,8 +5,9 @@
 Unter **Einstellungen → Sentinum Cloud**:
 
 1. Die Verbindung aktivieren.
-2. Broker `broker.sentinum.de`, Port `8883` sowie die von Sentinum bereitgestellten
-   MQTT-Zugangsdaten eintragen. Diese sind unabhängig vom my.sentinum.de-Login.
+2. Die von Sentinum bereitgestellten MQTT-Zugangsdaten eintragen. Broker
+   `broker.sentinum.de` und TLS-Port `8883` sind fest vorgegeben und nicht
+   bearbeitbar. Die Zugangsdaten sind unabhängig vom my.sentinum.de-Login.
 3. Das Topic leer lassen, wenn der MQTT-Benutzername dem Kunden-Topic entspricht.
    Dann wird `datahub/<username>/+/+/+/up` abonniert.
 4. Falls erforderlich, das konkrete Kunden-Topic eintragen, etwa

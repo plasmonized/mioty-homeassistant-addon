@@ -178,18 +178,18 @@
     <div class="sc-cloud-notice">
         <strong>MQTT-Zugangsdaten erforderlich.</strong>
         Benutzername und Passwort werden von Sentinum separat für MQTT ausgestellt. Sie sind nicht Ihre Zugangsdaten für <em>my.sentinum</em>.
-        Diese Integration verwendet immer TLS; der Standardport ist 8883.
+        Diese Integration verwendet immer TLS. Broker und Port sind fest vorgegeben.
     </div>
 
     <form id="sentinum-cloud-form">
         <div class="sc-cloud-grid">
             <div class="form-group sc-cloud-full">
                 <label for="sc-cloud-broker">Broker:</label>
-                <input type="text" id="sc-cloud-broker" name="broker" value="broker.sentinum.de" autocomplete="url" required>
+                <input type="text" id="sc-cloud-broker" value="broker.sentinum.de" readonly aria-readonly="true">
             </div>
             <div class="form-group">
                 <label for="sc-cloud-port">TLS-Port:</label>
-                <input type="number" id="sc-cloud-port" name="port" value="8883" min="1" max="65535" inputmode="numeric" required>
+                <input type="text" id="sc-cloud-port" value="8883" readonly aria-readonly="true">
                 <small class="sc-cloud-help sc-cloud-tls">TLS ist für diese Verbindung immer aktiviert.</small>
             </div>
             <div class="form-group">
@@ -253,7 +253,7 @@
         let pollTimer = null;
 
         function setFormDisabled(disabled) {
-            ['sc-cloud-broker', 'sc-cloud-port', 'sc-cloud-username', 'sc-cloud-password', 'sc-cloud-topic']
+            ['sc-cloud-username', 'sc-cloud-password', 'sc-cloud-topic']
                 .forEach((id) => { get(id).disabled = disabled; });
         }
 
@@ -333,8 +333,6 @@
                 });
                 const settings = await readJson(response);
                 enabledInput.checked = Boolean(settings.enabled);
-                get('sc-cloud-broker').value = settings.broker || 'broker.sentinum.de';
-                get('sc-cloud-port').value = settings.port || 8883;
                 get('sc-cloud-username').value = settings.username || '';
                 passwordConfigured = Boolean(settings.password);
                 passwordInput.value = '';
@@ -373,8 +371,6 @@
             const suppliedPassword = passwordInput.value;
             const payload = {
                 enabled: enabledInput.checked,
-                broker: get('sc-cloud-broker').value.trim(),
-                port: Number(get('sc-cloud-port').value),
                 username: get('sc-cloud-username').value.trim(),
                 password: clearPasswordInput.checked ? '' : (suppliedPassword || (passwordConfigured ? '***' : '')),
                 topic: get('sc-cloud-topic').value.trim()

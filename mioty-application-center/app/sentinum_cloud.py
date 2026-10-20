@@ -30,7 +30,10 @@ PREFIX = "sentinum_cloud_"
 
 
 def cloud_settings(settings):
-    return {key: settings.get(PREFIX + key, default) for key, default in DEFAULTS.items()}
+    result = {key: settings.get(PREFIX + key, default) for key, default in DEFAULTS.items()}
+    # Sentinum uses one fixed public TLS endpoint, not a user-selected broker.
+    result.update(broker=DEFAULTS["broker"], port=DEFAULTS["port"])
+    return result
 
 
 def telemetry_topic(topic):
@@ -77,6 +80,8 @@ def validate_settings(data, current):
         raise ValueError("Port muss zwischen 1 und 65535 liegen.") from None
     if result["broker"] and not re.fullmatch(r"[A-Za-z0-9._:-]+", result["broker"]):
         raise ValueError("Broker als Hostname ohne mqtts:// oder Pfad eingeben.")
+    if result["broker"] != DEFAULTS["broker"] or result["port"] != DEFAULTS["port"]:
+        raise ValueError("Sentinum Cloud verwendet fest broker.sentinum.de mit TLS-Port 8883.")
     topic = result["topic"]
     if topic:
         result["topic"] = telemetry_topic(topic)
