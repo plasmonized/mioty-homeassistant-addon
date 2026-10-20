@@ -26,3 +26,12 @@ across the whole interface, not isolated dashboard styling.
 **How to apply:** Extend future visual changes to related tables, forms,
 navigation, dialogs and lower-page content. Preserve the operational hierarchy
 and functional behavior rather than introducing unrelated dashboard concepts.
+
+Do not put a Sentinum logo in the upper-right application header. In the
+Sentinum Cloud settings, use the light/orange logo on black, not a white tile.
+
+**Why:** The user wants less prominent Sentinum branding and explicitly requested
+these two logo treatments.
+
+**How to apply:** Keep global navigation/header unbranded by Sentinum; reserve
+its logo for the actual Cloud integration.

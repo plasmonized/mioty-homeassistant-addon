@@ -5,9 +5,11 @@
         gap: 10px;
     }
     #sentinum-cloud-title .sc-cloud-logo {
-        width: 36px;
+        width: 50px;
         height: 36px;
-        object-fit: contain;
+        object-fit: cover;
+        object-position: left;
+        background: #000;
         flex-shrink: 0;
     }
     #sentinum-cloud-section .sc-cloud-intro {
@@ -164,7 +166,7 @@
 <section class="section" id="sentinum-cloud-section" aria-labelledby="sentinum-cloud-title">
     <div class="sc-cloud-heading">
         <div>
-            <h2 id="sentinum-cloud-title"><img class="sc-cloud-logo" src="{{ ingress_path }}/static/images/sentinum-logo.png" alt="Sentinum Logo" width="36" height="36">Sentinum Cloud</h2>
+            <h2 id="sentinum-cloud-title"><img class="sc-cloud-logo" src="{{ ingress_path }}/static/images/sentinum-wordmark.png" alt="Sentinum Logo" width="50" height="36">Sentinum Cloud</h2>
             <p class="sc-cloud-intro">Sensordaten über MQTT empfangen. Die vorhandenen Decoder bleiben unverändert nutzbar.</p>
         </div>
         <label class="sc-cloud-toggle" for="sc-cloud-enabled">
