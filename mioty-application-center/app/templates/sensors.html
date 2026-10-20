@@ -342,6 +342,13 @@
             font-size: 12px;
             font-weight: bold;
         }
+
+        .status-badge.status-auto {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
         
         .status-active {
             background: #d4edda;
@@ -695,7 +702,7 @@
                         ${sensor.application_key ? '<span class="status-badge status-active">AES</span>' : ''}
                         <button class="btn btn-secondary" data-action="reregister" data-eui="${escapeHTML(encodedEui)}" title="Sensor erneut am Service Center registrieren">Neu anlernen</button>
                     ` : '';
-                    const autoDiscovered = sensor.auto_discovered ? '<span class="status-badge" style="background: #17a2b8; color: white;">Auto</span>' : '';
+                    const autoDiscovered = sensor.auto_discovered ? '<span class="status-badge status-auto" style="background: #17a2b8; color: white;">Auto</span>' : '';
                     const sourceBadge = sensor.source === 'sentinum_cloud' ? '<span class="source-badge">Sentinum Cloud</span>' : '';
                     return `
                         <article class="sensor-card" style="border-left-color: ${sensor.online ? '#28a745' : '#6c757d'};">
