@@ -91,6 +91,13 @@ export function SignalPath() {
             <span className={`sp-route-icon ${index === 3 ? 'home' : ''}`}><Icon size={19} strokeWidth={1.7} /></span>
             <i className="sp-route-mark-dot" />
           </span>
+          <span className={`sp-route-watermark route-watermark-${index}`} aria-hidden="true">
+            {index === 0
+              ? <img src="/__mockup/images/signal-path-mioty-logo.png" alt="" />
+              : index === 3
+                ? <img src="/__mockup/images/signal-path-home-assistant.png" alt="" />
+                : <Icon size={66} strokeWidth={1.05} />}
+          </span>
           <span className="sp-route-copy">
             <strong>{index === 0 ? <><span>Sensor</span><em>mioty</em></> : index === 3 ? <><span>Zuhause</span><em className="ha-mark">HA</em></> : <><span>{label}</span><em>{index === 1 ? 'IOT' : 'DATA'}</em></>}</strong>
             <small>{index === 0 ? `${sensors.length} Geräte · mioty` : detail}</small>

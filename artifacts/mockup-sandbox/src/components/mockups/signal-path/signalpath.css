@@ -47,7 +47,26 @@
 .sp-warn-value { color: var(--sp-orange); }
 .sp-route-shortcut { display: flex; align-items: center; gap: 9px; margin-left: auto; border: 0; background: transparent; color: var(--sp-ink); font-size: 11px; }
 .sp-route { display: flex; align-items: center; gap: 0; padding: 14px 18px; margin-bottom: 25px; border: 1px solid var(--sp-line); border-radius: 5px; background: #f9f7f2; }
-.sp-route-step { min-width: 0; flex: 1; display: flex; align-items: center; gap: 10px; }
+.sp-route-step { min-width: 0; flex: 1; display: flex; align-items: center; gap: 10px; position: relative; isolation: isolate; }
+.sp-route-watermark {
+  position: absolute;
+  z-index: -1;
+  right: 16px;
+  top: 50%;
+  width: 92px;
+  height: 60px;
+  display: grid;
+  place-items: center;
+  transform: translateY(-50%);
+  color: #879098;
+  opacity: .13;
+  pointer-events: none;
+}
+.sp-route-watermark img { display: block; max-width: 100%; max-height: 100%; object-fit: contain; }
+.sp-route-watermark-0 { width: 91px; height: 45px; opacity: .20; }
+.sp-route-watermark-1 { right: 24px; }
+.sp-route-watermark-2 { right: 24px; }
+.sp-route-watermark-3 { width: 118px; height: 42px; opacity: .20; }
 .sp-route-mark { position: relative; display: grid; place-items: center; width: 39px; height: 39px; flex: none; border: 1px solid #dedbd5; border-radius: 10px; background: #f1eee7; }
 .sp-route-mark.route-mark-0 { background: #f5e4da; border-color: #e9c4b1; }
 .sp-route-mark.route-mark-1 { background: #e8e9e3; border-color: #d8d9d2; }
@@ -159,6 +178,7 @@
   .sp-route-step { flex: 0 1 auto; gap: 6px; }
   .sp-route-step:not(:first-child) { display: none; }
   .sp-route-step:first-child { flex: 1; }
+  .sp-route-watermark { display: none; }
   .sp-route-step:first-child:after { content: 'Datenweg bis Home Assistant'; color: var(--sp-muted); font-size: 10px; }
   .sp-route-step:first-child small { display: none; }
 .sp-route-step:first-child:after { margin-left: 2px; }
