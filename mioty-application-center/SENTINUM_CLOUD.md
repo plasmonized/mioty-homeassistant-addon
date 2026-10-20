@@ -35,8 +35,10 @@ Topic-Schema: `datahub/<Kunde>/<Serie>/<Untertyp>/<Serie>_cellular_<IMEI>/up`
 (alternativ `devices/…`). LoRa-/mioty-Geräte desselben Kontos werden ignoriert.
 Die IMEI einschließlich führender Nullen dient als stabile Sensor-ID.
 
-Eos, Febris, Aion, Apollon, Hyperion und Juno nutzen die bereits eingebauten
-Blueprints. Eine vorhandene manuelle Decoder-Zuweisung hat Vorrang.
+Die Sensorserie und Geräte-ID werden aus dem Topic ermittelt; Geräte-IDs im
+JSON werden nur auf Widersprüche geprüft.
+Für Rohpayloads von Eos, Febris, Aion, Apollon, Hyperion und Juno werden die bereits
+eingebauten Blueprints verwendet. Eine vorhandene manuelle Decoder-Zuweisung hat Vorrang.
 Weitere Decoder lassen sich wie bisher über die Decoder-Seite zuweisen.
 
 Die JSON-Nachricht kann Rohdaten als Hex-String (`payload`, `payload_hex`,
@@ -49,7 +51,19 @@ Optional: `deviceId`, `timestamp` (ISO 8601 oder Unix-Zeit in s/ms/µs/ns),
 
 Bereits dekodierte flache Messwerte können unter `measurements`, `decoded`
 oder `data` stehen: `{"temperature": {"value": 22.5, "unit": "°C"}}`
-oder `{"temperature": 22.5}`. Unbekannte/fehlerhafte Formate werden nicht als
+oder `{"temperature": 22.5}`.
+
+Das native Cloud-Format liefert Messwerte auch direkt auf oberster JSON-Ebene,
+z. B. `internal_temperature`, `radar_rd_1`, `radar_peaks`, `rsrp` und `rsrq`.
+Diese Werte sind bereits dekodiert und skaliert: Sie durchlaufen keinen
+binären Payload-Decoder. Original-Feldnamen und Nullwerte bleiben erhalten.
+Bekannte Einheiten werden ergänzt (z. B. Eos-Radardistanzen in Metern).
+`metadata` und `sentos_meta` werden nicht als Messwerte ausgegeben.
+Der Empfangszeitstempel stammt aus `metadata.timestamp`, wenn oben kein
+Zeitstempel angegeben ist; `gpsUTCtime` bleibt ein separater GPS-Messwert.
+RSRP und RSRQ bleiben eigenständige Werte und werden nicht als RSSI/SNR ausgegeben.
+
+Unbekannte/fehlerhafte Formate werden nicht als
 erfolgreicher Empfang gezählt und verursachen eine sichtbare Fehlermeldung.
 Für abweichende Kontenformate ist ein anonymisiertes Beispiel einer vollständigen
 MQTT-Nachricht einschließlich Topic erforderlich.

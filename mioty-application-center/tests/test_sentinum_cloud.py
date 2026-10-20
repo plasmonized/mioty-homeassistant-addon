@@ -27,6 +27,26 @@ TOPIC = "datahub/example/eos/eos/eos_cellular_012345678901236/up"
 EOS = "12100531965F0D48000204B004B0FF3807D00064012D"
 
 
+def flat_cloud_message():
+    """Native cloud structure, with synthetic identifiers and location."""
+    return {
+        "up_cnt": 93, "alarm": 64, "internal_temperature": 10, "capacity": 0,
+        "battery_voltage": 0, "radar_status": 1, "radar_peaks": 3,
+        "radar_rd_1": 1.356816, "radar_ra_1": 3,
+        "radar_rd_2": 1.277959, "radar_ra_2": 1,
+        "radar_rd_3": 1.624572, "radar_ra_3": 0,
+        "orientation": 0, "tilt_angle": 0,
+        "sentos_meta": {"id": "eos_cellular_012345678901236", "sq": "39,21",
+                        "loc": "50,10,0,16,1792401019,2,0"},
+        "rsrp": -102, "rsrq": -9.5, "latitude": 50, "longitude": 10,
+        "altitude": 0, "gpsAccuracy": 16, "gpsUTCtime": 1792401019, "method": "GNSS",
+        "metadata": {"deviceType": "eos", "deviceBaseType": "eos",
+                     "deviceId": "eos_cellular_012345678901236",
+                     "versionMajor": "1", "versionMinor": "1",
+                     "timestamp": "1792484201593", "label": "test_sensor"},
+    }
+
+
 def decoder_manager():
     """Actual decoder engine, without unrelated application-key storage setup."""
     engine = PayloadDecoder.__new__(PayloadDecoder)
@@ -87,6 +107,37 @@ class NormalizationTests(unittest.TestCase):
         }})[1]["cloud_decoded"]
         self.assertTrue(result["decoded"])
         self.assertEqual(result["data"]["temperature"], {"value": 22.5, "unit": "°C"})
+
+    def test_native_flat_cloud_message(self):
+        identity, data = normalize_message(TOPIC.replace("datahub/", "devices/"), flat_cloud_message())
+        self.assertEqual(identity, "012345678901236")
+        self.assertEqual(data["timestamp_ns"], 1792484201593000000)
+        self.assertNotIn("data", data)  # No raw bytes; do not run a binary decoder.
+        self.assertIsNone(data["rssi"])  # RSRP is not RSSI; SQ is not SNR.
+        self.assertIsNone(data["snr"])
+        decoded = data["cloud_decoded"]["data"]
+        self.assertEqual(decoded["radar_rd_1"], {"value": 1.356816, "unit": "m"})
+        self.assertEqual(decoded["internal_temperature"], {"value": 10, "unit": "°C"})
+        self.assertEqual(decoded["capacity"]["value"], 0)
+        self.assertEqual(decoded["radar_ra_3"]["value"], 0)
+        self.assertEqual(decoded["rsrp"], {"value": -102, "unit": "dBm"})
+        self.assertEqual(decoded["rsrq"], {"value": -9.5, "unit": "dB"})
+        self.assertEqual(decoded["method"]["value"], "GNSS")
+        self.assertNotIn("metadata", decoded)
+        self.assertNotIn("sentos_meta", decoded)
+        self.assertNotIn("timestamp", decoded)
+
+    def test_flat_cloud_rejects_mismatched_nested_ids_and_invalid_values(self):
+        for section, key in (("metadata", "deviceId"), ("sentos_meta", "id")):
+            body = flat_cloud_message()
+            body[section][key] = "eos_cellular_other"
+            with self.subTest(section=section), self.assertRaises(ValueError):
+                normalize_message(TOPIC, body)
+        for overrides in ({"radar_rd_1": float("nan")},
+                          {"metadata": {"timestamp": "inf"}},
+                          {"metadata": {"timestamp": "invalid"}}):
+            with self.subTest(overrides=overrides), self.assertRaises(ValueError):
+                normalize_message(TOPIC, {**flat_cloud_message(), **overrides})
 
     def test_bad_messages_do_not_reach_pipeline(self):
         for body in (
@@ -224,6 +275,23 @@ class PipelineAndApiTests(unittest.TestCase):
         self.assertEqual(self.addon.sensors[identity]["decoded_data"]["data"]["temperature"]["value"], 25)
         self.assertEqual(self.addon._get_device_info_from_decoder(identity, "test")["manufacturer"], "Sentinum")
         self.assertTrue(self.addon.mqtt_manager.ha_client.publish.called)
+
+    def test_native_flat_message_reaches_dashboard_live_and_ha_without_decoder(self):
+        identity, data = normalize_message(TOPIC, flat_cloud_message())
+        with patch.object(self.addon.decoder_manager, "decode_sensor_payload") as decode:
+            self.assertTrue(self.addon._handle_sentinum_cloud_data(identity, data))
+            decode.assert_not_called()
+        sensors = self.web.get("/api/sensors").get_json()
+        self.assertEqual(sensors[0]["eui"], identity)
+        self.assertEqual(sensors[0]["metadata"]["manufacturer"], "Sentinum")
+        live = self.web.get("/api/livedata").get_json()["sensors"][0]
+        self.assertTrue(live["messages"][0]["has_decoded"])
+        self.assertEqual(live["messages"][0]["decoded_data"]["radar_rd_2"]["value"], 1.277959)
+        self.assertEqual(self.addon.sensors[identity]["decoded_data"]["decoder_name"], "Sentinum Cloud")
+        state = json.loads(self.addon.mqtt_manager.ha_client.publish.call_args.args[1])
+        self.assertEqual(state["radar_rd_3"]["value"], 1.624572)
+        self.assertEqual(state["battery_voltage"]["value"], 0)
+        self.assertNotIn("metadata", state)
 
     def test_settings_password_mask_persistence_and_disable(self):
         with patch("sentinum_cloud.mqtt.Client") as factory:

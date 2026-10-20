@@ -97,7 +97,7 @@ def _timestamp_ns(value):
         return time.time_ns()
     if isinstance(value, str):
         try:
-            value = float(value)
+            value = int(value) if re.fullmatch(r"\d+", value) else float(value)
         except ValueError:
             parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
             if parsed.tzinfo is None:
@@ -105,7 +105,9 @@ def _timestamp_ns(value):
             return int(parsed.timestamp() * 1e9)
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise ValueError("Ungültiger Zeitstempel.")
-    scale = 1 if value >= 1e17 else 1e3 if value >= 1e14 else 1e6 if value >= 1e11 else 1e9
+    if isinstance(value, float) and not math.isfinite(value):
+        raise ValueError("Ungültiger Zeitstempel.")
+    scale = 1 if value >= 1e17 else 1000 if value >= 1e14 else 1000000 if value >= 1e11 else 1000000000
     return int(value * scale)
 
 
@@ -141,11 +143,13 @@ def normalize_message(topic, body):
         return None
     if not isinstance(body, dict):
         raise ValueError("Cloud-Nachricht muss ein JSON-Objekt sein.")
-    reported_id = body.get("deviceId", body.get("device_id", device_id))
-    if str(reported_id).lower() != device_id.lower():
-        raise ValueError("Geräte-ID stimmt nicht mit dem Topic überein.")
-    identity = device_id.rsplit("_", 1)[-1].upper()  # Cellular IMEI, not a synthetic EUI
     metadata = body.get("metadata") if isinstance(body.get("metadata"), dict) else {}
+    sentos_meta = body.get("sentos_meta") if isinstance(body.get("sentos_meta"), dict) else {}
+    for reported_id in (body.get("deviceId"), body.get("device_id"),
+                        metadata.get("deviceId"), sentos_meta.get("id")):
+        if reported_id is not None and str(reported_id).lower() != device_id.lower():
+            raise ValueError("Geräte-ID stimmt nicht mit dem Topic überein.")
+    identity = device_id.rsplit("_", 1)[-1].upper()  # Cellular IMEI, not a synthetic EUI
     data = {
         "type": "cellular",
         "source": "sentinum_cloud",
@@ -184,6 +188,17 @@ def normalize_message(topic, body):
     else:
         # Datahub may already provide decoded measurements instead of raw bytes.
         values = body.get("measurements", body.get("decoded", body.get("data")))
+        flat_cloud = values is None
+        if flat_cloud:
+            # Native /up messages expose measurements at the root. Transport
+            # envelopes are not measurements (in particular metadata and sq/loc).
+            reserved = {
+                "metadata", "sentos_meta", "deviceId", "device_id", "timestamp",
+                "time", "rssi", "snr", "encoding", "payloadEncoding", "payload_hex",
+                "payloadHex", "rawPayload", "payload", "data", "frm_payload",
+                "measurements", "decoded",
+            }
+            values = {key: value for key, value in body.items() if key not in reserved}
         if not isinstance(values, dict) or not values:
             raise ValueError("Keine Rohdaten oder dekodierten Messwerte in der Cloud-Nachricht.")
         normalized = {}
@@ -193,7 +208,21 @@ def normalize_message(topic, body):
             if isinstance(value, dict) and "value" in value:
                 unit, value = value.get("unit", ""), value["value"]
             else:
+                # Values from the cloud are already scaled. Never apply binary
+                # blueprint transforms (e.g. /1000) a second time.
                 unit = ""
+                if flat_cloud:
+                    unit = {
+                        "internal_temperature": "°C", "capacity": "%",
+                        "battery_voltage": "V", "tilt_angle": "°",
+                        "rsrp": "dBm", "rsrq": "dB",
+                        "latitude": "°", "longitude": "°", "altitude": "m",
+                        "gpsAccuracy": "m",
+                    }.get(key, "")
+                    if product == "eos" and re.fullmatch(r"radar_rd_\d+", key):
+                        unit = "m"
+                    elif product == "eos" and re.fullmatch(r"radar_ra_\d+", key):
+                        unit = "dBsm"
             if isinstance(value, (str, int, float, bool)) and value is not None:
                 if isinstance(value, float) and not math.isfinite(value):
                     raise ValueError("Ungültiger Messwert.")

@@ -43,3 +43,18 @@ non-editable broker and TLS-port fields.
 
 **How to apply:** Keep the endpoint `broker.sentinum.de:8883` fixed in the
 configuration UI and server validation.
+
+## Native cloud messages
+
+Use the MQTT topic as the authoritative sensor-series and device identity.
+JSON IDs are consistency checks, not the source of model selection.
+Native `/up` messages can contain already decoded, scaled measurements directly
+at the root, alongside `metadata` and `sentos_meta`.
+
+**Why:** The user supplied an actual Eos cloud message in this format and
+emphasized that the topic already identifies the sensor. Reapplying a binary
+decoder to these values would be incorrect.
+
+**How to apply:** Keep native field names and numerical values, avoid double
+scaling, and do not treat transport metadata as measurements. Use the existing
+binary decoders only when raw bytes are actually present.
