@@ -14,6 +14,7 @@ from flask_cors import CORS
 from settings_manager import SettingsManager
 from sentinum_cloud import cloud_settings, validate_settings, PREFIX as CLOUD_PREFIX
 from service_center_api import create_service_center_client, ServiceCenterClient
+from dashboard_status import dashboard_snapshot
 
 
 class WebGUI:
@@ -567,6 +568,19 @@ class WebGUI:
             
             return jsonify(status)
         
+        @self.app.route('/api/dashboard')
+        def get_dashboard():
+            """Compact live health overview; no credentials or broker details."""
+            if not self.addon:
+                return jsonify({"error": "Add-on nicht verfügbar"}), 503
+            try:
+                response = jsonify(dashboard_snapshot(self.addon))
+                response.headers['Cache-Control'] = 'no-store'
+                return response
+            except Exception:
+                logging.exception("Dashboard-Status konnte nicht ermittelt werden")
+                return jsonify({"error": "Dashboard-Status nicht verfügbar"}), 503
+
         # ==================== SENSOR CONFIG API ====================
         
         @self.app.route('/api/sensor-config/list')
