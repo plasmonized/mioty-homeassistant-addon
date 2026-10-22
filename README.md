@@ -7,6 +7,8 @@ Eine vollständige Home Assistant Add-on Lösung zur Verwaltung von mioty IoT Se
 ## 📋 Inhaltsverzeichnis
 
 - [Überblick](#-überblick)
+- [Oberfläche](#-oberfläche)
+- [MIOTY und SCACI](#-mioty-und-scaci)
 - [Datenfluss-Architektur](#-datenfluss-architektur)
 - [Installation](#-installation)
 - [Konfiguration](#-konfiguration)
@@ -24,13 +26,32 @@ Das **mioty Application Center für Home Assistant** ist eine umfassende Add-on 
 
 ### Hauptfunktionen
 
-- ✅ **Vollautomatische Sensor-Erkennung** über MQTT
-- ✅ **Web-basierte Verwaltungsoberfläche** für Sensoren und Einstellungen
-- ✅ **Automatisiertes Payload Decoder System** für mioty Blueprint (.json) und Sentinum JavaScript (.js) Formate
-- ✅ **Real-time Base Station Monitoring** mit Status-Überwachung
-- ✅ **Bidirektionale Kommunikation** für Downlink-Nachrichten
-- ✅ **Deutsche Lokalisierung** der gesamten Benutzeroberfläche
-- ✅ **Home Assistant Integration** mit automatischer Entity-Erstellung
+- **Einheitliches Dashboard:** zuletzt aktive Sensoren über alle unterstützten Funktechnologien, aktive mioty-/LoRaWAN-Basisstationen und kompakte Verbindungsübersicht.
+- **Verbindungen auf einen Blick:** Service Center, mioty-MQTT, Home Assistant MQTT und Sentinum Cloud; Status wird visuell angezeigt.
+- **Sensormanagement nach Technologie:** Sensoren gruppiert nach mioty, LoRaWAN, OMS/Wireless M-Bus und Mobilfunk; Cloud-Sensoren werden als Quelle gekennzeichnet.
+- **Sentinum Cloud:** optionale MQTT/TLS-Anbindung mit einstellbaren Zugangsdaten und Kunden-Topic; vorverarbeitete JSON-Messwerte werden ohne erneute Dekodierung übernommen.
+- **Decoder:** mioty Blueprint (.json), Sentinum JavaScript (.js), IO-Link-Adapter und IODD-Dateien.
+- **Home Assistant:** MQTT-Weitergabe von Messwerten und automatische Entity-Erstellung.
+- **Hell- und Dunkelmodus:** Umschalter in den Einstellungen; die Auswahl wird lokal im Browser gespeichert.
+- **Responsive Oberfläche:** deutsche Bedienoberfläche für Desktop und Mobilgeräte.
+
+## 🖥️ Oberfläche
+
+![Dashboard mit aktiven Sensoren, Funktechnologien und Verbindungsstatus](docs/screenshots/dashboard.jpg)
+
+*Operative Übersicht mit Sensoraktivität, Basisstationen und den vier relevanten Verbindungen.*
+
+![Decoder- und IO-Link-Verwaltung](docs/screenshots/decoderverwaltung.jpg)
+
+*Decoder, IO-Link-Adapter und IODD-Dateien zentral verwalten.*
+
+## 📡 MIOTY und SCACI
+
+Die Verbindung zum mioty Service Center nutzt das **SC-AC Interface (SCACI) v1.0.0** über TLS. Implementiert sind unter anderem Sitzungsaufbau und -fortsetzung, Anfrage-/Antwort-/Abschlussabläufe, Sensorregistrierung, Statusmeldungen, Uplink sowie Downlink-Ergebnisse.
+
+**Ziel der Implementierung ist eine 100 % MIOTY-konforme Kommunikation über SCACI v1.0.0.** Diese Aussage bezieht sich auf die Protokollanbindung des Add-ons. Sie stellt keine unabhängige oder formelle Produktzertifizierung dar.
+
+Die Sensordaten durchlaufen weiterhin die vorhandenen Decoder und werden anschließend über MQTT an Home Assistant weitergegeben. Sentinum Cloud ist eine optionale, separate MQTT/TLS-Datenquelle.
 
 ## 🔄 Datenfluss-Architektur
 
@@ -230,16 +251,29 @@ Erforderliche Endpunkte:
 
 ## 🖥️ Web-Benutzeroberfläche
 
-Die Web-GUI ist über die Home Assistant Ingress-Funktion verfügbar und bietet drei Hauptbereiche:
+Die Web-GUI ist über die Home Assistant Ingress-Funktion erreichbar. Das dunkle Sentinum-Orange/Graphit-Design unterstützt jetzt einen Hellmodus. Die Auswahl wird lokal im verwendeten Browserprofil gespeichert und gilt für alle Seiten.
 
-### 📊 Sensor-Management
+### Dashboard und Verbindungen
 
-- **Sensor hinzufügen:** EUI, Netzwerk-Schlüssel, Kurze Adresse konfigurieren
-- **Sensor-Liste:** Real-time Status aller registrierten Sensoren
-- **Signal-Qualität:** RSSI, SNR und letzte Verbindungszeit
-- **Bidirektionale Kommunikation:** Downlink-Nachrichten senden
+- Gesamtzahl und Aktivität der Sensoren über die erkannten Funktechnologien hinweg
+- Aktivität von mioty- und LoRaWAN-Basisstationen
+- Kompakte 2×2-Übersicht für Service Center, mioty-MQTT, Home Assistant MQTT und Sentinum Cloud; ein Statuspunkt kennzeichnet den Verbindungszustand
 
-### 📝 Payload Decoder Management
+### Sensor-Management
+
+- Sensorübersicht nach Technologie gruppiert: mioty, LoRaWAN, OMS/Wireless M-Bus und Mobilfunk
+- Kennzeichnung der Datenquelle Sentinum Cloud und Anzeige der mobilfunkbasierten Geräte-ID
+- Sensoren hinzufügen, bearbeiten, entfernen und – für mioty-Sensoren – beim Service Center erneut anlernen
+- Live-Daten sowie Signal- und Statusinformationen
+
+### Einstellungen und Datenquellen
+
+- MQTT-Broker für mioty-/BSSCI-Daten und MQTT-Weitergabe an Home Assistant
+- Optionale Sentinum-Cloud-Anbindung per MQTT/TLS mit eigenständigen Zugangsdaten, Kunden-Topic und vollständiger Deaktivierung
+- Anzeige der Verbindungszustände der einzelnen Dienste
+- Umschalter für Hell-/Dunkelmodus mit browserlokaler Speicherung
+
+### Decoder- und IO-Link-Verwaltung
 
 #### Unterstützte Decoder-Formate:
 
@@ -300,13 +334,6 @@ function decode(bytes, port) {
 - **Zuweisen:** Decoder zu spezifischen Sensor-EUIs zuordnen
 - **Testen:** Live-Test mit Hex-Payloads
 - **Verwalten:** Bearbeiten, löschen, neu zuweisen
-
-### ⚙️ Einstellungen
-
-- **MQTT Konfiguration:** Broker, Port, Credentials
-- **BSSCI Integration:** Service URL und Verbindungsparameter
-- **System-Einstellungen:** Log-Level, Auto-Discovery
-- **Verbindungsstatus:** Real-time Monitoring aller Komponenten
 
 ## 🔧 Payload Decoder System
 

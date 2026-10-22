@@ -88,9 +88,9 @@ def dashboard_snapshot(addon, now=None):
 
     service_detail = []
     if scaci_enabled or scaci_connected:
-        service_detail.append("SCACI: " + ("verbunden" if scaci_connected else "getrennt"))
+        service_detail.append("SCACI" if scaci_connected else "SCACI: getrennt")
     if mqtt_enabled or mqtt_connected:
-        service_detail.append("MQTT: " + ("verbunden" if mqtt_connected else "getrennt"))
+        service_detail.append("MQTT" if mqtt_connected else "MQTT: getrennt")
     connections = [
         {"id": "service_center", "label": "Service Center",
          "state": connection_state(scaci_enabled or mqtt_enabled, scaci_connected or mqtt_connected),
