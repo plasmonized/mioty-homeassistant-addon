@@ -77,9 +77,10 @@ flowchart LR
 ### Voraussetzungen
 
 - Home Assistant 2023.1.0 oder höher
-- MQTT Broker (z.B. Mosquitto Add-on)
-- Aktives mioty Netzwerk mit BSSCI Service Center
-- **Externe Abhängigkeit: [containerized mioty Service Center](https://github.com/plasmonized/containerized-mioty-Service-Center)** - erforderlich für vollständige Funktionalität
+- Aktives mioty Netzwerk mit Basisstationen und Zugang zu einem mioty Service Center
+- Für den MQTT-Datenweg: MQTT-Broker (z. B. Mosquitto) und die passende BSSCI/MQTT-Anbindung
+- Für den direkten Datenweg: erreichbarer SCACI-v1.0.0-Endpunkt über TLS
+- Die [containerisierte mioty Service-Center-/MQTT-Bridge](https://github.com/plasmonized/containerized-mioty-Service-Center) wird für die MQTT-Variante benötigt, nicht für die direkte SCACI-Verbindung.
 - GitHub Repository Zugang
 
 ### Add-on Installation
