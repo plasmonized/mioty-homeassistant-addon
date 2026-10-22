@@ -55,128 +55,21 @@ Die Sensordaten durchlaufen weiterhin die vorhandenen Decoder und werden anschli
 
 ## 🔄 Datenfluss-Architektur
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                        mioty IoT Netzwerk Datenfluss                       │
-└─────────────────────────────────────────────────────────────────────────────┘
+*Der Datenzugang zum mioty Service Center kann wahlweise über MQTT oder direkt über SCACI erfolgen. Beide Wege führen in dieselbe Verarbeitung.*
 
-     mioty Sensoren                 mioty Base Stations            BSSCI Service
-    ┌─────────────┐                ┌─────────────────┐            ┌─────────────┐
-    │  📡 Sensor  │                │  🗼 Base        │            │  🖥️ BSSCI   │
-    │  EUI: xxx1  │◄──────────────►│    Station 1    │◄──────────►│  Service    │
-    │             │   mioty RF     │                 │   TCP/TLS  │  Center     │
-    └─────────────┘                └─────────────────┘            │             │
-                                                                  │  Port:      │
-    ┌─────────────┐                ┌─────────────────┐            │  16018      │
-    │  📡 Sensor  │                │  🗼 Base        │            │             │
-    │  EUI: xxx2  │◄──────────────►│    Station 2    │◄──────────►│             │
-    │             │   mioty RF     │                 │   TCP/TLS  │             │
-    └─────────────┘                └─────────────────┘            └─────────────┘
-                                                                         │
-                                                                         │ TCP/IP
-                                                                         ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                           MQTT Broker                                      │
-│  ┌─────────────────────────────────────────────────────────────────────┐    │
-│  │  Topic Structure:                                                   │    │
-│  │  • bssci/ep/{sensor_eui}/ul     - Sensor Uplink Data               │    │
-│  │  • bssci/ep/{sensor_eui}/dl     - Sensor Downlink Commands         │    │
-│  │  • bssci/ep/{sensor_eui}/config - Sensor Configuration             │    │
-│  │  • bssci/bs/{basestation_id}    - Base Station Status              │    │
-│  └─────────────────────────────────────────────────────────────────────┘    │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                         │
-                                         │ MQTT Subscribe
-                                         ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                    mioty Application Center Add-on                         │
-│  ┌─────────────────────────────────────────────────────────────────────┐    │
-│  │                      MQTT Manager                                  │    │
-│  │  • Subscribes to all mioty topics                                  │    │
-│  │  • Handles real-time message processing                            │    │
-│  │  • Manages connection lifecycle                                    │    │
-│  └─────────────────────────────────────────────────────────────────────┘    │
-│                                    │                                        │
-│                                    ▼                                        │
-│  ┌─────────────────────────────────────────────────────────────────────┐    │
-│  │                   Payload Decoder Engine                           │    │
-│  │  ┌───────────────┐  ┌─────────────────┐  ┌─────────────────────┐    │    │
-│  │  │ mioty         │  │ Sentinum        │  │ Custom Decoder      │    │    │
-│  │  │ Blueprint     │  │ JavaScript      │  │ Scripts             │    │    │
-│  │  │ (.json)       │  │ (.js)           │  │ (User Upload)       │    │    │
-│  │  └───────────────┘  └─────────────────┘  └─────────────────────┘    │    │
-│  │           │                   │                     │              │    │
-│  │           └───────────────────┼─────────────────────┘              │    │
-│  │                              ▼                                    │    │
-│  │  ┌─────────────────────────────────────────────────────────────────┐ │    │
-│  │  │              Decoded Sensor Data                                │ │    │
-│  │  │  {                                                              │ │    │
-│  │  │    "temperature": 24.5,                                         │ │    │
-│  │  │    "humidity": 68.2,                                            │ │    │
-│  │  │    "battery": 3.7,                                              │ │    │
-│  │  │    "signal_quality": {                                          │ │    │
-│  │  │      "rssi": -89,                                               │ │    │
-│  │  │      "snr": 12                                                  │ │    │
-│  │  │    }                                                            │ │    │
-│  │  │  }                                                              │ │    │
-│  │  └─────────────────────────────────────────────────────────────────┘ │    │
-│  └─────────────────────────────────────────────────────────────────────┘    │
-│                                    │                                        │
-│                                    ▼                                        │
-│  ┌─────────────────────────────────────────────────────────────────────┐    │
-│  │                      Web GUI Interface                             │    │
-│  │  • Sensor Management (Add/Remove/Configure)                        │    │
-│  │  • Decoder Upload & Assignment                                     │    │
-│  │  • Real-time Status Monitoring                                     │    │
-│  │  • MQTT Configuration                                              │    │
-│  │  • Base Station Health Overview                                    │    │
-│  └─────────────────────────────────────────────────────────────────────┘    │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                         │
-                                         │ Home Assistant API
-                                         ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                         Home Assistant                                     │
-│  ┌─────────────────────────────────────────────────────────────────────┐    │
-│  │                    Entity Creation                                  │    │
-│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐                  │    │
-│  │  │   Sensor    │  │   Sensor    │  │ Base Station│                  │    │
-│  │  │ Temperature │  │  Humidity   │  │   Status    │                  │    │
-│  │  │  (°C)       │  │    (%)      │  │   Entities  │                  │    │
-│  │  └─────────────┘  └─────────────┘  └─────────────┘                  │    │
-│  │                                                                     │    │
-│  │  Device Registry:                                                   │    │
-│  │  • mioty Sensor (EUI: fca84a030000127c)                            │    │
-│  │    - Temperature Sensor                                             │    │
-│  │    - Humidity Sensor                                                │    │
-│  │    - Battery Level                                                  │    │
-│  │    - Signal Quality (RSSI/SNR)                                      │    │
-│  │    - Last Seen Timestamp                                            │    │
-│  └─────────────────────────────────────────────────────────────────────┘    │
-│                                    │                                        │
-│                                    ▼                                        │
-│  ┌─────────────────────────────────────────────────────────────────────┐    │
-│  │              Home Assistant Automations                            │    │
-│  │  • Temperature Threshold Alerts                                    │    │
-│  │  • Low Battery Notifications                                       │    │
-│  │  • Signal Quality Monitoring                                       │    │
-│  │  • Historical Data Logging                                         │    │
-│  │  • Dashboard Visualizations                                        │    │
-│  └─────────────────────────────────────────────────────────────────────┘    │
-└─────────────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    Sensor[mioty Sensor] -->|mioty Funk| Basis[mioty Basisstation]
+    Basis -->|BSSCI Sensordaten| SC[mioty Service Center]
 
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                           Datenfluss Details                               │
-└─────────────────────────────────────────────────────────────────────────────┘
+    SC -->|MQTT Topics| Broker[MQTT Broker]
+    Broker -->|MQTT Eingang| Addon[mioty Application Center]
+    Addon <-->|Alternative: TLS / SCACI v1.0.0| SC
 
-1. 📡 mioty Sensoren senden Daten über mioty RF-Protokoll
-2. 🗼 Base Stations empfangen und leiten Daten an BSSCI Service weiter
-3. 🖥️ BSSCI Service published Daten über MQTT Broker
-4. 🔄 mioty Application Center Add-on subscribes MQTT Topics
-5. 🔧 Payload Decoder Engine dekodiert Hex-Payloads zu strukturierten Daten
-6. 📊 Web GUI ermöglicht Verwaltung und Monitoring
-7. 🏠 Home Assistant erstellt automatisch Entities für jeden Sensor
-8. 📈 Benutzer kann Automationen und Dashboards basierend auf Sensor-Daten erstellen
+    Addon --> Decoder[Payload Decoder]
+    Decoder --> Daten[Dekodierte Messwerte]
+    Daten --> HAMQTT[Home-Assistant MQTT]
+    HAMQTT --> HA[Home Assistant]
 ```
 
 ## 📦 Installation
@@ -236,9 +129,9 @@ certfile: fullchain.pem
 keyfile: privkey.pem
 ```
 
-### MQTT Integration
+### Datenzugang über MQTT oder SCACI
 
-Das Add-on kommuniziert komplett über MQTT - keine direkte BSSCI Service Center Verbindung erforderlich:
+Sensordaten können über den MQTT-Broker oder über die direkte TLS-Verbindung mit SCACI v1.0.0 empfangen werden. Der MQTT-Weg nutzt die mioty/BSSCI Topics:
 
 ```
 Alle Daten fließen über den MQTT Broker
